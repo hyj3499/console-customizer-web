@@ -10,33 +10,39 @@ const useCustomizerStore = create((set) => ({
     protagonist: { name: '', images: [] },
     setProtagonist: (protagonist) => set({ protagonist }),
     
-    heroine: { name: '', images: [] },
-    setHeroine: (heroine) => set({ heroine }),
-    
-    // 주인공 전용 스타일
-    pFontStyle: { font: 'Pretendard', color: '#EBEBEB', outline: '#000000' },
-    // 히로인 전용 스타일
-    hFontStyle: { font: 'Pretendard', color: '#EBEBEB', outline: '#000000' },
-    
+    // ⭐ 주인공 전용 스타일에 초상화 옵션 추가 (portraitStyle, portraitColor)
+    pFontStyle: { 
+        font: 'Pretendard', color: '#EBEBEB', useOutline: false, outline: '#000000',
+        dialogFrame: 'simple', dialogColor: 'rgba(0,0,0,0.8)',
+        nameFrame: 'simple', nameColor: 'rgba(0,0,0,0.8)',
+        portraitStyle: 'square', portraitColor: '#ffffff' // <-- 추가됨!
+    },
+    setPFontStyle: (style) => set((state) => ({ pFontStyle: { ...state.pFontStyle, ...style } })),
+
+    // 등장인물 배열 상태
+    characters: [
+        { 
+            id: Date.now(), 
+            name: '', 
+            images: [], 
+            fontStyle: { 
+                font: 'Pretendard', color: '#EBEBEB', useOutline: false, outline: '#000000',
+                dialogFrame: 'simple', dialogColor: 'rgba(0,0,0,0.8)',
+                nameFrame: 'simple', nameColor: 'rgba(0,0,0,0.8)'
+            } 
+        }
+    ],
+    setCharacters: (chars) => set({ characters: chars }),
+
     // 업로드된 커스텀 폰트 목록
     customFonts: [], 
-
-    setPFontStyle: (style) => set((state) => ({ pFontStyle: { ...state.pFontStyle, ...style } })),
-    setHFontStyle: (style) => set((state) => ({ hFontStyle: { ...state.hFontStyle, ...style } })),
     addCustomFont: (fontName, url) => set((state) => ({ 
         customFonts: [...state.customFonts, { name: fontName, url }] 
     })),
 
-
     // --- 3단계 상태 ---
     background: null,
     setBackground: (background) => set({ background }),
-
-    /*favorabilityShape: 'heart',
-    setFavorabilityShape: (shape) => set({ favorabilityShape: shape }),
-    
-    favorabilityColor: '#ff8787',
-    setFavorabilityColor: (color) => set({ favorabilityColor: color }),*/
 
     currentBranch: 'main',
     setCurrentBranch: (branch) => set({ currentBranch: branch }),
