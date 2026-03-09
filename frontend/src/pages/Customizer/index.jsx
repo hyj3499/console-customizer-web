@@ -1,7 +1,8 @@
 // src/pages/Customizer/index.jsx
 import { useState } from 'react';
 import StepModeSelect from './StepModeSelect';
-import StepSettings from './StepSettings'; // ⭐ 추가: 2단계 부품 불러오기
+import StepSettings from './StepSettings';
+import StepEventEditor from './StepEventEditor'; // ⭐ 추가
 
 export default function Customizer() {
     const [currentStep, setCurrentStep] = useState(1);
@@ -9,38 +10,21 @@ export default function Customizer() {
 
     return (
         <div style={{ padding: '40px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            {/* ... 기존 헤더 영역 ... */}
+            <h1 style={{ marginBottom: '10px' }}>게임 커스터마이징</h1>
+            <div style={{ marginBottom: '40px', color: '#888', fontWeight: 'bold' }}>
+                현재 단계: Step {currentStep} / 5
+            </div>
 
-            {/* 1단계 화면 */}
-            {currentStep === 1 && (
-                <StepModeSelect 
-                    selectedMode={selectedMode} 
-                    onSelectMode={(mode) => setSelectedMode(mode)} 
-                />
-            )}
+            {currentStep === 1 && <StepModeSelect selectedMode={selectedMode} onSelectMode={setSelectedMode} />}
+            {currentStep === 2 && <StepSettings />}
+            {currentStep === 3 && <StepEventEditor />} {/* ⭐ 3단계 연결 */}
 
-            {/* ⭐ 2단계 화면 교체 (우리가 방금 만든 StepSettings 연결) */}
-            {currentStep === 2 && (
-                <StepSettings />
-            )}
-
-            {/* 하단 이동 버튼 영역 */}
+            {/* 하단 이동 버튼 */}
             <div style={{ marginTop: '50px', display: 'flex', gap: '20px', width: '100%', maxWidth: '800px', justifyContent: 'center' }}>
                 {currentStep > 1 && (
-                    <button 
-                        onClick={() => setCurrentStep(currentStep - 1)}
-                        style={{ padding: '12px 30px', fontSize: '18px', borderRadius: '8px', cursor: 'pointer' }}
-                    >
-                        ⬅️ 이전
-                    </button>
+                    <button onClick={() => setCurrentStep(currentStep - 1)} style={{ padding: '12px 30px', fontSize: '18px', borderRadius: '8px', cursor: 'pointer' }}>⬅️ 이전</button>
                 )}
-                
-                <button 
-                    onClick={() => setCurrentStep(currentStep + 1)}
-                    style={{ padding: '12px 30px', fontSize: '18px', backgroundColor: '#646cff', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-                >
-                    다음 단계로 ➡️
-                </button>
+                <button onClick={() => setCurrentStep(currentStep + 1)} style={{ padding: '12px 30px', fontSize: '18px', backgroundColor: '#646cff', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>다음 단계로 ➡️</button>
             </div>
         </div>
     );
