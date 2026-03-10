@@ -273,13 +273,27 @@ export default function StepEventEditor() {
         const file = e.target.files[0];
         if (!file) return;
         const objectUrl = URL.createObjectURL(file);
+        
         setIsCgMode(true);
-        updateActiveScenarios([...scenarios, 
-            { type: 'cg_image', src: objectUrl, branch: currentBranch },
-            { type: 'dialog', branch: currentBranch, isCg: true, speaker: defaultSpeaker, text: '', bgImage: objectUrl, bgType: 'custom_cg', dateOverride: null }
-        ]);
+        
+        // ⭐ 기존 데이터 구조를 해치지 않으면서 'file' 객체만 슬쩍 끼워넣습니다.
+        const newScenarios = [...scenarios, 
+            { type: 'cg_image', src: objectUrl, file: file, branch: currentBranch },
+            { 
+                type: 'dialog', 
+                branch: currentBranch, 
+                isCg: true, 
+                speaker: defaultSpeaker, 
+                text: '', 
+                bgImage: objectUrl, 
+                file: file, // 👈 백엔드 전송용
+                bgType: 'custom_cg', 
+                dateOverride: null 
+            }
+        ];
+        
+        updateActiveScenarios(newScenarios);
     };
-
     // --- 🎨 인게임 미리보기 에셋 로드 ---
     const getActiveSpeakerStyle = (speakerName) => {
         if (!speakerName || speakerName === '나레이션' || speakerName === defaultSpeaker) return pFontStyle;
