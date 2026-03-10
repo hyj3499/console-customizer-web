@@ -57,7 +57,7 @@ export default function StepEventEditor() {
         events, setEvents, activeEventId, setActiveEventId,
         showPreview, setShowPreview, previewScenario, setPreviewScenario,
         protagonist, characters, pFontStyle, globalUi,
-        customBackgrounds, addCustomBackground // ⭐ 커스텀 배경 보관함 추가
+        customBackgrounds, addCustomBackground 
     } = useCustomizerStore();
 
     const currentGlobalUi = globalUi || { calendarFrame: 'retro', calendarColor: 'rgba(255,182,193,0.8)', calendarTextColor: '#5C4033', calendarTextUseOutline: true, calendarTextOutlineColor: '#ffffff', systemFont: 'Pretendard' };
@@ -88,7 +88,7 @@ export default function StepEventEditor() {
         return currentDate;
     };
 
-    // --- ✨ 이벤트 관리 로직 ---
+    // --- ✨ 이벤트 관리 로직 (자동 넘버링 포함) ---
     const updateActiveEvent = (updates) => {
         setEvents(events.map(ev => ev.id === activeEventId ? { ...ev, ...updates } : ev));
     };
@@ -104,8 +104,11 @@ export default function StepEventEditor() {
 
     const addNewEvent = () => {
         const newId = events.length > 0 ? Math.max(...events.map(e => e.id)) + 1 : 1;
+        // 타이틀은 무조건 '이벤트 + 현재 배열 길이 + 1'
+        const newTitle = `이벤트 ${events.length + 1}`; 
+        
         setEvents([...events, { 
-            id: newId, title: `이벤트 ${newId}`, bgm: null, baseDate: { month: 'JAN', day: '01', time: '12:00' },
+            id: newId, title: newTitle, bgm: null, baseDate: { month: 'JAN', day: '01', time: '12:00' },
             scenarios: [{ type: 'dialog', branch: 'main', speaker: defaultSpeaker, protagonistImage: null, heroineImage: null, text: '', bgImage: null, bgType: 'bg_school', dateOverride: null }] 
         }]);
         setActiveEventId(newId);
@@ -115,16 +118,40 @@ export default function StepEventEditor() {
 
     const deleteEvent = (e, idToRemove) => {
         e.stopPropagation();
-        if (idToRemove === 1) return; 
         if (events.length <= 1) return alert('🚨 최소 1개의 이벤트는 남아있어야 합니다!');
         
         if (window.confirm('이 이벤트를 정말 삭제하시겠습니까? (복구 불가)')) {
-            const newEvents = events.filter(ev => ev.id !== idToRemove);
-            setEvents(newEvents);
+            // 1. 해당 이벤트를 삭제하고
+            const filteredEvents = events.filter(ev => ev.id !== idToRemove);
+            
+            // 2. 남은 이벤트들의 순서를 다시 정렬(Re-indexing)하여 title을 맞춰줍니다.
+            const reorderedEvents = filteredEvents.map((ev, index) => ({
+                ...ev,
+                id: index + 1,
+                title: `이벤트 ${index + 1}`
+            }));
+
+            setEvents(reorderedEvents);
+
+            // 삭제한 이벤트가 현재 보고 있던 이벤트였다면 1번 이벤트로 강제 이동
             if (activeEventId === idToRemove) {
-                setActiveEventId(newEvents[0].id);
+                setActiveEventId(reorderedEvents[0].id);
                 setPreviewScenario(null);
+            } else if (activeEventId > idToRemove) {
+                // 삭제된 이벤트보다 뒤에 있던 이벤트를 보고 있었다면 id가 당겨졌으므로 activeId도 수정
+                setActiveEventId(activeEventId - 1);
             }
+        }
+    };
+
+    // --- ✨ 미리보기 토글 핸들러 ---
+    const handleTogglePreview = (e) => {
+        const isChecked = e.target.checked;
+        setShowPreview(isChecked);
+        
+        // ⭐ 토글을 켜는 순간, 현재 포커스된 대사가 없다면 무조건 0번 컷을 띄워줌
+        if (isChecked && !previewScenario && scenarios.length > 0) {
+            setPreviewScenario({ ...scenarios[0], index: 0 });
         }
     };
 
@@ -137,7 +164,11 @@ export default function StepEventEditor() {
         const newScenarios = [...scenarios];
         newScenarios[index][field] = value;
         updateActiveScenarios(newScenarios);
-        if (previewScenario && previewScenario.index === index) setPreviewScenario({ ...newScenarios[index], index });
+
+        // ⭐ 입력창, 드롭다운 등 해당 컷 내의 어떠한 변경이 일어나도 무조건 미리보기를 현재 컷으로 전환!
+        if (showPreview) {
+            setPreviewScenario({ ...newScenarios[index], index });
+        }
     };
 
     const handleDateOverrideChange = (index, field, value) => {
@@ -146,32 +177,31 @@ export default function StepEventEditor() {
         currentOverride[field] = value;
         newScenarios[index].dateOverride = currentOverride;
         updateActiveScenarios(newScenarios);
+
+        // 시간 변경 시에도 즉각 렌더링
+        if (showPreview) setPreviewScenario({ ...newScenarios[index], index });
     };
 
-    // ⭐ 커스텀 배경 콤보박스 선택 및 업로드 핸들러
     const handleBgSelectChange = (index, value) => {
         if (value === 'custom_new') {
-            // "새 이미지 업로드" 선택 시 숨겨진 파일 인풋 클릭
             if (fileInputRefs.current[index]) fileInputRefs.current[index].click();
         } else if (value.startsWith('custom_bg_')) {
-            // 내 보관함에서 꺼내 쓰기
             const customBg = customBackgrounds.find(bg => bg.id === value);
             if (customBg) {
                 const newScenarios = [...scenarios];
                 newScenarios[index].bgType = value;
                 newScenarios[index].bgImage = customBg.url;
                 updateActiveScenarios(newScenarios);
-                if (previewScenario && previewScenario.index === index) setPreviewScenario({ ...newScenarios[index], index });
+                if (showPreview) setPreviewScenario({ ...newScenarios[index], index });
             }
         } else {
-            // 기본 프리셋 배경
             const preset = PRESET_BACKGROUNDS.find(p => p.id === value);
             if (preset) {
                 const newScenarios = [...scenarios];
                 newScenarios[index].bgType = value;
                 newScenarios[index].bgImage = preset.url;
                 updateActiveScenarios(newScenarios);
-                if (previewScenario && previewScenario.index === index) setPreviewScenario({ ...newScenarios[index], index });
+                if (showPreview) setPreviewScenario({ ...newScenarios[index], index });
             }
         }
     };
@@ -180,19 +210,16 @@ export default function StepEventEditor() {
         const file = e.target.files[0];
         if (file) {
             const url = URL.createObjectURL(file);
-            // 1. 보관함에 새 배경 등록
             const newId = `custom_bg_${Date.now()}`;
             const newName = `내 배경 ${customBackgrounds.length + 1}`;
             addCustomBackground({ id: newId, name: newName, url, file });
 
-            // 2. 현재 컷에 즉시 적용
             const newScenarios = [...scenarios];
             newScenarios[index].bgType = newId;
             newScenarios[index].bgImage = url;
             updateActiveScenarios(newScenarios);
-            if (previewScenario && previewScenario.index === index) setPreviewScenario({ ...newScenarios[index], index });
+            if (showPreview) setPreviewScenario({ ...newScenarios[index], index });
         }
-        // 같은 파일을 지웠다 다시 올릴 수 있도록 초기화
         e.target.value = '';
     };
 
@@ -284,7 +311,8 @@ export default function StepEventEditor() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px' }}>
                 <span style={{ fontWeight: 'bold' }}>📺 인게임 연출 미리보기 모드</span>
                 <label style={{ position: 'relative', display: 'inline-block', width: '50px', height: '24px' }}>
-                    <input type="checkbox" checked={showPreview} onChange={(e) => setShowPreview(e.target.checked)} style={{ opacity: 0, width: 0, height: 0 }} />
+                    {/* ⭐ 토글 핸들러 교체 */}
+                    <input type="checkbox" checked={showPreview} onChange={handleTogglePreview} style={{ opacity: 0, width: 0, height: 0 }} />
                     <span style={{ position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: showPreview ? '#1971c2' : '#ccc', borderRadius: '24px', transition: '.4s' }}>
                         <span style={{ position: 'absolute', height: '16px', width: '16px', left: showPreview ? '30px' : '4px', bottom: '4px', backgroundColor: 'white', transition: '.4s', borderRadius: '50%' }} />
                     </span>
@@ -432,7 +460,7 @@ export default function StepEventEditor() {
                                     marginLeft: scenario.branch === 'option1' ? '20px' : scenario.branch === 'option2' ? '40px' : '0'
                                 }}
                             >
-                                {/* 좌측: 날짜 패널 */}
+                                {/* 좌측 사이드바: 날짜 표시 및 수정 버튼 */}
                                 <div style={{ width: '90px', borderRight: '1px dashed #dee2e6', paddingRight: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                     <div style={{ fontSize: '10px', color: '#868e96', fontWeight: 'bold', marginBottom: '5px' }}>{effectiveDate.month} {effectiveDate.day}</div>
                                     <div style={{ fontSize: '14px', color: '#495057', fontWeight: 'bold' }}>{effectiveDate.time}</div>
@@ -456,7 +484,7 @@ export default function StepEventEditor() {
                                     </div>
                                 </div>
 
-                                {/* 우측: 메인 편집 영역 */}
+                                {/* 우측 메인 영역: 대사 및 표정 설정 */}
                                 <div style={{ flex: 1 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -508,7 +536,7 @@ export default function StepEventEditor() {
                                                     onChange={(e) => handleBgUpload(e, index)} 
                                                     style={{ display: 'none' }} 
                                                 />
-                                                {scenario.bgImage && <span style={{ fontSize: '12px', color: 'green' }}>✓ 적용됨</span>}
+                                                {scenario.bgImage && scenario.bgType !== 'custom_new' && <span style={{ fontSize: '12px', color: 'green' }}>✓ 적용됨</span>}
                                             </div>
 
                                             <div style={{ display: 'flex', gap: '10px' }}>
@@ -517,6 +545,7 @@ export default function StepEventEditor() {
                                                     <option value="나레이션">나레이션</option>
                                                     {characters.map(c => <option key={c.id} value={c.name || '등장인물'}>{c.name || '등장인물'}</option>)}
                                                 </select>
+                                                
                                                 <input type="text" placeholder="대사를 입력하세요..." value={scenario.text} onChange={(e) => handleScenarioChange(index, 'text', e.target.value)} style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }} />
                                             </div>
 

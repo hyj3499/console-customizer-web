@@ -199,10 +199,23 @@ export default function StepSettings() {
     const handleFontUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
+
         const reader = new FileReader();
         reader.onload = (event) => {
-            const newFont = new FontFace(file.name.split('.')[0], `url(${event.target.result})`);
-            newFont.load().then((loadedFont) => { document.fonts.add(loadedFont); addCustomFont(file.name.split('.')[0], event.target.result); alert(`${file.name.split('.')[0]} 등록 완료!`); });
+            const fontName = file.name.split('.')[0];
+            const newFont = new FontFace(fontName, `url(${event.target.result})`);
+            
+            newFont.load().then((loadedFont) => {
+                document.fonts.add(loadedFont);
+                
+                // 💡 수정 포인트: 이름, 데이터(base64), 그리고 실제 'file' 객체까지 저장
+                addCustomFont(fontName, event.target.result, file); 
+                
+                alert(`${fontName} 등록 완료!`);
+            }).catch(err => {
+                console.error("폰트 로드 실패:", err);
+                alert("폰트 파일 로드에 실패했습니다.");
+            });
         };
         reader.readAsDataURL(file);
     };
