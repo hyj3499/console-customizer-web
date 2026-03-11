@@ -70,7 +70,8 @@ export default function StepEventEditor() {
     const scenarios = activeEvent.scenarios;
     const hasChoiceNode = scenarios.some(s => s.type === 'choice');
 
-    const defaultSpeaker = protagonist.name || '주인공';
+    const defaultSpeaker = 'PROTAGONIST'; 
+    const displayProtagonistName = protagonist.name || '주인공';
 
     // --- 🚨 엔딩 추적 로직 추가 ---
     const isMainEnded = scenarios.some(s => s.branch === 'main' && s.type === 'ending');
@@ -306,8 +307,9 @@ export default function StepEventEditor() {
     };
 
     // --- 🎨 인게임 미리보기 에셋 로드 ---
+// 💡 [수정] speakerName이 'PROTAGONIST'일 때 주인공 스타일(pFontStyle)을 반환하도록 수정
     const getActiveSpeakerStyle = (speakerName) => {
-        if (!speakerName || speakerName === '나레이션' || speakerName === defaultSpeaker) return pFontStyle;
+        if (!speakerName || speakerName === '나레이션' || speakerName === 'PROTAGONIST') return pFontStyle;
         const char = characters.find(c => c.name === speakerName);
         return char ? char.fontStyle : pFontStyle;
     };
@@ -328,6 +330,13 @@ export default function StepEventEditor() {
 
     const previewDate = previewScenario ? getEffectiveDateForIndex(previewScenario.index) : activeEvent.baseDate;
     const isNarration = previewScenario?.speaker === '나레이션';
+
+    // 💡 [추가] 화면에 표시할 최종 화자 이름을 결정하는 함수
+    const getSpeakerName = (speakerId) => {
+        if (!speakerId) return '';
+        if (speakerId === 'PROTAGONIST') return displayProtagonistName;
+        return speakerId;
+    };
 
     return (
         <div style={{ width: '100%', maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -396,15 +405,30 @@ export default function StepEventEditor() {
                                         </div>
                                     </div>
                                 )}
-
+                                {/* ⭐ 반응형 네임칸 적용 (우측 고정, 좌측 확장) */}
+{/* ⭐ 반응형 네임칸 적용 (우측 고정, 좌측 확장) */}
                                 {previewScenario.speaker && !isNarration && (
                                     <div style={{
-                                        position: 'absolute', left: '27.6%', top: '66.66%', width: '9.37%', height: '4.63%',
-                                        backgroundColor: nAsset.type === 'image' ? 'transparent' : (activeStyle.nameColor || 'rgba(0,0,0,0.8)'), backgroundImage: nAsset.type === 'image' ? `url(${nAsset.src})` : 'none', backgroundSize: '100% 100%',
-                                        border: nAsset.type === 'css' ? nAsset.border : 'none', borderRadius: nAsset.type === 'css' ? nAsset.borderRadius : '0', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11
+                                        position: 'absolute', 
+                                        top: '66.66%', 
+                                        left: '27.6%', 
+                                        right: 'auto',
+                                        width: 'fit-content',
+                                        minWidth: '9.37%',
+                                        height: '4.63%',
+                                        padding: '0 2cqw',
+                                        whiteSpace: 'nowrap',
+                                        boxSizing: 'border-box',
+                                        backgroundColor: nAsset.type === 'image' ? 'transparent' : (activeStyle.nameColor || 'rgba(0,0,0,0.8)'), 
+                                        backgroundImage: nAsset.type === 'image' ? `url(${nAsset.src})` : 'none', 
+                                        backgroundSize: '100% 100%',
+                                        border: nAsset.type === 'css' ? nAsset.border : 'none', 
+                                        borderRadius: nAsset.type === 'css' ? nAsset.borderRadius : '0', 
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11
                                     }}>
+                                        {/* 💡 [수정] getSpeakerName 함수를 사용하여 이름 출력 */}
                                         <span style={{ fontFamily: renderFontFamily, color: activeStyle.color || '#fff', textShadow: activeStyle.useOutline ? `-1px -1px 0 ${activeStyle.outline}, 1px -1px 0 ${activeStyle.outline}, -1px 1px 0 ${activeStyle.outline}, 1px 1px 0 ${activeStyle.outline}` : 'none', fontSize: '2.5cqh', fontWeight: 'bold' }}>
-                                            {previewScenario.speaker}
+                                            {getSpeakerName(previewScenario.speaker)}
                                         </span>
                                     </div>
                                 )}
@@ -614,16 +638,19 @@ export default function StepEventEditor() {
                                             </div>
                                         )}
 
-                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                <div style={{ display: 'flex', gap: '10px' }}>
                                                 <select value={scenario.speaker} onChange={(e) => handleScenarioChange(index, 'speaker', e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', width: '120px' }}>
-                                                    <option value={defaultSpeaker}>{defaultSpeaker}</option>
+                                                    <option value="PROTAGONIST">{displayProtagonistName}</option>
                                                     <option value="나레이션">나레이션</option>
-                                                    {characters.map(c => <option key={c.id} value={c.name || '등장인물'}>{c.name || '등장인물'}</option>)}
+                                                    {/* 💡 [수정] 이름이 없으면 인덱스를 활용해 '등장인물 1', '등장인물 2' 등으로 표시 */}
+                                                    {characters.map((c, charIdx) => {
+                                                        const defaultName = `등장인물 ${charIdx + 1}`;
+                                                        return <option key={c.id} value={c.name || defaultName}>{c.name || defaultName}</option>;
+                                                    })}
                                                 </select>
                                                 
                                                 <input type="text" placeholder="대사를 입력하세요..." value={scenario.text} onChange={(e) => handleScenarioChange(index, 'text', e.target.value)} style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }} />
                                             </div>
-
                                             {!scenario.isCg && (
                                                 <div style={{ display: 'flex', gap: '20px', marginTop: '15px' }}>
                                                     <div style={{ flex: 1, padding: '10px', backgroundColor: '#f1f3f5', borderRadius: '6px' }}>

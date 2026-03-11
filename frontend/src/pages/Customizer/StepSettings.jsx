@@ -1,7 +1,7 @@
 // ==============================================================================
 // 📄 파일 경로 : src/pages/Customizer/StepSettings.jsx
 // 🎯 주요 역할 : 게임 커스터마이징 Step 2 (등장인물/주인공 설정 및 UI 테마 커스텀)
-// 💡 추가 기능 : 타이핑 애니메이션 연출 및 캐릭터별 타이핑 효과음 설정
+// 💡 추가 기능 : 타이핑 애니메이션 연출, 캐릭터별 타이핑 효과음, 외곽선 및 네임칸 반응형
 // ==============================================================================
 
 import { useState, useEffect, useRef } from 'react';
@@ -36,9 +36,9 @@ const PREVIEW_BACKGROUNDS = [
     { name: '숲', value: 'https://via.placeholder.com/1920x1080/228b22/ffffff?text=Forest' }
 ];
 
-// ⭐ [추가] 타이핑 효과음 목록 설정 (실제 public 폴더 내 파일 경로 필요)
+// ⭐ 타이핑 효과음 목록 설정
 const SOUND_EFFECTS = [
-    { id: 'type1', name: '일반 타자기 (Type 1)', src: '/sounds/type1.wav' }, // 파일 확장자는 실제 환경에 맞게 수정 필요
+    { id: 'type1', name: '일반 타자기 (Type 1)', src: '/sounds/type1.wav' }, 
     { id: 'type2', name: '경쾌한 키보드 (Type 2)', src: '/sounds/type2.wav' },
     { id: 'type3', name: '전자음 띡띡 (Type 3)', src: '/sounds/type3.wav' },
     { id: 'type4', name: '묵직한 기계음 (Type 4)', src: '/sounds/type4.wav' },
@@ -114,7 +114,6 @@ const SmartColorPicker = ({ label, rgba, borderColor, onChange, onBorderChange, 
                         <input type="range" min="0" max="1" step="0.05" value={alpha} onChange={(e) => onChange(toRgba(hex, e.target.value))} style={{ width: '45px' }} />
                     </div>
                     
-                    {/* ⭐ 외곽선 켜기/끄기 체크박스 추가 */}
                     {onBorderChange && onUseBorderChange !== undefined && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '1px solid #dee2e6', paddingLeft: '15px' }}>
                             <input 
@@ -126,7 +125,6 @@ const SmartColorPicker = ({ label, rgba, borderColor, onChange, onBorderChange, 
                             />
                             <label htmlFor={`border-check-${label}`} style={{ fontSize: '11px', color: '#666', fontWeight: 'bold', cursor: 'pointer' }}>외곽선</label>
                             
-                            {/* 체크되었을 때만 색상 선택기 표시 */}
                             {useBorder && (
                                 <div style={{ width: '24px', height: '24px', borderRadius: '4px', backgroundColor: borderHex, border: '1px solid #ced4da', position: 'relative', overflow: 'hidden' }}>
                                     <input type="color" value={borderHex} onChange={(e) => onBorderChange(e.target.value)} style={{ opacity: 0, position: 'absolute', inset: 0, cursor: 'pointer' }} />
@@ -179,8 +177,7 @@ const CharacterForm = ({ charData, isProtagonist, onUpdate, onImageUpload, onRem
     );
 };
 
-// 🎨 테마 설정 블록 (⭐ 타이핑 사운드 추가됨)
-// 🎨 테마 설정 블록 (수정됨)
+// 🎨 테마 설정 블록
 const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOptions, showPortrait }) => {
     
     const playSound = (soundId) => {
@@ -224,7 +221,6 @@ const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOption
                 </div>
             </div>
 
-            {/* ⭐ 대화창 테마: useBorder 설정 추가 */}
             <div className="theme-divider">
                 <div className="theme-select-group">
                     <MiniPreview type="dialog" frameKey={fontStyle.dialogFrame} color={fontStyle.dialogColor} borderColor={fontStyle.useDialogBorder !== false ? fontStyle.dialogBorderColor : 'transparent'} />
@@ -247,7 +243,6 @@ const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOption
                 />
             </div>
 
-            {/* ⭐ 네임칸 테마: useBorder 설정 추가 */}
             <div className="theme-divider">
                 <div className="theme-select-group">
                     <MiniPreview type="namebox" frameKey={fontStyle.nameFrame} color={fontStyle.nameColor} borderColor={fontStyle.useNameBorder !== false ? fontStyle.nameBorderColor : 'transparent'} />
@@ -270,7 +265,6 @@ const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOption
                 />
             </div>
 
-            {/* ⭐ 초상화 프레임: useBorder 설정 추가 */}
             {showPortrait && (
                 <div className="theme-divider">
                     <div className="theme-select-group">
@@ -297,47 +291,42 @@ const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOption
         </div>
     );
 };
-// 📺 인게임 미리보기 화면 (⭐ 타이핑 애니메이션 추가)
+
+// 📺 인게임 미리보기 화면
 const InGamePreview = ({ 
     previewBg, standingImg, currentGlobalUi, textShadowStr, 
     isP, pAsset, nAsset, dAsset, cAsset, activeStyle, renderFontFamily, 
     activeChar, protagonist 
 }) => {
     
-    // 타이핑 애니메이션을 위한 상태
     const charName = activeChar?.name || (isP ? '주인공' : '등장인물');
     const fullText = `"${charName}의 대사가 이곳에 출력됩니다. 설정한 타이핑 속도로 한 글자씩 표시됩니다!"`;
     
     const [displayedText, setDisplayedText] = useState("");
     const [isTyping, setIsTyping] = useState(true);
     
-    // 오디오 객체를 담아둘 ref (중복 재생 방지)
     const audioRef = useRef(null);
 
-    // 타겟(캐릭터)이 바뀌거나 마운트될 때마다 애니메이션 리셋
     useEffect(() => {
         setDisplayedText("");
         setIsTyping(true);
         
-        // 현재 캐릭터의 효과음 세팅
         const soundId = activeStyle.typingSound || 'type1';
         const sound = SOUND_EFFECTS.find(s => s.id === soundId);
         
         if (sound && sound.src) {
             audioRef.current = new Audio(sound.src);
-            audioRef.current.loop = true; // 타자 치는 동안 반복 재생
+            audioRef.current.loop = true; 
         } else {
             audioRef.current = null;
         }
     }, [activeChar, isP, activeStyle.typingSound]);
 
-    // 타이핑 로직
     useEffect(() => {
         if (!isTyping) return;
 
         let currentIndex = 0;
         
-        // 타자 치기 시작할 때 소리 재생
         if (audioRef.current) {
             audioRef.current.play().catch(e => console.log("자동재생 막힘"));
         }
@@ -349,19 +338,17 @@ const InGamePreview = ({
             } else {
                 clearInterval(typingInterval);
                 setIsTyping(false);
-                // 타자가 끝나면 소리 정지
                 if (audioRef.current) {
                     audioRef.current.pause();
                     audioRef.current.currentTime = 0;
                 }
                 
-                // 3초 뒤에 다시 애니메이션 시작 (무한 반복 시뮬레이션용)
                 setTimeout(() => {
                     setDisplayedText("");
                     setIsTyping(true);
                 }, 3000);
             }
-        }, 50); // 타이핑 속도 조절 (ms)
+        }, 50);
 
         return () => {
             clearInterval(typingInterval);
@@ -371,11 +358,15 @@ const InGamePreview = ({
         };
     }, [isTyping, fullText]);
 
-
-    // ⭐ 외곽선 끄기 옵션이 적용된 최종 보더 설정
     const finalDialogBorder = activeStyle.useDialogBorder === false ? 'none' : dAsset.border;
     const finalNameBorder = activeStyle.useNameBorder === false ? 'none' : nAsset.border;
     const finalPortraitBorder = activeStyle.usePortraitBorder === false ? 'none' : (pAsset ? pAsset.border : 'none');
+
+    // ⭐ [수정] 폰트 외곽선(텍스트 섀도우) 생성 로직 추가
+    const outlineColor = parseRgba(activeStyle.outline).hex;
+    const charTextShadowStr = activeStyle.useOutline 
+        ? `-1px -1px 0 ${outlineColor}, 1px -1px 0 ${outlineColor}, -1px 1px 0 ${outlineColor}, 1px 1px 0 ${outlineColor}` 
+        : 'none';
 
     return (
         <div className="preview-container" style={{
@@ -399,30 +390,49 @@ const InGamePreview = ({
                 <div className="ig-portrait-area">
                     {pAsset.type === 'image' && <img src={pAsset.src} alt="Frame" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill', zIndex: 1 }} />}
                     <div style={{ position: 'absolute', inset: 0, zIndex: 2, backgroundColor: pAsset.type === 'image' ? 'transparent' : activeStyle.portraitColor, WebkitMaskImage: pAsset.type === 'image' ? `url(${pAsset.mask})` : 'none', maskImage: pAsset.type === 'image' ? `url(${pAsset.mask})` : 'none', WebkitMaskSize: '100% 100%', maskSize: '100% 100%', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', borderRadius: pAsset.type === 'css' ? pAsset.borderRadius : '0%', 
-                        border: pAsset.type === 'css' ? finalPortraitBorder : 'none', // 👈 초상화 프레임 테두리 적용
+                        border: pAsset.type === 'css' ? finalPortraitBorder : 'none',
                     overflow: 'hidden' }}>
                         {protagonist.images.length > 0 ? <img src={getImgUrl(protagonist.images[0])} alt="주인공" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>👤</div>}
                     </div>
                 </div>
             )}
 
-            <div className="ig-namebox" style={{ backgroundColor: nAsset.type === 'image' ? 'transparent' : activeStyle.nameColor, backgroundImage: nAsset.type === 'image' ? `url(${nAsset.src})` : 'none', 
-                border: nAsset.type === 'css' ? finalNameBorder : 'none', // 👈 네임칸 테두리 적용
-            borderRadius: nAsset.type === 'css' ? nAsset.borderRadius : '0' }}>
-                <span style={{ fontFamily: renderFontFamily, color: activeStyle.color, fontWeight: 'bold' }}>{charName}</span>
+            {/* ⭐ [수정] 네임칸 반응형 중앙 정렬 및 우측 앵커용 가이드 추가 */}
+            <div className="ig-namebox" style={{ 
+                backgroundColor: nAsset.type === 'image' ? 'transparent' : activeStyle.nameColor, 
+                backgroundImage: nAsset.type === 'image' ? `url(${nAsset.src})` : 'none', 
+                border: nAsset.type === 'css' ? finalNameBorder : 'none', 
+                borderRadius: nAsset.type === 'css' ? nAsset.borderRadius : '0',
+                
+                // --- 반응형 너비 및 중앙 정렬 로직 ---
+                width: 'fit-content',
+                minWidth: '150px', // 네임칸의 최소 너비 방어
+                padding: '10px 30px', // 좌우 여백을 주어 글자수에 비례해 늘어나도록 유도
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                whiteSpace: 'nowrap',
+                // 💡 [안내] 오른쪽 고정을 확실히 하려면 CSS(StepSettings.css)의 .ig-namebox 클래스에서 
+                // left: auto; 로 초기화해주시고, right: 10% (원하는 우측 앵커값) 형태로 지정해야 합니다!
+            }}>
+                {/* ⭐ [수정] 캐릭터 이름에 외곽선(textShadow) 적용 */}
+                <span style={{ fontFamily: renderFontFamily, color: activeStyle.color, fontWeight: 'bold', textShadow: charTextShadowStr }}>
+                    {charName}
+                </span>
             </div>
 
             <div className="ig-dialogbox" style={{ backgroundColor: dAsset.type === 'image' ? 'transparent' : activeStyle.dialogColor, backgroundImage: dAsset.type === 'image' ? `url(${dAsset.src})` : 'none', 
-                border: dAsset.type === 'css' ? finalDialogBorder : 'none', // 👈 대화창 테두리 적용
+                border: dAsset.type === 'css' ? finalDialogBorder : 'none',
             borderRadius: dAsset.type === 'css' ? dAsset.borderRadius : '0' }}>
-                <p style={{ fontFamily: renderFontFamily, color: activeStyle.color, fontSize: '3cqh', margin: 0, whiteSpace: 'pre-wrap' }}>
-                    {/* ⭐ 여기서 한 글자씩 쳐진 텍스트를 출력! */}
+                {/* ⭐ [수정] 대화 텍스트에 외곽선(textShadow) 적용 */}
+                <p style={{ fontFamily: renderFontFamily, color: activeStyle.color, fontSize: '3cqh', margin: 0, whiteSpace: 'pre-wrap', textShadow: charTextShadowStr }}>
                     {displayedText}
                 </p>
             </div>
         </div>
     );
 };
+
 // --------------------------------------------------------
 // 3. 메인 부모 컴포넌트
 // --------------------------------------------------------
@@ -434,6 +444,20 @@ export default function StepSettings() {
     
     const [previewTarget, setPreviewTarget] = useState('protagonist');
     const [previewBg, setPreviewBg] = useState('default');
+
+    // ⭐ [추가] 초기 렌더링 시 이름이 비어있다면 기본 이름으로 덮어쓰기
+    useEffect(() => {
+        if (!protagonist.name) {
+            setProtagonist({ ...protagonist, name: '주인공' });
+        }
+        
+        const hasEmptyNameChar = characters.some(c => !c.name);
+        if (hasEmptyNameChar) {
+            setCharacters(characters.map((c, index) => 
+                c.name ? c : { ...c, name: `등장인물 ${index + 1}` }
+            ));
+        }
+    }, []); // 처음 렌더링될 때 딱 한 번만 실행
 
     const currentGlobalUi = globalUi || { calendarFrame: 'retro', calendarColor: 'rgba(255,182,193,0.8)', calendarTextColor: '#5C4033', calendarTextUseOutline: true, calendarTextOutlineColor: '#ffffff', systemFont: 'Pretendard', cursor: 'default', saveLoadStyle: 'modern' };
     const safeSetGlobalUi = setGlobalUi || (() => {});
@@ -448,7 +472,7 @@ export default function StepSettings() {
             fontStyle: { 
                 font: 'Pretendard', color: '#ffffff', useOutline: false, outline: '#000000', 
                 dialogFrame: 'simple', dialogColor: 'rgba(255,182,193,0.8)', nameFrame: 'simple', nameColor: 'rgba(255,182,193,0.8)',
-                typingSound: 'type1' // ⭐ 생성 시 타이핑 사운드 기본값 
+                typingSound: 'type1' 
             } 
         }]);
     };
