@@ -10,11 +10,19 @@ const useCustomizerStore = create((set) => ({
     protagonist: { name: '', images: [] }, // images 안에는 { file, preview } 가 들어감
     setProtagonist: (protagonist) => set({ protagonist }),
     
+    //pFontStyle: { 
+    //    font: 'Pretendard', color: '#EBEBEB', useOutline: false, outline: '#000000',
+    //    dialogFrame: 'simple', dialogColor: 'rgba(0,0,0,0.8)',
+    //    nameFrame: 'simple', nameColor: 'rgba(0,0,0,0.8)',
+     //   portraitStyle: 'square', portraitColor: '#ffffff'
+    //},
+
     pFontStyle: { 
-        font: 'Pretendard', color: '#EBEBEB', useOutline: false, outline: '#000000',
-        dialogFrame: 'simple', dialogColor: 'rgba(0,0,0,0.8)',
-        nameFrame: 'simple', nameColor: 'rgba(0,0,0,0.8)',
-        portraitStyle: 'square', portraitColor: '#ffffff'
+        font: '', color: '#ffffff', useOutline: false, outline: '#000000', 
+        dialogFrame: 'simple', dialogColor: 'rgba(255,182,193,0.8)', dialogBorderColor: '#dddddd', 
+        nameFrame: 'simple', nameColor: 'rgba(255,182,193,0.8)', nameBorderColor: '#dddddd', 
+        portraitStyle: 'square', portraitColor: '#ffffff', portraitBorderColor: '#dddddd',
+        typingSound: 'type1' // ⭐ [추가] 주인공 기본 타이핑 효과음
     },
     setPFontStyle: (style) => set((state) => ({ pFontStyle: { ...state.pFontStyle, ...style } })),
 
