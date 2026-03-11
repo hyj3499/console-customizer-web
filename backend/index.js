@@ -160,6 +160,22 @@ app.post('/api/projects/save', upload.array('files'), async (req, res) => {
             });
         }
 
+        //추가) 커스텀 폰트 저장
+        if (parsedData.customFonts) {
+            parsedData.customFonts = parsedData.customFonts.map(font => {
+                // 1. 프론트엔드에서 보낸 파일명 추출 (보통 폰트명.ttf 형식)
+                const fontFileName = font.url; // 프론트 ProjectService에서 f.file.name을 여기 담아 보냄
+
+                // 2. urlMap에서 실제 R2 주소 찾기
+                // (만약 Mulmaru.ttf로 보냈다면 urlMap["Mulmaru.ttf"]에 값이 있음)
+                const r2Url = urlMap[fontFileName] || font.url;
+
+                return {
+                    ...font,
+                    url: r2Url 
+                };
+            });
+}
         // 2) 주인공 및 캐릭터 스탠딩 이미지 치환
         if (parsedData.protagonist?.images) {
             parsedData.protagonist.images = parsedData.protagonist.images.map(replaceUrl);

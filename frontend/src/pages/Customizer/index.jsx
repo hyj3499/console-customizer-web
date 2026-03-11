@@ -86,7 +86,16 @@ export default function Customizer() {
                 // 스토어(전역 상태)에 데이터 복원
                 if (data.globalUi) setGlobalUi(data.globalUi);
                 if (data.pFontStyle) setPFontStyle(data.pFontStyle);
-                
+                // ✅ [폰트 복원 로직 추가]
+                if (data.customFonts && data.customFonts.length > 0) {
+                    data.customFonts.forEach(font => {
+                        const newFont = new FontFace(font.name, `url(${font.url})`);
+                        newFont.load().then(loaded => {
+                            document.fonts.add(loaded);
+                            store.addCustomFont(font.name, font.url, null); // 스토어 복구
+                        });
+                    });
+                }               
                 if (data.protagonist) {
                     setProtagonist({
                         name: data.protagonist.name || "",

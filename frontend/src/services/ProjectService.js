@@ -16,9 +16,6 @@ import useCustomizerStore from '../store/useCustomizerStore';
 
 const API_URL = '/api/projects'; 
 
-// --------------------------------------------------------
-// ⭐ 1. 새 프로젝트(계정) 생성 함수
-// --------------------------------------------------------
 export const saveProjectToServer = async (id, pw) => {
     try {
         const response = await axios.post(`${API_URL}/create`, { id, pw });
@@ -29,38 +26,44 @@ export const saveProjectToServer = async (id, pw) => {
     }
 };
 
-// --------------------------------------------------------
-// ⭐ 2. 통합 데이터 및 이미지 클라우드 저장 함수
-// --------------------------------------------------------
 export const uploadAndSaveProject = async (projectId, htmlString) => {
     const state = useCustomizerStore.getState();
     const formData = new FormData();
 
-    // 1) 기본 저장 정보 세팅
     formData.append('projectId', projectId);
     if (htmlString) formData.append('htmlContent', htmlString);
 
-    const blobToFileName = {};  // 임시 주소(blob)와 실제 파일명(name)을 짝지어줄 사전
-    const filesToUpload = [];   // 서버로 전송할 실제 파일 객체들 담는 바구니
+    const blobToFileName = {};  
+    const filesToUpload = [];   
 
-    // [헬퍼 함수] 이미지가 진짜 '파일'을 가지고 있다면 사전에 등록하고 바구니에 담기
-    const collectFile = (imgObj) => {
-        if (imgObj?.file && imgObj?.preview) {
-            blobToFileName[imgObj.preview] = imgObj.file.name;
-            filesToUpload.push(imgObj.file);
+    // --------------------------------------------------------
+    // 1. 파일 수집 헬퍼 함수
+    // --------------------------------------------------------
+    const collectFile = (item) => {
+        const file = item?.file;
+        const url = item?.preview || item?.url;
+        
+        // ✅ 조건 완화: 파일 객체가 존재한다면 일단 수집합니다.
+        // (blob: 뿐만 아니라 data:base64 형태의 preview를 가진 파일도 모두 수집)
+        if (file && url) {
+            blobToFileName[url] = file.name;
+            filesToUpload.push(file);
+            console.log("📌 수집된 파일:", file.name); // 브라우저 콘솔에서 확인
         }
     };
-
-    // 2) 모든 스토어 데이터에서 물리적 파일(새로 올린 파일) 긁어모으기
+    // --------------------------------------------------------
+    // 2. 모든 물리적 파일(이미지, 배경, 폰트) 긁어모으기
+    // --------------------------------------------------------
     state.protagonist?.images?.forEach(collectFile);
     state.characters?.forEach(c => c.images?.forEach(collectFile));
     state.customBackgrounds?.forEach(collectFile);
+    
+    // ✅ 커스텀 폰트 파일 수집 (사용자가 업로드한 모든 폰트 파일 바구니에 담기)
+    state.customFonts?.forEach(collectFile);
 
-    // 3) 대사창(Events) 내부의 CG 및 커스텀 배경 파일 수집
     state.events?.forEach(event => {
         event.scenarios?.forEach(sc => {
             if (sc.file) {
-                // src 또는 bgImage가 blob 임시 주소라면 사전에 기록
                 if (sc.src?.startsWith('blob:')) blobToFileName[sc.src] = sc.file.name;
                 if (sc.bgImage?.startsWith('blob:')) blobToFileName[sc.bgImage] = sc.file.name;
                 filesToUpload.push(sc.file);
@@ -68,19 +71,29 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
         });
     });
 
-    // [헬퍼 함수] 임시 주소(blob)는 파일명으로 바꾸고, 유령 주소(undefined)는 지워주는 청소기
+    // --------------------------------------------------------
+    // 3. 데이터 정제 헬퍼 함수
+    // --------------------------------------------------------
     const cleanUrl = (url) => {
         if (!url) return null;
-        if (blobToFileName[url]) return blobToFileName[url]; // 서버가 인식할 파일명으로 치환
-        if (typeof url === 'string' && url.includes('undefined')) return null; // 찌꺼기 삭제
-        return url; // 정상적인 클라우드 주소(https://...)는 그대로 통과
+        if (blobToFileName[url]) return blobToFileName[url]; 
+        if (typeof url === 'string' && url.includes('undefined')) return null;
+        return url; 
     };
 
-    // 4) 이벤트(대사) 데이터 깊은 복사 후 주소 대청소 진행
+    const getCleanNameOrUrl = (img) => {
+        if (img.file) return img.file.name; 
+        const url = img.preview || img;
+        if (typeof url === 'string' && url.includes('undefined')) return null;
+        return url;
+    };
+
+    // --------------------------------------------------------
+    // 4. 데이터 깊은 복사 및 경로 정제 (Events)
+    // --------------------------------------------------------
     const eventsToSave = JSON.parse(JSON.stringify(state.events || []));
     eventsToSave.forEach(event => {
         event.scenarios?.forEach(sc => {
-            // 모든 이미지 경로에 청소기(cleanUrl) 가동
             sc.protagonistImage = cleanUrl(sc.protagonistImage);
             sc.heroineImage = cleanUrl(sc.heroineImage);
             sc.bgImage = cleanUrl(sc.bgImage);
@@ -88,33 +101,54 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
         });
     });
 
-    // [헬퍼 함수] 캐릭터/주인공 이미지 배열용 청소기
-    const getCleanNameOrUrl = (img) => {
-        if (img.file) return img.file.name; // 새 파일이면 이름 반환
-        const url = img.preview || img;
-        if (typeof url === 'string' && url.includes('undefined')) return null; // 찌꺼기 삭제
-        return url;
-    };
-
-    // 5) 최종적으로 서버에 보낼 깨끗한 JSON 데이터 조립
+    // --------------------------------------------------------
+    // 5. 최종 JSON 데이터 조립 (폰트 이름 유지 및 폰트 리스트 포함)
+    // --------------------------------------------------------
     const gameData = {
         selectedMode: state.selectedMode,
-        pFontStyle: state.pFontStyle,
-        globalUi: state.globalUi,
+        // ✅ 주인공 폰트 설정 (이름 그대로 저장)
+        pFontStyle: state.pFontStyle, 
+        // ✅ 전역 UI/시스템 폰트 설정 (이름 그대로 저장)
+        globalUi: state.globalUi, 
         protagonist: {
             name: state.protagonist?.name || "",
             images: state.protagonist?.images?.map(getCleanNameOrUrl).filter(Boolean) || []
         },
         characters: state.characters?.map(c => ({
             ...c,
+            // ✅ 각 등장인물별 개별 폰트 설정도 이름 그대로 유지됨
             images: c.images?.map(getCleanNameOrUrl).filter(Boolean) || []
         })) || [],
-        events: eventsToSave 
+        events: eventsToSave,
+        
+        // ✅ 커스텀 폰트 메타데이터 (백엔드에서 URL 치환을 위해 필요)
+        customFonts: state.customFonts?.map(f => ({
+            name: f.name,
+            url: f.file ? f.file.name : f.url // 파일이 있으면 파일명으로, 없으면 기존 URL
+        })) || []
     };
 
-    // 6) 조립된 JSON 텍스트와 파일 바구니를 통째로 묶어서 서버로 발송
+    // --------------------------------------------------------
+    // 6. 서버 전송
+    // --------------------------------------------------------
     formData.append('gameData', JSON.stringify(gameData));
-    filesToUpload.forEach(file => formData.append('files', file));
+    
+    // ✅ 중복 제거 로직 수정: 파일 이름을 키로 사용하여 폰트 파일이 누락되지 않게 함
+    const finalFiles = [];
+    const seenNames = new Set();
+
+    filesToUpload.forEach(file => {
+        if (file && !seenNames.has(file.name)) {
+            seenNames.add(file.name);
+            finalFiles.push(file);
+        }
+    });
+
+    console.log("📤 서버로 보낼 파일 목록:", finalFiles.map(f => f.name)); // 터미널 콘솔 확인용
+
+    finalFiles.forEach(file => {
+        formData.append('files', file); 
+    });
 
     const response = await axios.post(`${API_URL}/save`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }

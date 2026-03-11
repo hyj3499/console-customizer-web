@@ -1,15 +1,12 @@
 // ==============================================================================
 // 📄 파일 경로 : src/pages/Customizer/StepSettings.jsx
 // 🎯 주요 역할 : 게임 커스터마이징 Step 2 (등장인물/주인공 설정 및 UI 테마 커스텀)
-// 💡 리팩토링 포인트 : 
-//   1. 인게임 미리보기(InGamePreview) 컴포넌트 완전 분리
-//   2. 전역 UI 설정(GlobalUiSettings) 부분 컴포넌트 분리 
-//   3. 안전한 이미지 로딩 로직 유지 (getImgUrl)
+// 💡 리팩토링 포인트 : CSS 분리, 반복되는 폼 컴포넌트 모듈화, 클라우드 URL 정제
 // ==============================================================================
 
 import { useState } from 'react';
 import useCustomizerStore from '../../store/useCustomizerStore';
-import './StepSettings.css';
+import './StepSettings.css'; // ⭐ 분리된 CSS 파일 임포트
 
 // --------------------------------------------------------
 // 1. 상수 및 데이터 유틸리티 모음
@@ -24,7 +21,7 @@ const PRESET_COLORS = [
 
 const getColorId = (rgbaValue) => PRESET_COLORS.find(c => c.value === rgbaValue)?.id || 'pink';
 
-// ⭐ 클라우드 URL과 객체 형식을 모두 처리하는 안전한 이미지 추출기
+// ⭐ [안전장치] 클라우드 주소와 객체를 모두 처리하는 이미지 주소 추출기
 const getImgUrl = (imgData) => {
     if (!imgData) return null;
     if (typeof imgData === 'string') return imgData;
@@ -83,7 +80,7 @@ const toRgba = (hex, alpha) => {
 };
 
 // --------------------------------------------------------
-// 2. 모듈화된 서브 컴포넌트들
+// 2. 모듈화된 서브 컴포넌트들 (가독성 향상)
 // --------------------------------------------------------
 
 // 🎨 색상 및 투명도 선택기
@@ -127,9 +124,12 @@ const SmartColorPicker = ({ label, rgba, borderColor, onChange, onBorderChange, 
 };
 
 // 🖼️ 에셋 미니 썸네일
+// 🖼️ 에셋 미니 썸네일 (수정됨)
 const MiniPreview = ({ type, frameKey, color, borderColor }) => {
+    // ⭐ 초상화(portrait)는 simple 대신 square를 기본값으로 쓰도록 방어!
     const fallbackKey = type === 'portrait' ? 'square' : 'simple';
     const assetResolver = UI_ASSETS[type][frameKey] || UI_ASSETS[type][fallbackKey];
+    
     const asset = assetResolver(color, borderColor); 
     const isPortrait = type === 'portrait';
     
@@ -140,7 +140,7 @@ const MiniPreview = ({ type, frameKey, color, borderColor }) => {
     );
 };
 
-// 👤 캐릭터 설정 폼 (주인공 & 등장인물)
+// 👤 캐릭터 설정 폼 (주인공 & 등장인물 공통 사용)
 const CharacterForm = ({ charData, isProtagonist, onUpdate, onImageUpload, onRemoveImage, onRemoveChar, totalCount }) => {
     const typeText = isProtagonist ? '😎 주인공 (Player)' : `🎭 등장인물`;
     const themeClass = isProtagonist ? 'protagonist' : 'character';
@@ -168,11 +168,13 @@ const CharacterForm = ({ charData, isProtagonist, onUpdate, onImageUpload, onRem
     );
 };
 
-// 🎨 테마 설정 블록
+// 🎨 테마 설정 블록 (주인공 & 등장인물 공통 사용)
+// 🎨 테마 설정 블록 (수정됨)
 const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOptions, showPortrait }) => (
     <div className={`theme-block ${themeClass}`}>
         <h4 style={{ margin: '0 0 15px 0' }} className={`char-card-title ${themeClass}`}>{title}</h4>
         
+        {/* 폰트 설정 */}
         <div className="theme-row">
             <div style={{ flex: 1, minWidth: '150px' }}>
                 <label className="input-label">폰트</label>
@@ -187,6 +189,7 @@ const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOption
             </div>
         </div>
 
+        {/* 대화창 테마 */}
         <div className="theme-divider">
             <div className="theme-select-group">
                 <MiniPreview type="dialog" frameKey={fontStyle.dialogFrame} color={fontStyle.dialogColor} borderColor={fontStyle.dialogBorderColor} />
@@ -200,6 +203,7 @@ const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOption
             <SmartColorPicker label="🎨 대화창 색상" rgba={fontStyle.dialogColor} borderColor={fontStyle.dialogBorderColor} isImageTheme={UI_ASSETS.dialog[fontStyle.dialogFrame || 'simple']().type === 'image'} onChange={(val) => onUpdate({ dialogColor: val })} onBorderChange={(val) => onUpdate({ dialogBorderColor: val })} />
         </div>
 
+        {/* 네임칸 테마 */}
         <div className="theme-divider">
             <div className="theme-select-group">
                 <MiniPreview type="namebox" frameKey={fontStyle.nameFrame} color={fontStyle.nameColor} borderColor={fontStyle.nameBorderColor} />
@@ -213,6 +217,7 @@ const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOption
             <SmartColorPicker label="🎨 네임칸 색상" rgba={fontStyle.nameColor} borderColor={fontStyle.nameBorderColor} isImageTheme={UI_ASSETS.namebox[fontStyle.nameFrame || 'simple']().type === 'image'} onChange={(val) => onUpdate({ nameColor: val })} onBorderChange={(val) => onUpdate({ nameBorderColor: val })} />
         </div>
 
+        {/* ⭐ 주인공일 때만 초상화 프레임 표시 */}
         {showPortrait && (
             <div className="theme-divider">
                 <div className="theme-select-group">
@@ -227,48 +232,6 @@ const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOption
                 <SmartColorPicker label="🎨 초상화 배경색" rgba={fontStyle.portraitColor} borderColor={fontStyle.portraitBorderColor} isImageTheme={UI_ASSETS.portrait[fontStyle.portraitStyle || 'square']().type === 'image'} onChange={(val) => onUpdate({ portraitColor: val })} onBorderChange={(val) => onUpdate({ portraitBorderColor: val })} />
             </div>
         )}
-    </div>
-);
-
-// 📺 인게임 미리보기 화면 (컴포넌트로 분리하여 가독성 극대화)
-const InGamePreview = ({ 
-    previewBg, standingImg, currentGlobalUi, textShadowStr, 
-    isP, pAsset, nAsset, dAsset, cAsset, activeStyle, renderFontFamily,
-    activeChar, protagonist 
-}) => (
-    <div className="preview-container" style={{
-        backgroundColor: '#1a1b1e',
-        backgroundImage: previewBg === 'default' ? 'radial-gradient(circle, #343a40 10%, transparent 10%), radial-gradient(circle, #343a40 10%, transparent 10%)' : `url(${previewBg})`,
-        backgroundSize: previewBg === 'default' ? '20px 20px' : 'cover', backgroundPosition: previewBg === 'default' ? '0 0, 10px 10px' : 'center'
-    }}>
-        {standingImg && <img src={standingImg} alt="스탠딩" style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', height: '92.6%', objectFit: 'contain' }} />}
-
-        <div className="ig-calendar-group">
-            <div className="ig-calendar-box" style={{ backgroundColor: cAsset.type === 'image' ? 'transparent' : currentGlobalUi.calendarColor, backgroundImage: cAsset.type === 'image' ? `url(${cAsset.src})` : 'none', border: cAsset.type === 'css' ? cAsset.border : 'none', borderRadius: cAsset.type === 'css' ? cAsset.borderRadius : '0' }}>
-                <span style={{ fontFamily: currentGlobalUi.systemFont, fontSize: '5cqh', color: '#5C4033', fontWeight: 'bold', textShadow: textShadowStr, marginTop: '10px' }}>12</span>
-            </div>
-            <div className="ig-calendar-text">
-                <span style={{ fontFamily: currentGlobalUi.systemFont, fontSize: '3cqh', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: textShadowStr }}>DATE: OCT 12</span>
-                <span style={{ fontFamily: currentGlobalUi.systemFont, fontSize: '3cqh', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: textShadowStr }}>TIME: 14:30</span>
-            </div>
-        </div>
-
-        {isP && pAsset && (
-            <div className="ig-portrait-area">
-                {pAsset.type === 'image' && <img src={pAsset.src} alt="Frame" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill', zIndex: 1 }} />}
-                <div style={{ position: 'absolute', inset: 0, zIndex: 2, backgroundColor: pAsset.type === 'image' ? 'transparent' : activeStyle.portraitColor, WebkitMaskImage: pAsset.type === 'image' ? `url(${pAsset.mask})` : 'none', maskImage: pAsset.type === 'image' ? `url(${pAsset.mask})` : 'none', WebkitMaskSize: '100% 100%', maskSize: '100% 100%', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', borderRadius: pAsset.type === 'css' ? pAsset.borderRadius : '0%', border: pAsset.type === 'css' ? pAsset.border : 'none', overflow: 'hidden' }}>
-                    {protagonist.images.length > 0 ? <img src={getImgUrl(protagonist.images[0])} alt="주인공" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>👤</div>}
-                </div>
-            </div>
-        )}
-
-        <div className="ig-namebox" style={{ backgroundColor: nAsset.type === 'image' ? 'transparent' : activeStyle.nameColor, backgroundImage: nAsset.type === 'image' ? `url(${nAsset.src})` : 'none', border: nAsset.type === 'css' ? nAsset.border : 'none', borderRadius: nAsset.type === 'css' ? nAsset.borderRadius : '0' }}>
-            <span style={{ fontFamily: renderFontFamily, color: activeStyle.color, fontWeight: 'bold' }}>{activeChar?.name || '주인공'}</span>
-        </div>
-
-        <div className="ig-dialogbox" style={{ backgroundColor: dAsset.type === 'image' ? 'transparent' : activeStyle.dialogColor, backgroundImage: dAsset.type === 'image' ? `url(${dAsset.src})` : 'none', border: dAsset.type === 'css' ? dAsset.border : 'none', borderRadius: dAsset.type === 'css' ? dAsset.borderRadius : '0' }}>
-            <p style={{ fontFamily: renderFontFamily, color: activeStyle.color, fontSize: '3cqh', margin: 0 }}>"{activeChar?.name || '주인공'}의 대사가 이곳에 출력됩니다."</p>
-        </div>
     </div>
 );
 
@@ -289,47 +252,101 @@ export default function StepSettings() {
     
     const fontOptions = [{ name: 'Pretendard (기본)', value: 'Pretendard' }, { name: '둥근모꼴', value: 'DungGeunMo' }, ...customFonts.map(f => ({ name: `📁 ${f.name}`, value: f.name }))];
 
-    // 동작 핸들러
+    // ✅ [수정] 등장인물 추가 시 "등장인물 1, 2..." 기본 이름 부여
     const addCharacter = () => {
         if (characters.length >= 10) return alert('최대 10명!');
-        setCharacters([...characters, { id: Date.now(), name: '', images: [], fontStyle: { font: 'Pretendard', color: '#ffffff', useOutline: false, outline: '#000000', dialogFrame: 'simple', dialogColor: 'rgba(255,182,193,0.8)', nameFrame: 'simple', nameColor: 'rgba(255,182,193,0.8)' } }]);
+        
+        // 현재 리스트 길이를 기준으로 번호 생성
+        const nextNum = characters.length + 1;
+        
+        setCharacters([
+            ...characters, 
+            { 
+                id: Date.now(), 
+                name: `등장인물 ${nextNum}`, // 기본 이름 설정
+                images: [], 
+                fontStyle: { 
+                    font: 'Pretendard', 
+                    color: '#ffffff', 
+                    useOutline: false, 
+                    outline: '#000000', 
+                    dialogFrame: 'simple', 
+                    dialogColor: 'rgba(255,182,193,0.8)', 
+                    nameFrame: 'simple', 
+                    nameColor: 'rgba(255,182,193,0.8)' 
+                } 
+            }
+        ]);
     };
     
+    // ✅ [수정] 이미지 업로드 시 1:1 비율 체크 및 미리보기 (기존 로직 유지/보강)
     const handleImageUpload = async (e, targetId) => {
         const files = Array.from(e.target.files);
-        if (targetId === 'protagonist') {
-            for (let file of files) {
-                const img = new Image(); img.src = URL.createObjectURL(file);
-                await new Promise(res => img.onload = res);
-                if (img.width !== img.height) return alert('🚨 주인공 초상화는 1:1 비율이어야 합니다!');
+        if (files.length === 0) return;
+
+        const newImageData = [];
+        for (let file of files) {
+            const previewUrl = URL.createObjectURL(file);
+
+            if (targetId === 'protagonist') {
+                const isValid = await new Promise((resolve) => {
+                    const img = new Image();
+                    img.src = previewUrl;
+                    img.onload = () => {
+                        if (img.width !== img.height) {
+                            alert(`🚨 '${file.name}'은 1:1 비율이 아닙니다!`);
+                            resolve(false);
+                        } else resolve(true);
+                    };
+                });
+                if (!isValid) continue;
             }
-            setProtagonist({ ...protagonist, images: [...protagonist.images, ...files.map(file => ({ file, preview: URL.createObjectURL(file) }))] });
+            newImageData.push({ file, preview: previewUrl });
+        }
+
+        if (targetId === 'protagonist') {
+            setProtagonist({ ...protagonist, images: [...protagonist.images, ...newImageData] });
         } else {
-            setCharacters(characters.map(char => char.id === targetId ? { ...char, images: [...char.images, ...files.map(file => ({ file, preview: URL.createObjectURL(file) }))] } : char));
+            setCharacters(characters.map(char => char.id === targetId ? { ...char, images: [...char.images, ...newImageData] } : char));
         }
     };
 
+    // ✅ [수정] 폰트 업로드 시 스토어에 'file' 객체까지 확실히 저장
     const handleFontUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
+
         const reader = new FileReader();
         reader.onload = (event) => {
             const fontName = file.name.split('.')[0];
-            const newFont = new FontFace(fontName, `url(${event.target.result})`);
+            const fontUrl = event.target.result; // Base64 데이터
+
+            const newFont = new FontFace(fontName, `url(${fontUrl})`);
             newFont.load().then((loadedFont) => {
                 document.fonts.add(loadedFont);
-                addCustomFont(fontName, event.target.result, file); 
-                alert(`${fontName} 등록 완료!`);
+                
+                // ⭐ 핵심: 스토어의 addCustomFont에 file 원본을 세 번째 인자로 넘깁니다.
+                addCustomFont(fontName, fontUrl, file); 
+                
+                alert(`폰트 '${fontName}' 등록 완료!`);
+            }).catch(err => {
+                console.error("폰트 로드 실패:", err);
+                alert("폰트 파일이 올바르지 않습니다.");
             });
         };
         reader.readAsDataURL(file);
     };
 
-    // 미리보기 연산 (수정 및 복구 완료)
+    // 미리보기 연산
+// 미리보기 연산
     const isP = previewTarget === 'protagonist';
     const activeChar = isP ? protagonist : characters.find(c => c.id === previewTarget);
     const activeStyle = isP ? pFontStyle : (activeChar?.fontStyle || pFontStyle);
     
+    // ❌ 이 한 줄을 지우시고
+    // let standingImg = getImgUrl(isP ? characters[0]?.images[0] : activeChar?.images[0]);
+
+    // ✅ 아래 코드로 덮어씌우세요!
     let standingImg = null;
     if (!isP && activeChar?.images?.length > 0) {
         standingImg = getImgUrl(activeChar.images[0]);
@@ -345,7 +362,7 @@ export default function StepSettings() {
     const renderFontFamily = activeStyle.font || currentGlobalUi.systemFont || 'sans-serif';
     const textShadowStr = currentGlobalUi.calendarTextUseOutline ? `-1px -1px 0 ${currentGlobalUi.calendarTextOutlineColor}, 1px -1px 0 ${currentGlobalUi.calendarTextOutlineColor}, -1px 1px 0 ${currentGlobalUi.calendarTextOutlineColor}, 1px 1px 0 ${currentGlobalUi.calendarTextOutlineColor}` : 'none';
 
-    return (
+return (
         <div className="settings-container">
             <h2 className="section-title">등장인물 및 스타일 설정</h2>
             <p className="section-desc">주인공과 등장인물의 이름, 일러스트, 폰트 및 UI 디자인을 설정해 주세요.</p>
@@ -364,13 +381,41 @@ export default function StepSettings() {
                     {characters.map(char => <button key={char.id} className={`tab-btn ${!isP && previewTarget === char.id ? 'active-c' : 'inactive'}`} onClick={() => setPreviewTarget(char.id)}>🎭 {char.name || '캐릭터'} 시점</button>)}
                 </div>
 
-                {/* 분리된 미리보기 컴포넌트 렌더링 */}
-                <InGamePreview 
-                    previewBg={previewBg} standingImg={standingImg} currentGlobalUi={currentGlobalUi} 
-                    textShadowStr={textShadowStr} isP={isP} pAsset={pAsset} nAsset={nAsset} 
-                    dAsset={dAsset} cAsset={cAsset} activeStyle={activeStyle} renderFontFamily={renderFontFamily}
-                    activeChar={activeChar} protagonist={protagonist} 
-                />
+                {/* ⭐ CSS 클래스로 스타일 연동 완료 */}
+                <div className="preview-container" style={{
+                    backgroundColor: '#1a1b1e',
+                    backgroundImage: previewBg === 'default' ? 'radial-gradient(circle, #343a40 10%, transparent 10%), radial-gradient(circle, #343a40 10%, transparent 10%)' : `url(${previewBg})`,
+                    backgroundSize: previewBg === 'default' ? '20px 20px' : 'cover', backgroundPosition: previewBg === 'default' ? '0 0, 10px 10px' : 'center'
+                }}>
+                    {standingImg && <img src={standingImg} alt="스탠딩" style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', height: '92.6%', objectFit: 'contain' }} />}
+
+                    <div className="ig-calendar-group">
+                        <div className="ig-calendar-box" style={{ backgroundColor: cAsset.type === 'image' ? 'transparent' : currentGlobalUi.calendarColor, backgroundImage: cAsset.type === 'image' ? `url(${cAsset.src})` : 'none', border: cAsset.type === 'css' ? cAsset.border : 'none', borderRadius: cAsset.type === 'css' ? cAsset.borderRadius : '0' }}>
+                            <span style={{ fontFamily: currentGlobalUi.systemFont, fontSize: '5cqh', color: '#5C4033', fontWeight: 'bold', textShadow: textShadowStr, marginTop: '10px' }}>12</span>
+                        </div>
+                        <div className="ig-calendar-text">
+                            <span style={{ fontFamily: currentGlobalUi.systemFont, fontSize: '3cqh', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: textShadowStr }}>DATE: OCT 12</span>
+                            <span style={{ fontFamily: currentGlobalUi.systemFont, fontSize: '3cqh', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: textShadowStr }}>TIME: 14:30</span>
+                        </div>
+                    </div>
+
+                    {isP && pAsset && (
+                        <div className="ig-portrait-area">
+                            {pAsset.type === 'image' && <img src={pAsset.src} alt="Frame" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill', zIndex: 1 }} />}
+                            <div style={{ position: 'absolute', inset: 0, zIndex: 2, backgroundColor: pAsset.type === 'image' ? 'transparent' : activeStyle.portraitColor, WebkitMaskImage: pAsset.type === 'image' ? `url(${pAsset.mask})` : 'none', maskImage: pAsset.type === 'image' ? `url(${pAsset.mask})` : 'none', WebkitMaskSize: '100% 100%', maskSize: '100% 100%', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', borderRadius: pAsset.type === 'css' ? pAsset.borderRadius : '0%', border: pAsset.type === 'css' ? pAsset.border : 'none', overflow: 'hidden' }}>
+                                {protagonist.images.length > 0 ? <img src={getImgUrl(protagonist.images[0])} alt="주인공" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>👤</div>}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="ig-namebox" style={{ backgroundColor: nAsset.type === 'image' ? 'transparent' : activeStyle.nameColor, backgroundImage: nAsset.type === 'image' ? `url(${nAsset.src})` : 'none', border: nAsset.type === 'css' ? nAsset.border : 'none', borderRadius: nAsset.type === 'css' ? nAsset.borderRadius : '0' }}>
+                        <span style={{ fontFamily: renderFontFamily, color: activeStyle.color, fontWeight: 'bold' }}>{activeChar?.name || '주인공'}</span>
+                    </div>
+
+                    <div className="ig-dialogbox" style={{ backgroundColor: dAsset.type === 'image' ? 'transparent' : activeStyle.dialogColor, backgroundImage: dAsset.type === 'image' ? `url(${dAsset.src})` : 'none', border: dAsset.type === 'css' ? dAsset.border : 'none', borderRadius: dAsset.type === 'css' ? dAsset.borderRadius : '0' }}>
+                        <p style={{ fontFamily: renderFontFamily, color: activeStyle.color, fontSize: '3cqh', margin: 0 }}>"{activeChar?.name || '주인공'}의 대사가 이곳에 출력됩니다."</p>
+                    </div>
+                </div>
             </div>
 
             {/* 👤 2. 이름 및 스탠딩 일러 설정 */}
@@ -383,7 +428,7 @@ export default function StepSettings() {
                 <button onClick={addCharacter} style={{ padding: '15px', backgroundColor: '#f1f3f5', border: '2px dashed #adb5bd', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', color: '#495057' }}>➕ 등장인물 추가하기 ({characters.length} / 10)</button>
             </div>
 
-            {/* ⭐ 3. 게임 전역 UI 셋팅 */}
+            {/* ⭐ 3. 게임 전역 UI 셋팅 (복구됨!) */}
             <h4 className="sub-header">🎮 3. 게임 전역 UI 셋팅</h4>
             <div style={{ backgroundColor: '#fdf3f5', border: '1px solid #fcc2d7', padding: '20px', borderRadius: '8px', marginBottom: '40px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
