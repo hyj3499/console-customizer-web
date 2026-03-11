@@ -54,14 +54,21 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
     // --------------------------------------------------------
     // 2. 모든 물리적 파일(이미지, 배경, 폰트) 긁어모으기
     // --------------------------------------------------------
+// --------------------------------------------------------
+    // 2. 모든 물리적 파일(이미지, 배경, 폰트) 긁어모으기
+    // --------------------------------------------------------
     state.protagonist?.images?.forEach(collectFile);
     state.characters?.forEach(c => c.images?.forEach(collectFile));
     state.customBackgrounds?.forEach(collectFile);
-    
-    // ✅ 커스텀 폰트 파일 수집 (사용자가 업로드한 모든 폰트 파일 바구니에 담기)
     state.customFonts?.forEach(collectFile);
 
     state.events?.forEach(event => {
+        // 🌟 [추가] 이벤트 BGM 파일이 존재하면 수집 바구니에 담기
+        if (event.bgmFile && event.bgm?.startsWith('blob:')) {
+            blobToFileName[event.bgm] = event.bgmFile.name;
+            filesToUpload.push(event.bgmFile);
+        }
+
         event.scenarios?.forEach(sc => {
             if (sc.file) {
                 if (sc.src?.startsWith('blob:')) blobToFileName[sc.src] = sc.file.name;
@@ -70,11 +77,10 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
             }
         });
     });
-    // 1. 배경 이미지 수집
+
     if (state.startMenu?.bgImage) {
         collectFile(state.startMenu.bgImage);
     }
-
     // --------------------------------------------------------
     // 3. 데이터 정제 헬퍼 함수
     // --------------------------------------------------------
@@ -96,15 +102,19 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
     // 4. 데이터 깊은 복사 및 경로 정제 (Events)
     // --------------------------------------------------------
     const eventsToSave = JSON.parse(JSON.stringify(state.events || []));
-    eventsToSave.forEach(event => {
-        event.scenarios?.forEach(sc => {
-            sc.protagonistImage = cleanUrl(sc.protagonistImage);
-            sc.heroineImage = cleanUrl(sc.heroineImage);
-            sc.bgImage = cleanUrl(sc.bgImage);
-            sc.src = cleanUrl(sc.src);
-        });
-    });
+        eventsToSave.forEach(event => {
+            
+            // 🌟 [추가] 임시 blob 주소를 진짜 '파일명.mp3' 등으로 교체!
+            event.bgm = cleanUrl(event.bgm); 
+            delete event.bgmFile; // JSON에 파일 객체가 들어가지 않도록 찌꺼기 삭제
 
+            event.scenarios?.forEach(sc => {
+                sc.protagonistImage = cleanUrl(sc.protagonistImage);
+                sc.heroineImage = cleanUrl(sc.heroineImage);
+                sc.bgImage = cleanUrl(sc.bgImage);
+                sc.src = cleanUrl(sc.src);
+            });
+        });
     // --------------------------------------------------------
     // 5. 최종 JSON 데이터 조립 (폰트 이름 유지 및 폰트 리스트 포함)
     // --------------------------------------------------------

@@ -51,10 +51,15 @@ const mockDB = {};
 // --------------------------------------------------------
 async function uploadToR2(file, projectId) {
     const folder = projectId ? `${projectId}/` : 'temp/';
-    // 특수문자를 제거한 안전한 파일명 생성
-    const safeFileName = file.originalname.replace(/[^a-zA-Z0-9.]/g, '');
-    const fileName = `${Date.now()}-${safeFileName}`;
-    const fullPath = folder + fileName;
+    
+    // 1. 한글 깨짐 방지: Express multer가 텍스트를 latin1로 읽는 문제를 utf8로 복원합니다.
+    const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    
+    // 2. 띄어쓰기 정도만 언더바(_)로 안전하게 바꿔주고 원본 이름을 유지합니다. (정규식 완화)
+    const safeFileName = originalName.replace(/\s+/g, '_');
+    
+    // 🚨 핵심 수정: Date.now()를 삭제하여 원본 파일명 그대로 덮어쓰게 만듭니다!
+    const fullPath = folder + safeFileName;
 
     const command = new PutObjectCommand({
         Bucket: process.env.R2_BUCKET_NAME,
@@ -67,7 +72,6 @@ async function uploadToR2(file, projectId) {
     // 업로드 성공 후 만들어진 진짜 인터넷 주소(URL)를 반환
     return `${process.env.R2_PUBLIC_DOMAIN}/${fullPath}`;
 }
-
 // --------------------------------------------------------
 // [API 1] 프로젝트 생성
 // --------------------------------------------------------

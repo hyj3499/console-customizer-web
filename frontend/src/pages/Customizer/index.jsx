@@ -19,6 +19,18 @@ const STYLES = {
     overlay: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(4px)' }
 };
 
+// 💡 추가된 도우미 함수: 현재 시나리오가 엔딩으로 꽉 차있는지 검사합니다.
+const checkIsFullyEnded = (scenarios) => {
+    if (!scenarios || scenarios.length === 0) return false;
+    
+    const hasChoiceNode = scenarios.some(s => s.type === 'choice');
+    const isMainEnded = scenarios.some(s => s.branch === 'main' && s.type === 'ending');
+    const isOption1Ended = scenarios.some(s => s.branch === 'option1' && s.type === 'ending');
+    const isOption2Ended = scenarios.some(s => s.branch === 'option2' && s.type === 'ending');
+    
+    return hasChoiceNode ? (isOption1Ended && isOption2Ended) : isMainEnded;
+};
+
 export default function Customizer() {
     // --------------------------------------------------------
     // 1. 컴포넌트 상태 (State) 관리
@@ -146,6 +158,20 @@ export default function Customizer() {
     const handleSave = async () => {
         const activeId = newId || loadId;
         if (!activeId) return alert("프로젝트 ID를 찾을 수 없습니다.");
+
+        const state = useCustomizerStore.getState();
+        const activeEvent = state.events.find(ev => ev.id === state.activeEventId);
+        
+        // 🚨 방어 로직 추가: activeEvent와 scenarios가 안전하게 존재하는지 확인 후 실행합니다.
+        if (activeEvent && activeEvent.scenarios) {
+            // 엔딩 도달 여부 체크 (위의 checkIsFullyEnded 함수 로직 활용)
+            if (checkIsFullyEnded(activeEvent.scenarios)) {
+                const nextEvents = state.events.filter(ev => ev.id > state.activeEventId);
+                if (nextEvents.length > 0) {
+                    alert(`⚠️ 여기가 마지막 이벤트입니다! 이후의 ${nextEvents.length}개 이벤트는 실제 게임에 적용되지 않습니다.`);
+                }
+            }
+        }
 
         try {
             console.log("🚀 클라우드 저장 프로세스 시작...");

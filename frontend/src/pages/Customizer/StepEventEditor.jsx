@@ -72,6 +72,19 @@ export default function StepEventEditor() {
 
     const defaultSpeaker = protagonist.name || '주인공';
 
+    // --- 🚨 엔딩 추적 로직 추가 ---
+    const isMainEnded = scenarios.some(s => s.branch === 'main' && s.type === 'ending');
+    const isOption1Ended = scenarios.some(s => s.branch === 'option1' && s.type === 'ending');
+    const isOption2Ended = scenarios.some(s => s.branch === 'option2' && s.type === 'ending');
+    
+    // 현재 작성 중인 분기에 엔딩이 등록되었는지 확인 (엔딩 이후 대사 추가 방지용)
+    const hasEndingInCurrentBranch = scenarios.some(s => s.branch === currentBranch && s.type === 'ending');
+    
+    // 이 이벤트의 모든 루트가 엔딩으로 끝났는지 확인
+    const isFullyEnded = hasChoiceNode 
+        ? (isOption1Ended && isOption2Ended) 
+        : isMainEnded;
+
     // --- ✨ 날짜 추적 시스템 ---
     const getEffectiveDateForIndex = (targetIndex) => {
         let currentDate = { ...activeEvent.baseDate };
@@ -88,23 +101,26 @@ export default function StepEventEditor() {
         return currentDate;
     };
 
-    // --- ✨ 이벤트 관리 로직 (자동 넘버링 포함) ---
+    // --- ✨ 이벤트 관리 로직 ---
     const updateActiveEvent = (updates) => {
         setEvents(events.map(ev => ev.id === activeEventId ? { ...ev, ...updates } : ev));
     };
 
     const handleEventBgmUpload = (e) => {
         const file = e.target.files[0];
-        if (file) updateActiveEvent({ bgm: URL.createObjectURL(file) });
+        if (file) {
+            updateActiveEvent({ 
+                bgm: URL.createObjectURL(file), // 화면 미리보기용 임시 주소 (blob)
+                bgmFile: file                   // 🌟 서버 전송용 실제 물리 파일 객체 추가!
+            });
+        }
     };
-
     const handleBaseDateChange = (field, value) => {
         updateActiveEvent({ baseDate: { ...activeEvent.baseDate, [field]: value } });
     };
 
     const addNewEvent = () => {
         const newId = events.length > 0 ? Math.max(...events.map(e => e.id)) + 1 : 1;
-        // 타이틀은 무조건 '이벤트 + 현재 배열 길이 + 1'
         const newTitle = `이벤트 ${events.length + 1}`; 
         
         setEvents([...events, { 
@@ -121,10 +137,7 @@ export default function StepEventEditor() {
         if (events.length <= 1) return alert('🚨 최소 1개의 이벤트는 남아있어야 합니다!');
         
         if (window.confirm('이 이벤트를 정말 삭제하시겠습니까? (복구 불가)')) {
-            // 1. 해당 이벤트를 삭제하고
             const filteredEvents = events.filter(ev => ev.id !== idToRemove);
-            
-            // 2. 남은 이벤트들의 순서를 다시 정렬(Re-indexing)하여 title을 맞춰줍니다.
             const reorderedEvents = filteredEvents.map((ev, index) => ({
                 ...ev,
                 id: index + 1,
@@ -133,23 +146,18 @@ export default function StepEventEditor() {
 
             setEvents(reorderedEvents);
 
-            // 삭제한 이벤트가 현재 보고 있던 이벤트였다면 1번 이벤트로 강제 이동
             if (activeEventId === idToRemove) {
                 setActiveEventId(reorderedEvents[0].id);
                 setPreviewScenario(null);
             } else if (activeEventId > idToRemove) {
-                // 삭제된 이벤트보다 뒤에 있던 이벤트를 보고 있었다면 id가 당겨졌으므로 activeId도 수정
                 setActiveEventId(activeEventId - 1);
             }
         }
     };
 
-    // --- ✨ 미리보기 토글 핸들러 ---
     const handleTogglePreview = (e) => {
         const isChecked = e.target.checked;
         setShowPreview(isChecked);
-        
-        // ⭐ 토글을 켜는 순간, 현재 포커스된 대사가 없다면 무조건 0번 컷을 띄워줌
         if (isChecked && !previewScenario && scenarios.length > 0) {
             setPreviewScenario({ ...scenarios[0], index: 0 });
         }
@@ -165,7 +173,6 @@ export default function StepEventEditor() {
         newScenarios[index][field] = value;
         updateActiveScenarios(newScenarios);
 
-        // ⭐ 입력창, 드롭다운 등 해당 컷 내의 어떠한 변경이 일어나도 무조건 미리보기를 현재 컷으로 전환!
         if (showPreview) {
             setPreviewScenario({ ...newScenarios[index], index });
         }
@@ -178,7 +185,6 @@ export default function StepEventEditor() {
         newScenarios[index].dateOverride = currentOverride;
         updateActiveScenarios(newScenarios);
 
-        // 시간 변경 시에도 즉각 렌더링
         if (showPreview) setPreviewScenario({ ...newScenarios[index], index });
     };
 
@@ -229,6 +235,11 @@ export default function StepEventEditor() {
         updateActiveScenarios([...scenarios, { type: 'dialog', branch: currentBranch, isCg: isCgMode, speaker: defaultSpeaker, protagonistImage: null, heroineImage: null, text: '', bgImage: lastBg, bgType: lastBgType, dateOverride: null }]);
     };
 
+    // 🚨 엔딩 블록 추가 핸들러
+    const addEndingInput = () => {
+        updateActiveScenarios([...scenarios, { type: 'ending', branch: currentBranch, text: '' }]);
+    };
+
     const insertScenarioAfter = (index, currentItem) => {
         const newScenarios = [...scenarios];
         let newBranch = currentItem.type === 'choice' ? 'option1' : currentItem.branch;
@@ -276,7 +287,6 @@ export default function StepEventEditor() {
         
         setIsCgMode(true);
         
-        // ⭐ 기존 데이터 구조를 해치지 않으면서 'file' 객체만 슬쩍 끼워넣습니다.
         const newScenarios = [...scenarios, 
             { type: 'cg_image', src: objectUrl, file: file, branch: currentBranch },
             { 
@@ -286,7 +296,7 @@ export default function StepEventEditor() {
                 speaker: defaultSpeaker, 
                 text: '', 
                 bgImage: objectUrl, 
-                file: file, // 👈 백엔드 전송용
+                file: file,
                 bgType: 'custom_cg', 
                 dateOverride: null 
             }
@@ -294,6 +304,7 @@ export default function StepEventEditor() {
         
         updateActiveScenarios(newScenarios);
     };
+
     // --- 🎨 인게임 미리보기 에셋 로드 ---
     const getActiveSpeakerStyle = (speakerName) => {
         if (!speakerName || speakerName === '나레이션' || speakerName === defaultSpeaker) return pFontStyle;
@@ -325,7 +336,6 @@ export default function StepEventEditor() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px' }}>
                 <span style={{ fontWeight: 'bold' }}>📺 인게임 연출 미리보기 모드</span>
                 <label style={{ position: 'relative', display: 'inline-block', width: '50px', height: '24px' }}>
-                    {/* ⭐ 토글 핸들러 교체 */}
                     <input type="checkbox" checked={showPreview} onChange={handleTogglePreview} style={{ opacity: 0, width: 0, height: 0 }} />
                     <span style={{ position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: showPreview ? '#1971c2' : '#ccc', borderRadius: '24px', transition: '.4s' }}>
                         <span style={{ position: 'absolute', height: '16px', width: '16px', left: showPreview ? '30px' : '4px', bottom: '4px', backgroundColor: 'white', transition: '.4s', borderRadius: '50%' }} />
@@ -334,7 +344,8 @@ export default function StepEventEditor() {
             </div>
 
             {/* --- ✨ 완벽 구현된 인게임 미리보기 화면 --- */}
-            {showPreview && previewScenario && previewScenario.type === 'dialog' && (
+            {/* 🚨 미리보기 렌더링 조건에 'ending' 타입 추가 */}
+            {showPreview && previewScenario && (previewScenario.type === 'dialog' || previewScenario.type === 'ending') && (
                 <div style={{ position: 'sticky', top: '10px', zIndex: 100, backgroundColor: '#1a1b1e', padding: '15px', borderRadius: '12px', border: '4px solid #333', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                         <h5 style={{ margin: 0, color: '#ffd43b' }}>🎥 Scene Preview: 컷 {previewScenario.index + 1}</h5>
@@ -342,61 +353,73 @@ export default function StepEventEditor() {
                     </div>
                     
                     <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', backgroundColor: '#000', borderRadius: '8px', overflow: 'hidden', containerType: 'size' }}>
-                        {previewScenario.bgImage && <img src={previewScenario.bgImage} alt="bg" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
-                        {previewScenario.heroineImage && <img src={previewScenario.heroineImage} alt="standing" style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', height: '92.6%', objectFit: 'contain' }} />}
-
-                        {!previewScenario.isCg && (
-                            <div style={{ position: 'absolute', left: '13.02%', top: '4.63%', display: 'flex', alignItems: 'center', gap: '1.3cqw', zIndex: 11 }}>
-                                <div style={{
-                                    width: '7.81cqw', height: '7.81cqw', backgroundColor: cAsset.type === 'image' ? 'transparent' : (currentGlobalUi.calendarColor || 'rgba(255,255,255,0.8)'),
-                                    backgroundImage: cAsset.type === 'image' ? `url(${cAsset.src})` : 'none', backgroundSize: '100% 100%',
-                                    border: cAsset.type === 'css' ? cAsset.border : 'none', borderRadius: cAsset.type === 'css' ? cAsset.borderRadius : '0',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                }}>
-                                    <span style={{ fontSize: '3.5cqh', color: '#5C4033', fontWeight: 'bold', textShadow: getCalendarTextShadow(), marginTop: '10px' }}>{previewDate.day}</span>
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8cqh' }}>
-                                    <span style={{ fontSize: '2cqh', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: getCalendarTextShadow() }}>DATE: {previewDate.month} {previewDate.day}</span>
-                                    <span style={{ fontSize: '2cqh', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: getCalendarTextShadow() }}>TIME: {previewDate.time}</span>
-                                </div>
-                            </div>
-                        )}
-
-                        {previewScenario.protagonistImage && (
-                            <div style={{ position: 'absolute', left: '13.02%', top: '72.22%', width: '13.02%', height: '23.15%', zIndex: 10, overflow: 'visible' }}>
-                                {pAsset.type === 'image' && <img src={pAsset.src} alt="Frame" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'fill', pointerEvents: 'none', zIndex: 1 }} />}
-                                <div style={{
-                                    position: 'absolute', width: '100%', height: '100%', zIndex: 2, backgroundColor: pAsset.type === 'image' ? 'transparent' : (activeStyle.portraitColor || 'rgba(255,182,193,0.8)'),
-                                    WebkitMaskImage: pAsset.type === 'image' ? `url(${pAsset.mask})` : 'none', maskImage: pAsset.type === 'image' ? `url(${pAsset.mask})` : 'none',
-                                    WebkitMaskSize: '100% 100%', maskSize: '100% 100%', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
-                                    borderRadius: pAsset.type === 'css' ? pAsset.borderRadius : '0%', border: pAsset.type === 'css' ? pAsset.border : 'none', boxSizing: 'border-box', overflow: 'hidden'
-                                }}>
-                                    <img src={previewScenario.protagonistImage} alt="주인공" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                </div>
-                            </div>
-                        )}
-
-                        {previewScenario.speaker && !isNarration && (
-                            <div style={{
-                                position: 'absolute', left: '27.6%', top: '66.66%', width: '9.37%', height: '4.63%',
-                                backgroundColor: nAsset.type === 'image' ? 'transparent' : (activeStyle.nameColor || 'rgba(0,0,0,0.8)'), backgroundImage: nAsset.type === 'image' ? `url(${nAsset.src})` : 'none', backgroundSize: '100% 100%',
-                                border: nAsset.type === 'css' ? nAsset.border : 'none', borderRadius: nAsset.type === 'css' ? nAsset.borderRadius : '0', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11
-                            }}>
-                                <span style={{ fontFamily: renderFontFamily, color: activeStyle.color || '#fff', textShadow: activeStyle.useOutline ? `-1px -1px 0 ${activeStyle.outline}, 1px -1px 0 ${activeStyle.outline}, -1px 1px 0 ${activeStyle.outline}, 1px 1px 0 ${activeStyle.outline}` : 'none', fontSize: '2.5cqh', fontWeight: 'bold' }}>
-                                    {previewScenario.speaker}
+                        
+                        {/* 🚨 엔딩 타입 렌더링 분기 */}
+                        {previewScenario.type === 'ending' ? (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' }}>
+                                <span style={{ fontFamily: renderFontFamily, color: '#fff', fontSize: '4cqh', fontWeight: 'bold', letterSpacing: '2px', textAlign: 'center', whiteSpace: 'pre-wrap' }}>
+                                    {previewScenario.text || "엔딩 대사를 입력하세요"}
                                 </span>
                             </div>
-                        )}
+                        ) : (
+                            <>
+                                {previewScenario.bgImage && <img src={previewScenario.bgImage} alt="bg" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
+                                {previewScenario.heroineImage && <img src={previewScenario.heroineImage} alt="standing" style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', height: '92.6%', objectFit: 'contain' }} />}
 
-                        <div style={{
-                            position: 'absolute', left: '27.6%', top: '72.22%', width: '57.3%', height: '23.15%',
-                            backgroundColor: dAsset.type === 'image' ? 'transparent' : (activeStyle.dialogColor || 'rgba(0,0,0,0.8)'), backgroundImage: dAsset.type === 'image' ? `url(${dAsset.src})` : 'none', backgroundSize: '100% 100%',
-                            border: dAsset.type === 'css' ? dAsset.border : 'none', borderRadius: dAsset.type === 'css' ? dAsset.borderRadius : '0', padding: '3cqh 4cqw', boxSizing: 'border-box', zIndex: 11
-                        }}>
-                            <p style={{ fontFamily: renderFontFamily, color: activeStyle.color || '#fff', textShadow: activeStyle.useOutline ? `-1px -1px 0 ${activeStyle.outline}, 1px -1px 0 ${activeStyle.outline}, -1px 1px 0 ${activeStyle.outline}, 1px 1px 0 ${activeStyle.outline}` : 'none', fontSize: '3cqh', marginTop: 0 }}>
-                                {previewScenario.text}
-                            </p>
-                        </div>
+                                {!previewScenario.isCg && (
+                                    <div style={{ position: 'absolute', left: '13.02%', top: '4.63%', display: 'flex', alignItems: 'center', gap: '1.3cqw', zIndex: 11 }}>
+                                        <div style={{
+                                            width: '7.81cqw', height: '7.81cqw', backgroundColor: cAsset.type === 'image' ? 'transparent' : (currentGlobalUi.calendarColor || 'rgba(255,255,255,0.8)'),
+                                            backgroundImage: cAsset.type === 'image' ? `url(${cAsset.src})` : 'none', backgroundSize: '100% 100%',
+                                            border: cAsset.type === 'css' ? cAsset.border : 'none', borderRadius: cAsset.type === 'css' ? cAsset.borderRadius : '0',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
+                                            <span style={{ fontSize: '3.5cqh', color: '#5C4033', fontWeight: 'bold', textShadow: getCalendarTextShadow(), marginTop: '10px' }}>{previewDate.day}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8cqh' }}>
+                                            <span style={{ fontSize: '2cqh', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: getCalendarTextShadow() }}>DATE: {previewDate.month} {previewDate.day}</span>
+                                            <span style={{ fontSize: '2cqh', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: getCalendarTextShadow() }}>TIME: {previewDate.time}</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {previewScenario.protagonistImage && (
+                                    <div style={{ position: 'absolute', left: '13.02%', top: '72.22%', width: '13.02%', height: '23.15%', zIndex: 10, overflow: 'visible' }}>
+                                        {pAsset.type === 'image' && <img src={pAsset.src} alt="Frame" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'fill', pointerEvents: 'none', zIndex: 1 }} />}
+                                        <div style={{
+                                            position: 'absolute', width: '100%', height: '100%', zIndex: 2, backgroundColor: pAsset.type === 'image' ? 'transparent' : (activeStyle.portraitColor || 'rgba(255,182,193,0.8)'),
+                                            WebkitMaskImage: pAsset.type === 'image' ? `url(${pAsset.mask})` : 'none', maskImage: pAsset.type === 'image' ? `url(${pAsset.mask})` : 'none',
+                                            WebkitMaskSize: '100% 100%', maskSize: '100% 100%', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
+                                            borderRadius: pAsset.type === 'css' ? pAsset.borderRadius : '0%', border: pAsset.type === 'css' ? pAsset.border : 'none', boxSizing: 'border-box', overflow: 'hidden'
+                                        }}>
+                                            <img src={previewScenario.protagonistImage} alt="주인공" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {previewScenario.speaker && !isNarration && (
+                                    <div style={{
+                                        position: 'absolute', left: '27.6%', top: '66.66%', width: '9.37%', height: '4.63%',
+                                        backgroundColor: nAsset.type === 'image' ? 'transparent' : (activeStyle.nameColor || 'rgba(0,0,0,0.8)'), backgroundImage: nAsset.type === 'image' ? `url(${nAsset.src})` : 'none', backgroundSize: '100% 100%',
+                                        border: nAsset.type === 'css' ? nAsset.border : 'none', borderRadius: nAsset.type === 'css' ? nAsset.borderRadius : '0', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11
+                                    }}>
+                                        <span style={{ fontFamily: renderFontFamily, color: activeStyle.color || '#fff', textShadow: activeStyle.useOutline ? `-1px -1px 0 ${activeStyle.outline}, 1px -1px 0 ${activeStyle.outline}, -1px 1px 0 ${activeStyle.outline}, 1px 1px 0 ${activeStyle.outline}` : 'none', fontSize: '2.5cqh', fontWeight: 'bold' }}>
+                                            {previewScenario.speaker}
+                                        </span>
+                                    </div>
+                                )}
+
+                                <div style={{
+                                    position: 'absolute', left: '27.6%', top: '72.22%', width: '57.3%', height: '23.15%',
+                                    backgroundColor: dAsset.type === 'image' ? 'transparent' : (activeStyle.dialogColor || 'rgba(0,0,0,0.8)'), backgroundImage: dAsset.type === 'image' ? `url(${dAsset.src})` : 'none', backgroundSize: '100% 100%',
+                                    border: dAsset.type === 'css' ? dAsset.border : 'none', borderRadius: dAsset.type === 'css' ? dAsset.borderRadius : '0', padding: '3cqh 4cqw', boxSizing: 'border-box', zIndex: 11
+                                }}>
+                                    <p style={{ fontFamily: renderFontFamily, color: activeStyle.color || '#fff', textShadow: activeStyle.useOutline ? `-1px -1px 0 ${activeStyle.outline}, 1px -1px 0 ${activeStyle.outline}, -1px 1px 0 ${activeStyle.outline}, 1px 1px 0 ${activeStyle.outline}` : 'none', fontSize: '3cqh', marginTop: 0 }}>
+                                        {previewScenario.text}
+                                    </p>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}
@@ -449,10 +472,41 @@ export default function StepEventEditor() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                     {scenarios.map((scenario, index) => {
                         const isSelected = previewScenario?.index === index;
-                        const pName = protagonist.name || '주인공';
                         const activeSpeakerChar = characters.find(c => c.name === scenario.speaker);
                         const effectiveDate = getEffectiveDateForIndex(index); 
                         const isFirstMainDialog = index === 0 && scenario.branch === 'main';
+
+                        // 🚨 엔딩 타입 렌더링 추가
+                        if (scenario.type === 'ending') {
+                            return (
+                                <div key={index} onClick={() => { if(showPreview) setPreviewScenario({ ...scenario, index }); }}
+                                    style={{ 
+                                        padding: '15px', backgroundColor: '#212529', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                        border: isSelected && showPreview ? '3px solid #ff6b6b' : '1px solid #343a40',
+                                        boxShadow: isSelected && showPreview ? '0 0 10px rgba(255,107,107,0.4)' : 'none',
+                                        transition: 'all 0.2s', cursor: showPreview ? 'pointer' : 'default',
+                                        marginLeft: scenario.branch === 'option1' ? '20px' : scenario.branch === 'option2' ? '40px' : '0'
+                                    }}
+                                >
+                                    <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ fontWeight: 'bold', color: '#ffd43b' }}>🎬 엔딩 연출</span>
+                                            {scenario.branch === 'option1' && <span style={{ fontSize: '11px', background: '#40c057', color: 'white', padding: '2px 6px', borderRadius: '4px' }}>선택지 1번</span>}
+                                            {scenario.branch === 'option2' && <span style={{ fontSize: '11px', background: '#fd7e14', color: 'white', padding: '2px 6px', borderRadius: '4px' }}>선택지 2번</span>}
+                                        </div>
+                                        <button onClick={(e) => { e.stopPropagation(); removeScenarioInput(index); }} style={{ background: 'none', border: 'none', color: '#fa5252', cursor: 'pointer', fontWeight: 'bold' }}>삭제</button>
+                                    </div>
+                                    <input 
+                                        type="text" 
+                                        placeholder="EX 엔딩2: 슬픈 개구리" 
+                                        value={scenario.text} 
+                                        onChange={(e) => handleScenarioChange(index, 'text', e.target.value)} 
+                                        style={{ width: '80%', padding: '12px', borderRadius: '6px', border: '1px solid #495057', backgroundColor: '#343a40', color: '#fff', textAlign: 'center', fontSize: '16px', fontWeight: 'bold' }} 
+                                    />
+                                    <p style={{ fontSize: '12px', color: '#868e96', marginTop: '10px' }}>이 대사가 출력된 후 게임이 종료됩니다.</p>
+                                </div>
+                            );
+                        }
 
                         if (scenario.type === 'cg_image') {
                             return (
@@ -512,14 +566,21 @@ export default function StepEventEditor() {
                                         )}
                                     </div>
 
-                                    {scenario.type === 'choice' ? (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                            <input type="text" placeholder="선택지 1 텍스트" value={scenario.option1 || ''} onChange={(e) => handleScenarioChange(index, 'option1', e.target.value)} style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
-                                            <input type="text" placeholder="선택지 2 텍스트" value={scenario.option2 || ''} onChange={(e) => handleScenarioChange(index, 'option2', e.target.value)} style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
-                                        </div>
-                                    ) : (
-                                        <>
-                                            {/* ⭐ 보관함 연동 배경 선택기 */}
+
+                                {scenario.type === 'choice' ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                        <input type="text" placeholder="선택지 1 텍스트" value={scenario.option1 || ''} onChange={(e) => handleScenarioChange(index, 'option1', e.target.value)} style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
+                                        <input type="text" placeholder="선택지 2 텍스트" value={scenario.option2 || ''} onChange={(e) => handleScenarioChange(index, 'option2', e.target.value)} style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }} />
+                                    </div>
+                                ) : (
+                                    <>
+                                        {/* ⭐ 여기가 수정된 부분입니다: CG 컷일 경우 배경 선택창 비활성화 */}
+                                        {scenario.isCg ? (
+                                            <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#845ef7', backgroundColor: '#f3f0ff', padding: '4px 8px', borderRadius: '4px' }}>🖼️ CG 일러스트 배경</label>
+                                                <span style={{ fontSize: '12px', color: '#868e96', fontWeight: 'bold' }}>🔒 이 컷은 등록된 CG 일러스트로 배경이 고정됩니다.</span>
+                                            </div>
+                                        ) : (
                                             <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                 <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#1971c2', backgroundColor: '#e7f5ff', padding: '4px 8px', borderRadius: '4px' }}>🖼️ 이 컷의 배경</label>
                                                 
@@ -543,7 +604,6 @@ export default function StepEventEditor() {
                                                     </optgroup>
                                                 </select>
 
-                                                {/* 숨겨진 파일 인풋 */}
                                                 <input 
                                                     type="file" accept="image/*" 
                                                     ref={el => fileInputRefs.current[index] = el}
@@ -552,6 +612,7 @@ export default function StepEventEditor() {
                                                 />
                                                 {scenario.bgImage && scenario.bgType !== 'custom_new' && <span style={{ fontSize: '12px', color: 'green' }}>✓ 적용됨</span>}
                                             </div>
+                                        )}
 
                                             <div style={{ display: 'flex', gap: '10px' }}>
                                                 <select value={scenario.speaker} onChange={(e) => handleScenarioChange(index, 'speaker', e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', width: '120px' }}>
@@ -601,24 +662,52 @@ export default function StepEventEditor() {
                     })}
                 </div>
 
+                {/* --- 🚨 하단 대사 추가 컨트롤러 --- */}
                 <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                    {currentBranch === 'main' && <button onClick={addScenarioInput} style={{ flex: 1, padding: '12px', backgroundColor: '#339af0', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>+ 일반 대사 추가</button>}
-                    {currentBranch === 'option1' && <button onClick={addScenarioInput} style={{ flex: 1, padding: '12px', backgroundColor: '#40c057', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>+ 선택지 1번 루트 대사 추가</button>}
-                    {currentBranch === 'option2' && <button onClick={addScenarioInput} style={{ flex: 1, padding: '12px', backgroundColor: '#fd7e14', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>+ 선택지 2번 루트 대사 추가</button>}
-                    
-                    {!isCgMode && (
-                        <label style={{ flex: 1, padding: '12px', backgroundColor: '#845ef7', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', textAlign: 'center' }}>
-                            🖼️ 이벤트 CG 추가 <input type="file" accept="image/*" onChange={handleCgUpload} style={{ display: 'none' }} />
-                        </label>
+                    {/* 해당 분기에 엔딩이 없어야 버튼들이 활성화됨 */}
+                    {!hasEndingInCurrentBranch ? (
+                        <>
+                            {currentBranch === 'main' && <button onClick={addScenarioInput} style={{ flex: 1, padding: '12px', backgroundColor: '#339af0', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>+ 일반 대사 추가</button>}
+                            {currentBranch === 'option1' && <button onClick={addScenarioInput} style={{ flex: 1, padding: '12px', backgroundColor: '#40c057', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>+ 선택지 1번 루트 대사 추가</button>}
+                            {currentBranch === 'option2' && <button onClick={addScenarioInput} style={{ flex: 1, padding: '12px', backgroundColor: '#fd7e14', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>+ 선택지 2번 루트 대사 추가</button>}
+                            
+                            {!isCgMode && (
+                                <label style={{ flex: 1, padding: '12px', backgroundColor: '#845ef7', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', textAlign: 'center' }}>
+                                    🖼️ 이벤트 CG 추가 <input type="file" accept="image/*" onChange={handleCgUpload} style={{ display: 'none' }} />
+                                </label>
+                            )}
+                            {isCgMode && <button onClick={() => setIsCgMode(false)} style={{ flex: 1, padding: '12px', backgroundColor: '#5c7cfa', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>⏹️ CG 대화 종료</button>}
+                            
+                            {currentBranch === 'main' && !isCgMode && !hasChoiceNode && <button onClick={addChoiceInput} style={{ flex: 1, padding: '12px', backgroundColor: '#adb5bd', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>+ 선택지 분기 추가</button>}
+
+                            {/* 🚨 엔딩 대사 추가 버튼 */}
+                            {!isCgMode && (
+                                <button onClick={addEndingInput} style={{ flex: 1, padding: '12px', backgroundColor: '#212529', color: '#ffd43b', border: '2px dashed #ffd43b', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+                                    🎬 엔딩 추가
+                                </button>
+                            )}
+                        </>
+                    ) : (
+                        // 엔딩이 생성된 후에는 버튼 비활성화 및 안내 문구 출력
+                        <div style={{ flex: 1, padding: '15px', backgroundColor: '#e9ecef', color: '#868e96', textAlign: 'center', borderRadius: '8px', fontWeight: 'bold' }}>
+                            🔒 현재 분기(루트)는 엔딩으로 마무리되어 더 이상 대사를 추가할 수 없습니다.
+                        </div>
                     )}
-                    {isCgMode && <button onClick={() => setIsCgMode(false)} style={{ flex: 1, padding: '12px', backgroundColor: '#5c7cfa', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>⏹️ CG 대화 종료</button>}
-                    {currentBranch === 'main' && !isCgMode && !hasChoiceNode && <button onClick={addChoiceInput} style={{ flex: 1, padding: '12px', backgroundColor: '#adb5bd', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>+ 선택지 분기 추가</button>}
                 </div>
 
                 {currentBranch === 'option1' && (
                     <button onClick={() => { setIsCgMode(false); setCurrentBranch('option2'); }} style={{ width: '100%', marginTop: '10px', padding: '12px', backgroundColor: '#2b8a3e', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
                         ✔️ 선택지 1번 루트 종료 (2번 작성 시작)
                     </button>
+                )}
+
+                {/* --- 🚨 게임 완전 종료 알림 메시지 --- */}
+                {isFullyEnded && (
+                    <div style={{ marginTop: '20px', padding: '20px', backgroundColor: '#212529', color: '#ffd43b', textAlign: 'center', borderRadius: '8px', fontWeight: 'bold', border: '2px solid #ffd43b', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}>
+                        <div style={{ fontSize: '24px', marginBottom: '10px' }}>🎊</div>
+                        모든 루트에 엔딩이 생겼습니다! 이 이벤트가 마지막 끝입니다.<br/>
+                        <span style={{ fontSize: '14px', color: '#ced4da', fontWeight: 'normal', marginTop: '5px', display: 'inline-block' }}>이 이후의 이벤트는 게임에 구현되지 않습니다!</span>
+                    </div>
                 )}
             </div>
         </div>
