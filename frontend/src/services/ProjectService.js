@@ -70,6 +70,10 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
             }
         });
     });
+    // 1. 배경 이미지 수집
+    if (state.startMenu?.bgImage) {
+        collectFile(state.startMenu.bgImage);
+    }
 
     // --------------------------------------------------------
     // 3. 데이터 정제 헬퍼 함수
@@ -105,29 +109,34 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
     // 5. 최종 JSON 데이터 조립 (폰트 이름 유지 및 폰트 리스트 포함)
     // --------------------------------------------------------
     const gameData = {
-        selectedMode: state.selectedMode,
-        // ✅ 주인공 폰트 설정 (이름 그대로 저장)
-        pFontStyle: state.pFontStyle, 
-        // ✅ 전역 UI/시스템 폰트 설정 (이름 그대로 저장)
-        globalUi: state.globalUi, 
-        protagonist: {
-            name: state.protagonist?.name || "",
-            images: state.protagonist?.images?.map(getCleanNameOrUrl).filter(Boolean) || []
-        },
-        characters: state.characters?.map(c => ({
-            ...c,
-            // ✅ 각 등장인물별 개별 폰트 설정도 이름 그대로 유지됨
-            images: c.images?.map(getCleanNameOrUrl).filter(Boolean) || []
-        })) || [],
-        events: eventsToSave,
-        
-        // ✅ 커스텀 폰트 메타데이터 (백엔드에서 URL 치환을 위해 필요)
-        customFonts: state.customFonts?.map(f => ({
-            name: f.name,
-            url: f.file ? f.file.name : f.url // 파일이 있으면 파일명으로, 없으면 기존 URL
-        })) || []
-    };
+            selectedMode: state.selectedMode,
+            pFontStyle: state.pFontStyle, 
+            globalUi: state.globalUi, 
 
+            // ✅ [추가] 시작 메뉴 설정 저장
+            startMenu: {
+                ...state.startMenu,
+                // 배경 이미지가 새로 업로드된 파일이면 파일명으로, 
+                // 프리셋(URL)이면 URL 그대로 저장
+                bgImage: state.startMenu?.bgImage?.file 
+                    ? state.startMenu.bgImage.file.name 
+                    : state.startMenu?.bgImage?.preview || null
+            },
+
+            protagonist: {
+                name: state.protagonist?.name || "",
+                images: state.protagonist?.images?.map(getCleanNameOrUrl).filter(Boolean) || []
+            },
+            characters: state.characters?.map(c => ({
+                ...c,
+                images: c.images?.map(getCleanNameOrUrl).filter(Boolean) || []
+            })) || [],
+            events: eventsToSave,
+            customFonts: state.customFonts?.map(f => ({
+                name: f.name,
+                url: f.file ? f.file.name : f.url 
+            })) || []
+        };
     // --------------------------------------------------------
     // 6. 서버 전송
     // --------------------------------------------------------

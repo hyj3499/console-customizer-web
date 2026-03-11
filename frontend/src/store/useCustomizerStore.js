@@ -73,6 +73,25 @@ const useCustomizerStore = create((set) => ({
 
     previewScenario: null,
     setPreviewScenario: (scenario) => set({ previewScenario: scenario }),
+
+    // 4단계
+    startMenu: {
+        bgImage: null, // { file, preview }
+        menuPos: { x: 50, y: 70 }, // % 단위 좌표
+        boxStyle: {
+            frame: 'simple',
+            color: 'rgba(0,0,0,0.5)',
+            padding: 20,
+            borderRadius: 8
+        },
+        textStyle: {
+            fontSize: 40,
+            color: '#ffffff'
+        }
+    },
+    setStartMenu: (data) => set((state) => ({ 
+        startMenu: { ...state.startMenu, ...data } 
+    }))
 }));
 
 export default useCustomizerStore;
