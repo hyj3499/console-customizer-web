@@ -1,0 +1,72 @@
+console-customizer-web
+├── README.md
+├── backend
+│   ├── index.js
+│   ├── package-lock.json
+│   ├── package.json
+│   └── utils
+│       └── r2Storage.js
+├── docs
+├── frontend
+│   ├── README.md
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── public
+│   │   ├── images
+│   │   │   ├── 1-console.png
+│   │   │   ├── 2-console.png
+│   │   │   ├── 3-console.png
+│   │   │   ├── 4-console.png
+│   │   │   ├── 5-console.png
+│   │   │   ├── 6E9mvp.png
+│   │   │   ├── OwijXD.png
+│   │   │   ├── Re3wvT.png
+│   │   │   ├── bg_school.png
+│   │   │   ├── cajSEI.png
+│   │   │   ├── logo.png
+│   │   │   ├── reborn_frame_pink.png
+│   │   │   ├── retro_calendar_pink.png
+│   │   │   ├── retro_dialog.png
+│   │   │   ├── retro_dialog_pink.png
+│   │   │   ├── retro_frame_mask.png
+│   │   │   ├── retro_frame_pink.png
+│   │   │   └── uPbAWb.png
+│   │   └── vite.svg
+│   ├── src
+│   │   ├── App.css
+│   │   ├── App.jsx
+│   │   ├── assets
+│   │   │   └── react.svg
+│   │   ├── components
+│   │   │   ├── Button.jsx
+│   │   │   ├── Footer.jsx
+│   │   │   └── Header.jsx
+│   │   ├── index.css
+│   │   ├── main.jsx
+│   │   ├── pages
+│   │   │   ├── About.jsx
+│   │   │   ├── Customizer
+│   │   │   │   ├── Customizer.css
+│   │   │   │   ├── CustomizerStep1.jsx
+│   │   │   │   ├── CustomizerStep2.jsx
+│   │   │   │   ├── CustomizerStep3.jsx
+│   │   │   │   ├── StepEventEditor.jsx
+│   │   │   │   ├── StepEventEditor.module.css
+│   │   │   │   ├── StepModeSelect.jsx
+│   │   │   │   ├── StepSettings.css
+│   │   │   │   ├── StepSettings.jsx
+│   │   │   │   ├── StepStartMenu.jsx
+│   │   │   │   ├── index.jsx
+│   │   │   │   └── test.jsxj
+│   │   │   ├── Faq.jsx
+│   │   │   ├── Home.jsx
+│   │   │   └── Notice.jsx
+│   │   ├── services
+│   │   │   └── ProjectService.js
+│   │   └── store
+│   │       └── useCustomizerStore.js
+│   ├── vite.config.js
+│   └── 내부구조.txt
+└── tree.txt
