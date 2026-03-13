@@ -227,4 +227,11 @@ app.post('/api/projects/save', upload.array('files'), async (req, res) => {
 // --------------------------------------------------------
 // 서버 부팅
 // --------------------------------------------------------
-module.exports = app;
+
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`🚀 로컬 서버 가동 중: http://localhost:${PORT}`);
+    });
+}
+
+export default app;
