@@ -1,47 +1,321 @@
-/* src/index.css */
+/* src/index.css comprehensive retro rewrite */
 
-/* 기본 폰트 및 색상 테마 설정 (기존 유지) */
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* 1. 폰트 등록 & 렌더링 최적화 제거 (레트로 픽셀 느낌) */
+@font-face {
+  font-family: 'DOSGothic';
+  src: url('./assets/fonts/DOSGothic.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
 }
 
-/* ⭐ 핵심: 화면 전체를 꽉 채우도록 기본 여백 제거 및 100% 설정 */
+/* 2. 전역 변수 설정 (Retro Windows 95 Palette & Bevel Styles) */
+:root {
+  /* Retro Windows 95 Palette */
+  --win95-base-gray: #c0c0c0;
+  --win95-highlight-gray: #ffffff;
+  --win95-light-shadow-gray: #808080;
+  --win95-dark-shadow-black: #000000;
+  --win95-content-white: #ffffff;
+  --win95-desktop-teal: #008080; /* 데스크톱 배경색 */
+  --win95-title-active-blue-start: #000080; /* 활성 타이틀바 그라데이션 시작 */
+  --win95-title-active-blue-end: #0000cd; /* 활성 타이틀바 그라데이션 끝 */
+  --win95-title-inactive-gray: #a0a0a0; /* 비활성 타이틀바 */
+  --win95-accent-blue: #0000ff; /* 하이퍼링크 및 특정 아이콘 */
+  --win95-start-colored-flag: url('retro-pixel-start-flag.png'); /* 컬러 스타트 플래그 아이콘 */
+
+  /* 폰트 설정 (픽셀-완벽함을 위해 고정폭 fallback 추가) */
+  --main-font: 'DOSGothic', 'Fixedsys', monospace;
+  line-height: 1.5;
+  font-weight: 400;
+  
+  /* 다크 모드/라이트 모드 자동 전환 제거 (일관된 레트로 테마 유지) */
+  color-scheme: light;
+}
+
+/* 3. 기본 레이아웃 초기화 & Desktop */
+* {
+  box-sizing: border-box;
+  /* 현대적인 글자 부드럽게 설정을 모두 끄고, 픽셀-완벽함을 위해 image-rendering 적용 */
+  image-rendering: pixelated; 
+}
+
 html, body, #root {
   margin: 0;
   padding: 0;
   width: 100%;
-  height: 100%;
+  /* height: 100% 대신 min-height를 써야 내용에 따라 길어집니다 */
+  min-height: 100%; 
+  /* hidden을 auto로 바꿔서 스크롤이 생기게 합니다 */
+}
+body {
+  font-family: var(--main-font);
+  color: var(--win95-dark-shadow-black); /* Gray base 위 기본 글자색 */
+  background-color: var(--win95-desktop-teal); /* 데스크톱 색상 적용 */
+  
+  /* 레트로 텍스트 렌더링 (모든 스무딩 해제) */
+  text-rendering: initial; /* 최적화 끔 */
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+  font-size: 14px; /* 표준 Windows 텍스트 크기 */
 }
 
-/* 박스 크기 계산을 직관적으로 만들어주는 마법의 코드 */
-* {
-  box-sizing: border-box;
-}
-
+/* 데스크톱 위의 하이퍼링크 스타일 */
 a {
   font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+  color: var(--win95-accent-blue);
+  text-decoration: underline;
+  transition: none; /* 현대적인 그라데이션 전환 끔 */
 }
 a:hover {
-  color: #535bf2;
+  color: var(--win95-accent-blue);
+  text-decoration: underline;
 }
 
-/* 라이트 모드 테마 */
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
+/* 4. Detailed Windows 95 Bevel & Component Styles */
+
+/* 아웃셋 베벨: 창, 버튼 등의 기본 돌출된 테두리 */
+.win95-bevel-outset {
+  border-top: 2px solid var(--win95-highlight-gray);
+  border-left: 2px solid var(--win95-highlight-gray);
+  border-right: 2px solid var(--win95-dark-shadow-black);
+  border-bottom: 2px solid var(--win95-dark-shadow-black);
+  background-color: var(--win95-base-gray);
 }
+
+/* 인셋 베벨: 입력창, 콘텐츠 영역 등의 오목한 테두리 */
+.win95-bevel-inset {
+  border-top: 2px solid var(--win95-dark-shadow-black);
+  border-left: 2px solid var(--win95-dark-shadow-black);
+  border-right: 2px solid var(--win95-highlight-gray);
+  border-bottom: 2px solid var(--win95-highlight-gray);
+  background-color: var(--win95-content-white);
+}
+
+/* 그루브 테두리: 창 외곽 등에 쓰이는 오목한 테두리 */
+.win95-border-groove {
+  border: 2px groove var(--win95-light-shadow-gray);
+}
+
+/* Detailed Windows 95 Window Component */
+.win95-window {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--win95-base-gray);
+  border-top: 1px solid var(--win95-highlight-gray);
+  border-left: 1px solid var(--win95-highlight-gray);
+  border-right: 1px solid var(--win95-dark-shadow-black);
+  border-bottom: 1px solid var(--win95-dark-shadow-black);
+  padding: 2px; /* 이중 베벨 효과 */
+}
+/* 실제 창 내부 콘텐츠를 위한 오목한 영역 */
+.win95-window-inner {
+  border-top: 1px solid var(--win95-light-shadow-gray);
+  border-left: 1px solid var(--win95-light-shadow-gray);
+  border-right: 1px solid var(--win95-highlight-gray);
+  border-bottom: 1px solid var(--win95-highlight-gray);
+  padding: 2px;
+}
+
+/* Win95 타이틀바 */
+.win95-title-bar {
+  display: flex;
+  align-items: center;
+  padding: 3px 5px;
+  font-weight: bold;
+  margin-bottom: 2px;
+  /* 활성 타이틀바 그라데이션 */
+  background: linear-gradient(to right, var(--win95-title-active-blue-start) 0%, var(--win95-title-active-blue-end) 100%);
+  color: var(--win95-highlight-text);
+}
+/* 비활성 창 타이틀바 */
+.win95-window:not(.win95-window-active) .win95-title-bar {
+  background: var(--win95-title-inactive-gray);
+  color: var(--win95-dark-shadow-black);
+}
+
+/* Win95 버튼 컴포넌트 */
+.win95-button {
+  display: inline-block;
+  min-width: 75px; /* 표준 최소 너비 */
+  text-align: center;
+  font-family: var(--main-font);
+  font-size: 14px;
+  cursor: pointer;
+  background-color: var(--win95-base-gray);
+  border-top: 2px solid var(--win95-highlight-gray);
+  border-left: 2px solid var(--win95-highlight-gray);
+  border-right: 2px solid var(--win95-dark-shadow-black);
+  border-bottom: 2px solid var(--win95-dark-shadow-black);
+  padding: 4px 12px;
+  color: var(--win95-dark-shadow-black);
+}
+/* 버튼 클릭 시 오목하게 들어가는 효과 */
+.win95-button:active {
+  border-top: 2px solid var(--win95-dark-shadow-black);
+  border-left: 2px solid var(--win95-dark-shadow-black);
+  border-right: 2px solid var(--win95-highlight-gray);
+  border-bottom: 2px solid var(--win95-highlight-gray);
+  padding: 5px 11px 3px 13px; /* visual push effect */
+}
+
+/* Win95 콘텐츠 영역 (리스트바 등) */
+.win95-content-area {
+  background-color: var(--win95-content-white);
+  border-top: 2px solid var(--win95-dark-shadow-black);
+  border-left: 2px solid var(--win95-dark-shadow-black);
+  border-right: 2px solid var(--win95-highlight-gray);
+  border-bottom: 2px solid var(--win95-highlight-gray);
+  padding: 10px;
+}
+
+/* Win95 입력창 */
+.win95-input {
+  display: block;
+  font-family: var(--main-font);
+  font-size: 14px;
+  background-color: var(--win95-content-white);
+  border-top: 2px solid var(--win95-dark-shadow-black);
+  border-left: 2px solid var(--win95-dark-shadow-black);
+  border-right: 2px solid var(--win95-highlight-gray);
+  border-bottom: 2px solid var(--win95-highlight-gray);
+  padding: 3px 6px;
+  color: var(--win95-dark-shadow-black);
+}
+
+/* Taskbar & Start Menu */
+.win95-taskbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 28px;
+  background-color: var(--win95-base-gray);
+  border-top: 2px solid var(--win95-highlight-gray);
+  display: flex;
+  align-items: center;
+  padding: 2px 4px;
+  z-index: 1000;
+}
+
+.win95-start-button {
+  display: flex;
+  align-items: center;
+  height: 24px;
+  cursor: pointer;
+  background-color: var(--win95-base-gray);
+  border-top: 2px solid var(--win95-highlight-gray);
+  border-left: 2px solid var(--win95-highlight-gray);
+  border-right: 2px solid var(--win95-dark-shadow-black);
+  border-bottom: 2px solid var(--win95-dark-shadow-black);
+  padding: 0 10px;
+  margin-right: 10px;
+}
+.win95-start-button-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  /* I will generate pixel versions of the 95 colored flag and use background-image */
+  background-image: var(--win95-start-colored-flag);
+  background-size: cover;
+  image-rendering: pixelated;
+}
+.win95-start-button-text {
+  font-weight: bold;
+}
+
+/* 5. Content Representations from Reference Image */
+
+/* 데스크톱 아이콘 목록 (픽셀 아이콘 생성) */
+.retro-desktop-icon {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+  /* generate pixel art icons for Calendar, Computer, Folder, CD, Info, Telephone */
+}
+/* 아이콘별 이미지 설명 (예시) */
+.icon-calendar { background-image: url('retro-pixel-calendar.png'); }
+.icon-computer { background-image: url('retro-pixel-computer.png'); }
+.icon-folder { background-image: url('retro-pixel-folder.png'); }
+.icon-cd { background-image: url('retro-pixel-cd-disc.png'); }
+.icon-info { background-image: url('retro-pixel-info.png'); }
+.icon-telephone { background-image: url('retro-pixel-telephone.png'); }
+.icon-minesweeper { background-image: url('retro-pixel-minesweeper.png'); width: 16px; height: 16px; }
+
+/* 지뢰찾기 보드 (그리드 및 픽셀 숫자 생성) */
+.retro-minesweeper-window .win95-content-area {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  grid-template-rows: repeat(16, 1fr);
+  width: 320px;
+  height: 320px;
+  background-color: var(--win95-base-gray); /* cell bg */
+  /* generate pixel cell backgrounds with numbers (1, 2, 3...) and flags */
+}
+
+/* Dog Mascot (픽셀 마스코트 생성) */
+.retro-dog-mascot-element {
+  /* generate pixel art of the dog mascot */
+  background-image: url('retro-pixel-dog.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  width: 150px;
+  height: 150px;
+  image-rendering: pixelated;
+}
+
+/* CD Player Controls (픽셀 아이콘 생성) */
+.retro-cd-player-window .cd-controls {
+  display: flex;
+  gap: 5px;
+  /* described CD control pixel icons: play, pause, stop, forward, backward */
+}
+
+/* World Map Regional Settings (픽셀 세계지도 생성) */
+.retro-regional-world-map {
+  width: 300px;
+  height: 150px;
+  /* described pixel world map with map cursor arrow descriptions */
+  background-image: url('retro-pixel-world-map.png');
+  background-size: cover;
+  image-rendering: pixelated;
+}
+
+/* Cursor Trial (픽셀 화살표 커서 그리드 생성) */
+.retro-cursor-sprite-trail {
+  /* described grid of pixel cursor arrow icons */
+  display: grid;
+  grid-template-columns: repeat(20, 1fr);
+  /* background of curser grid description curser curser curser arrow descriptions */
+}
+
+/* regional regional settings regional setting windows representation */
+/* 윈도우 95 스타일 커스텀 스크롤바 */
+::-webkit-scrollbar {
+  width: 16px;
+}
+
+::-webkit-scrollbar-track {
+  background: #dfdfdf; /* 스크롤바 트랙 배경 */
+  box-shadow: inset 1px 1px #808080, inset -1px -1px #ffffff;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c0c0c0;
+  border: 1px solid #ffffff;
+  border-right-color: #000000;
+  border-bottom-color: #000000;
+  box-shadow: inset 1px 1px #ffffff, inset -1px -1px #808080;
+}
+
+::-webkit-scrollbar-button {
+  background: #c0c0c0;
+  width: 16px;
+  height: 16px;
+  display: block;
+  border: 1px solid #ffffff;
+  border-right-color: #000000;
+  border-bottom-color: #000000;
+  box-shadow: inset 1px 1px #ffffff, inset -1px -1px #808080;
+}
+/* exchange inbox exchange exchange window exchange representation exchange inbox window example representation exchange exchange email */

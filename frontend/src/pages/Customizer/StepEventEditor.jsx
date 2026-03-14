@@ -339,7 +339,7 @@ export default function StepEventEditor() {
     };
 
     return (
-        <div style={{ width: '100%', maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
             {/* --- 미리보기 토글 스위치 --- */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px' }}>
@@ -354,14 +354,45 @@ export default function StepEventEditor() {
 
             {/* --- ✨ 완벽 구현된 인게임 미리보기 화면 --- */}
             {/* 🚨 미리보기 렌더링 조건에 'ending' 타입 추가 */}
+        {/* --- ✨ 완벽 구현된 인게임 미리보기 화면 (윈도우 95 스타일) --- */}
+            {/* 🚨 미리보기 렌더링 조건에 'ending' 타입 추가 */}
             {showPreview && previewScenario && (previewScenario.type === 'dialog' || previewScenario.type === 'ending') && (
-                <div style={{ position: 'sticky', top: '10px', zIndex: 100, backgroundColor: '#1a1b1e', padding: '15px', borderRadius: '12px', border: '4px solid #333', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                        <h5 style={{ margin: 0, color: '#ffd43b' }}>🎥 Scene Preview: 컷 {previewScenario.index + 1}</h5>
-                        <button onClick={() => { setShowPreview(false); setPreviewScenario(null); }} style={{ background: 'none', border: 'none', color: '#ff6b6b', fontSize: '20px', cursor: 'pointer', fontWeight: 'bold' }}>✖</button>
+                <div style={{ 
+                    position: 'sticky', top: '10px', zIndex: 100, 
+                    backgroundColor: '#c0c0c0', padding: '3px', /* 윈도우 기본 회색 */
+                    borderTop: '2px solid #fff', borderLeft: '2px solid #fff', 
+                    borderRight: '2px solid #000', borderBottom: '2px solid #000', /* Outset 베벨 */
+                    boxShadow: '2px 2px 5px rgba(0,0,0,0.3)' 
+                }}>
+                    {/* 윈도우 95 타이틀 바 */}
+                    <div style={{ 
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                        background: 'linear-gradient(to right, #000080, #1084d0)', 
+                        padding: '4px 8px', marginBottom: '10px',
+                        fontFamily: "'DOSGothic', sans-serif"
+                    }}>
+                        <h5 style={{ margin: 0, color: 'white', fontSize: '14px', fontWeight: 'bold' }}>
+                            Scene Preview: 컷 {previewScenario.index + 1}
+                        </h5>
+                        <button onClick={() => { setShowPreview(false); setPreviewScenario(null); }} 
+                            style={{ 
+                                background: '#c0c0c0', 
+                                borderTop: '2px solid #fff', borderLeft: '2px solid #fff', 
+                                borderRight: '2px solid #000', borderBottom: '2px solid #000', 
+                                color: '#000', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold', 
+                                padding: '1px 6px', fontFamily: "'DOSGothic', sans-serif"
+                            }}>
+                            X
+                        </button>
                     </div>
                     
-                    <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', backgroundColor: '#000', borderRadius: '8px', overflow: 'hidden', containerType: 'size' }}>
+                    {/* 모니터 액정 부분 (Inset 베벨) */}
+                    <div style={{ 
+                        position: 'relative', width: '100%', aspectRatio: '16/9', backgroundColor: '#000', 
+                        overflow: 'hidden', containerType: 'size',
+                        borderTop: '3px solid #808080', borderLeft: '3px solid #808080', 
+                        borderRight: '3px solid #fff', borderBottom: '3px solid #fff'
+                    }}>
                         
                         {/* 🚨 엔딩 타입 렌더링 분기 */}
                         {previewScenario.type === 'ending' ? (
@@ -405,8 +436,8 @@ export default function StepEventEditor() {
                                         </div>
                                     </div>
                                 )}
+                                
                                 {/* ⭐ 반응형 네임칸 적용 (우측 고정, 좌측 확장) */}
-{/* ⭐ 반응형 네임칸 적용 (우측 고정, 좌측 확장) */}
                                 {previewScenario.speaker && !isNarration && (
                                     <div style={{
                                         position: 'absolute', 
