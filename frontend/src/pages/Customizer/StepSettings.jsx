@@ -196,8 +196,7 @@ const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOption
                 <div style={{ flex: 1, minWidth: '150px' }}>
                     <label className="input-label">폰트</label>
                     <select className="theme-select" value={fontStyle.font} onChange={(e) => onUpdate({ font: e.target.value })}>
-                        {fontOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.name}</option>)}
-                    </select>
+                    {fontOptions.map((opt, index) => <option key={`${opt.value}-${index}`} value={opt.value}>{opt.name}</option>)}                    </select>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
                     <div><label className="input-label">글자색</label><input type="color" value={parseRgba(fontStyle.color).hex} onChange={(e) => onUpdate({ color: e.target.value })} style={{ width: '30px', height: '30px' }} /></div>
@@ -496,12 +495,22 @@ export default function StepSettings() {
         else setCharacters(characters.map(char => char.id === targetId ? { ...char, images: [...char.images, ...newImageData] } : char));
     };
 
+    // StepSettings.jsx의 handleFontUpload 함수 수정
     const handleFontUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
+
+        const fontName = file.name.split('.')[0];
+
+        // 🌟 추가: 이미 등록된 폰트인지 검사
+        if (customFonts.some(f => f.name === fontName)) {
+            alert(`'${fontName}' 폰트는 이미 등록되어 있습니다.`);
+            e.target.value = ''; // input 초기화
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = (event) => {
-            const fontName = file.name.split('.')[0];
             const fontUrl = event.target.result;
             const newFont = new FontFace(fontName, `url(${fontUrl})`);
             newFont.load().then((loadedFont) => {
@@ -570,8 +579,7 @@ export default function StepSettings() {
                     <div style={{ flex: 1, minWidth: '200px' }}>
                         <label style={{ fontSize: '13px', fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>🔤 시스템 기본 폰트</label>
                         <select style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ced4da' }} value={currentGlobalUi.systemFont} onChange={(e) => safeSetGlobalUi({ systemFont: e.target.value })}>
-                            {fontOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.name}</option>)}
-                        </select>
+                        {fontOptions.map((opt, index) => <option key={`${opt.value}-${index}`} value={opt.value}>{opt.name}</option>)}                        </select>
                     </div>
                     <div style={{ flex: 1, minWidth: '200px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>

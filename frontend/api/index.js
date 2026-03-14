@@ -64,35 +64,42 @@ app.post('/api/projects/login', async (req, res) => {
 // --------------------------------------------------------
 // ⭐ [API 3] 프론트엔드에게 R2 업로드 입장권(Presigned URL) 발급해주기
 // --------------------------------------------------------
+
 app.post('/api/projects/presigned', async (req, res) => {
     try {
         const { projectId, filesInfo } = req.body; 
+        
+        // ⭐ 1. 프론트엔드에서 도대체 뭘 보냈는지 로그로 낱낱이 확인합니다!
+        console.log(`🎫 [${projectId}] 입장권 요청 받음.`);
+        console.log(`📦 전달받은 파일 목록:`, JSON.stringify(filesInfo, null, 2));
+
         if (!projectId || !filesInfo) return res.status(400).json({ message: "데이터가 부족합니다." });
 
         const urls = await Promise.all(filesInfo.map(async (file) => {
-            // 한글이나 특수문자 깨짐을 막기 위해 원본 이름의 띄어쓰기만 _로 치환
-            const safeFileName = file.name.replace(/\s+/g, '_');
-            const fullPath = `${projectId}/${safeFileName}`; // Date.now() 제거하여 덮어쓰기 유도
+            // ⭐ 2. 만약 file.name이 없다면 임시 이름을 부여해서 서버가 죽는 걸 막습니다.
+            const originalName = file.name || `unknown_file_${Date.now()}`;
+            const safeFileName = originalName.replace(/\s+/g, '_');
+            const fullPath = `${projectId}/${safeFileName}`;
 
             const command = new PutObjectCommand({
                 Bucket: process.env.R2_BUCKET_NAME,
                 Key: fullPath,
-                ContentType: file.type, // "image/png" 등을 명시
+                ContentType: file.type || 'application/octet-stream', // 타입이 없으면 기본값 설정
             });
 
-            // 1시간 동안 유효한 R2 업로드 전용 URL 생성
             const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
             const finalUrl = `${process.env.R2_PUBLIC_DOMAIN}/${fullPath}`;
 
-            return { originalName: file.name, uploadUrl, finalUrl };
+            // 원래 이름(originalName)을 반환해야 프론트엔드가 urlMap을 제대로 만듭니다.
+            return { originalName: originalName, uploadUrl, finalUrl }; 
         }));
 
         res.status(200).json({ urls });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error("❌ Presigned URL 생성 중 진짜 에러 발생:", error); 
+        res.status(500).json({ message: error.message, stack: error.stack });
     }
 });
-
 // --------------------------------------------------------
 // [API 4] 통합 저장 (텍스트 JSON과 urlMap만 받아서 클라우드에 저장)
 // --------------------------------------------------------
