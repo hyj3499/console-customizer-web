@@ -1,19 +1,51 @@
-import { useState, useRef } from 'react';
+// src/pages/Customizer/StepStartMenu.jsx
+import { useRef } from 'react';
 import useCustomizerStore from '../../store/useCustomizerStore';
+import './StepStartMenu.css';
 
-// 프리셋 배경 이미지 (예시)
 const PRESET_BG = [
     { name: '로맨틱 핑크', url: 'https://via.placeholder.com/1920x1080/ffb6c1/ffffff?text=Romantic+Pink' },
     { name: '미스테리 블루', url: 'https://via.placeholder.com/1920x1080/2c3e50/ffffff?text=Mystery+Blue' }
 ];
 
 export default function StepStartMenu() {
-    const { startMenu, setStartMenu, globalUi, customFonts } = useCustomizerStore();
+const { startMenu, setStartMenu, globalUi, customFonts } = useCustomizerStore();
     const fileInputRef = useRef(null);
 
+    // ⭐ 튼튼한 방어 코드: 만약 옛날 데이터라 title/menu가 없으면 기본값을 억지로 쥐여줍니다.
+    const title = startMenu.title || { text: '나만의 시뮬레이션', x: 50, y: 30, fontSize: 8, color: '#ffffff', font: '', useOutline: true, outlineColor: '#000000' };
+    const menu = startMenu.menu || { x: 50, y: 75, fontSize: 4, color: '#ffffff', font: '', useOutline: true, outlineColor: '#000000', bgColor: '#000000', bgOpacity: 0.5, padding: 20, borderRadius: 8 };
+
     // --------------------------------------------------------
-    // 🖼️ 1920x1080 리사이징 로직
+    // 1. 유틸리티 및 헬퍼 함수
     // --------------------------------------------------------
+    const fontOptions = [
+        { name: '시스템 폰트 사용', value: '' },
+        { name: 'Pretendard', value: 'Pretendard' }, 
+        { name: '둥근모꼴', value: 'DungGeunMo' }, 
+        ...customFonts.map(f => ({ name: `📁 ${f.name}`, value: f.name }))
+    ];
+
+    const getFontFamily = (selectedFont) => selectedFont || globalUi.systemFont || 'sans-serif';
+    
+    const getTextShadow = (useOutline, outlineColor) => {
+        if (!useOutline) return 'none';
+        return `-1px -1px 0 ${outlineColor}, 1px -1px 0 ${outlineColor}, -1px 1px 0 ${outlineColor}, 1px 1px 0 ${outlineColor}, 0px 4px 10px rgba(0,0,0,0.5)`;
+    };
+
+    const hexToRgba = (hex, opacity) => {
+        const r = parseInt(hex.slice(1, 3), 16) || 0;
+        const g = parseInt(hex.slice(3, 5), 16) || 0;
+        const b = parseInt(hex.slice(5, 7), 16) || 0;
+        return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    };
+
+    // --------------------------------------------------------
+    // 2. 이벤트 핸들러
+    // --------------------------------------------------------
+    const updateTitle = (updates) => setStartMenu({ title: { ...title, ...updates } });
+    const updateMenu = (updates) => setStartMenu({ menu: { ...menu, ...updates } });
+
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -24,115 +56,215 @@ export default function StepStartMenu() {
             img.src = event.target.result;
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                canvas.width = 1920;
-                canvas.height = 1080;
+                canvas.width = 1920; canvas.height = 1080;
                 const ctx = canvas.getContext('2d');
-                // 비율 무시하고 꽉 채우기 (커스터마이저 요구사항)
                 ctx.drawImage(img, 0, 0, 1920, 1080);
                 
-                canvas.toBlob((blob) => {
-                    const resizedFile = new File([blob], file.name, { type: 'image/jpeg' });
-                    const previewUrl = URL.createObjectURL(resizedFile);
-                    setStartMenu({ bgImage: { file: resizedFile, preview: previewUrl } });
-                }, 'image/jpeg', 0.9);
+                // ⭐ 해결: toDataURL을 사용하여 이미지를 Base64 문자열로 변환 (용량 최적화를 위해 jpeg 0.8 사용)
+                const base64DataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                
+                // file 객체는 제외하고 영구적인 base64 텍스트만 저장
+                setStartMenu({ bgImage: { preview: base64DataUrl } });
             };
         };
         reader.readAsDataURL(file);
     };
 
-    const updateMenu = (key, value) => {
-        setStartMenu({ [key]: { ...startMenu[key], ...value } });
+    // 💡 정중앙 정렬 체크박스 핸들러
+    const handleCenterCheck = (isTitle, checked) => {
+        if (checked) {
+            if (isTitle) updateTitle({ x: 50, y: 50 });
+            else updateMenu({ x: 50, y: 50 });
+        }
     };
 
     return (
-        <div style={{ padding: '20px', width: '100%', maxWidth: '1200px' }}>
-            <h2 className="section-title">Step 4. 시작 메뉴 커스텀</h2>
-            
-            <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
-                
-                {/* 📺 왼쪽: 실시간 미리보기 (16:9 비율 유지) */}
-                <div style={{ flex: 2, minWidth: '600px' }}>
-                    <div style={{ 
-                        position: 'relative', 
-                        width: '100%', 
-                        aspectRatio: '16/9', 
-                        backgroundColor: '#000',
-                        backgroundImage: `url(${startMenu.bgImage?.preview || PRESET_BG[0].url})`,
-                        backgroundSize: 'cover',
-                        borderRadius: '8px',
-                        overflow: 'hidden',
-                        border: '4px solid #333'
+        <div className="startmenu-container">
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <h2 className="section-title" style={{ marginBottom: '5px' }}>타이틀 화면 (시작 메뉴) 디자인</h2>
+                <p className="section-desc" style={{ margin: 0 }}>게임 접속 시 가장 먼저 보이는 화면을 꾸며주세요.</p>
+            </div>
+
+            {/* 📺 윈도우 95 스타일 미리보기 */}
+            <div className="win95-monitor-wrap">
+                <div className="win95-title-bar">
+                    <h5>📺 Start Menu Preview</h5>
+                    <div style={{ display: 'flex', gap: '2px' }}>
+                        <span style={{ width: '12px', height: '12px', background: '#c0c0c0', border: '1px solid #fff', borderRightColor: '#000', borderBottomColor: '#000' }}></span>
+                        <span style={{ width: '12px', height: '12px', background: '#c0c0c0', border: '1px solid #fff', borderRightColor: '#000', borderBottomColor: '#000' }}></span>
+                        <button style={{ background: '#c0c0c0', borderTop: '1px solid #fff', borderLeft: '1px solid #fff', borderRight: '1px solid #000', borderBottom: '1px solid #000', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}>X</button>
+                    </div>
+                </div>
+
+                <div className="monitor-screen">
+                    <img src={startMenu.bgImage?.preview || PRESET_BG[0].url} alt="bg" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+
+                    {/* 타이틀 */}
+                    <div style={{
+                        position: 'absolute', left: `${title.x}%`, top: `${title.y}%`, transform: 'translate(-50%, -50%)',
+                        fontFamily: getFontFamily(title.font), fontSize: `${title.fontSize}cqh`, color: title.color,
+                        textShadow: getTextShadow(title.useOutline, title.outlineColor), fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'center', zIndex: 10
                     }}>
-                        {/* 🕹️ 메뉴 버튼 박스 */}
-                        <div style={{
-                            position: 'absolute',
-                            left: `${startMenu.menuPos.x}%`,
-                            top: `${startMenu.menuPos.y}%`,
-                            transform: 'translate(-50%, -50%)',
-                            backgroundColor: startMenu.boxStyle.color,
-                            padding: `${startMenu.boxStyle.padding}px`,
-                            borderRadius: `${startMenu.boxStyle.borderRadius}px`,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '10px',
-                            alignItems: 'center',
-                            border: startMenu.boxStyle.frame === 'simple' ? '2px solid white' : 'none'
-                        }}>
-                            {['NEW GAME', 'LOAD', 'EXIT'].map(text => (
-                                <span key={text} style={{
-                                    fontFamily: globalUi.systemFont,
-                                    fontSize: `${startMenu.textStyle.fontSize}px`,
-                                    color: startMenu.textStyle.color,
-                                    fontWeight: 'bold',
-                                    cursor: 'pointer'
-                                }}>{text}</span>
-                            ))}
-                        </div>
+                        {title.text || "타이틀을 입력하세요"}
+                    </div>
+
+                    {/* 메뉴 박스 */}
+                    <div style={{
+                        position: 'absolute', left: `${menu.x}%`, top: `${menu.y}%`, transform: 'translate(-50%, -50%)',
+                        backgroundColor: hexToRgba(menu.bgColor, menu.bgOpacity), padding: `${menu.padding / 10}cqw`, 
+                        borderRadius: `${menu.borderRadius}px`, display: 'flex', flexDirection: 'column', gap: '2cqh', alignItems: 'center',
+                        border: menu.useOutline ? `2px solid ${menu.outlineColor}` : 'none', zIndex: 10
+                    }}>
+                        {['NEW GAME', 'LOAD', 'EXIT'].map(text => (
+                            <span key={text} style={{ fontFamily: getFontFamily(menu.font), fontSize: `${menu.fontSize}cqh`, color: menu.color, textShadow: getTextShadow(menu.useOutline, menu.outlineColor), fontWeight: 'bold', cursor: 'pointer', transition: '0.2s' }}>
+                                {text}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* 🎛️ 컨트롤 패널 */}
+            <div className="control-grid">
+                
+                {/* 배경 설정 */}
+                <div className="control-card">
+                    <h4 className="control-card-title">🖼️ 배경 이미지 설정</h4>
+                    <div className="bg-thumbnail-list">
+                        {PRESET_BG.map(bg => (
+                            <img key={bg.name} src={bg.url} className="bg-thumbnail" title={bg.name} onClick={() => setStartMenu({ bgImage: { file: null, preview: bg.url } })} />
+                        ))}
+                        <div style={{ borderLeft: '1px solid #dee2e6', margin: '0 10px' }}></div>
+                        <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} style={{ display: 'none' }} />
+                        <button onClick={() => fileInputRef.current.click()} style={{ height: '45px', padding: '0 15px', border: '1px dashed #adb5bd', background: '#f8f9fa', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', color: '#495057' }}>+ 내 PC에서 업로드</button>
                     </div>
                 </div>
 
-                {/* ⚙️ 오른쪽: 설정창 */}
-                <div style={{ flex: 1, minWidth: '300px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {/* 타이틀 설정 */}
+                <div className="control-card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '2px solid #e9ecef', paddingBottom: '10px' }}>
+                        <h4 className="control-card-title" style={{ margin: 0, border: 'none', padding: 0 }}>✨ 타이틀 (게임 제목) 설정</h4>
+                        {/* 💡 타이틀 정중앙 체크박스 */}
+                        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#495057' }}>
+                            <input type="checkbox" checked={title.x === 50 && title.y === 50} onChange={(e) => handleCenterCheck(true, e.target.checked)} /> 🎯 화면 정중앙 배치
+                        </label>
+                    </div>
                     
-                    {/* 배경 선택 */}
-                    <div className="settings-card">
-                        <label className="input-label">🖼️ 배경 이미지</label>
-                        <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                            {PRESET_BG.map(bg => (
-                                <img key={bg.name} src={bg.url} style={{ width: '60px', height: '34px', cursor: 'pointer', border: '2px solid #ddd' }} 
-                                     onClick={() => setStartMenu({ bgImage: { file: null, preview: bg.url } })} />
-                            ))}
+                    <div className="form-row">
+                        <div className="form-group" style={{ flex: 2 }}>
+                            <label className="form-label">게임 제목 텍스트</label>
+                            <input type="text" className="form-input" value={title.text} onChange={(e) => updateTitle({ text: e.target.value })} />
                         </div>
-                        <input type="file" onChange={handleImageUpload} />
-                    </div>
-
-                    {/* 위치 조절 */}
-                    <div className="settings-card">
-                        <label className="input-label">📍 메뉴 위치 (X / Y)</label>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                            <input type="range" min="0" max="100" value={startMenu.menuPos.x} onChange={(e) => setStartMenu({ menuPos: { ...startMenu.menuPos, x: e.target.value } })} />
-                            <input type="range" min="0" max="100" value={startMenu.menuPos.y} onChange={(e) => setStartMenu({ menuPos: { ...startMenu.menuPos, y: e.target.value } })} />
+                        <div className="form-group">
+                            <label className="form-label">적용 폰트</label>
+                            <select className="form-input" value={title.font} onChange={(e) => updateTitle({ font: e.target.value })}>
+                                {fontOptions.map((opt, i) => <option key={i} value={opt.value}>{opt.name}</option>)}
+                            </select>
                         </div>
                     </div>
-
-                    {/* 박스 스타일 */}
-                    <div className="settings-card">
-                        <label className="input-label">📦 박스 스타일 (색상/불투명도)</label>
-                        <input type="color" onChange={(e) => {
-                            const hex = e.target.value;
-                            updateMenu('boxStyle', { color: hex + '80' }); // 기본 불투명도 50%
-                        }} />
-                        <label className="input-label">박스 둥글기</label>
-                        <input type="number" value={startMenu.boxStyle.borderRadius} onChange={(e) => updateMenu('boxStyle', { borderRadius: e.target.value })} />
+                    
+                    <div className="form-row" style={{ borderTop: '1px dashed #e9ecef', paddingTop: '15px' }}>
+                        <div className="form-group">
+                            {/* 💡 타이틀 X 위치 수치 표시 */}
+                            <label className="form-label">위치 좌우 (X: {title.x}%)</label>
+                            <input type="range" min="0" max="100" value={title.x} onChange={(e) => updateTitle({ x: Number(e.target.value) })} />
+                        </div>
+                        <div className="form-group">
+                            {/* 💡 타이틀 Y 위치 수치 표시 */}
+                            <label className="form-label">위치 상하 (Y: {title.y}%)</label>
+                            <input type="range" min="0" max="100" value={title.y} onChange={(e) => updateTitle({ y: Number(e.target.value) })} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">글자 크기 ({title.fontSize})</label>
+                            <input type="range" min="2" max="20" step="0.5" value={title.fontSize} onChange={(e) => updateTitle({ fontSize: Number(e.target.value) })} />
+                        </div>
                     </div>
 
-                    {/* 텍스트 스타일 */}
-                    <div className="settings-card">
-                        <label className="input-label">✍️ 텍스트 크기 & 색상</label>
-                        <input type="number" value={startMenu.textStyle.fontSize} onChange={(e) => updateMenu('textStyle', { fontSize: e.target.value })} />
-                        <input type="color" value={startMenu.textStyle.color} onChange={(e) => updateMenu('textStyle', { color: e.target.value })} />
+                    <div className="form-row">
+                        <div className="form-group" style={{ flex: 'unset', width: '120px' }}>
+                            <label className="form-label">글자 색상</label>
+                            <input type="color" className="color-circle" value={title.color} onChange={(e) => updateTitle({ color: e.target.value })} />
+                        </div>
+                        <div className="form-group" style={{ flex: 'unset', width: '180px' }}>
+                            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <input type="checkbox" checked={title.useOutline} onChange={(e) => updateTitle({ useOutline: e.target.checked })} /> 
+                                글자 외곽선 (그림자)
+                            </label>
+                            {title.useOutline && <input type="color" className="color-circle" value={title.outlineColor} onChange={(e) => updateTitle({ outlineColor: e.target.value })} />}
+                        </div>
                     </div>
                 </div>
+
+                {/* 메뉴 박스 설정 */}
+                <div className="control-card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '2px solid #e9ecef', paddingBottom: '10px' }}>
+                        <h4 className="control-card-title menu-color" style={{ margin: 0, border: 'none', padding: 0 }}>🕹️ 메뉴 디자인</h4>
+                        {/* 💡 메뉴 정중앙 체크박스 */}
+                        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#495057' }}>
+                            <input type="checkbox" checked={menu.x === 50 && menu.y === 50} onChange={(e) => handleCenterCheck(false, e.target.checked)} /> 🎯 화면 정중앙 배치
+                        </label>
+                    </div>
+
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label className="form-label">적용 폰트</label>
+                            <select className="form-input" value={menu.font} onChange={(e) => updateMenu({ font: e.target.value })}>
+                                {fontOptions.map((opt, i) => <option key={i} value={opt.value}>{opt.name}</option>)}
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">글자 크기 ({menu.fontSize})</label>
+                            <input type="range" min="1" max="10" step="0.5" value={menu.fontSize} onChange={(e) => updateMenu({ fontSize: Number(e.target.value) })} />
+                        </div>
+                    </div>
+
+                    <div className="form-row" style={{ borderTop: '1px dashed #e9ecef', paddingTop: '15px' }}>
+                        <div className="form-group">
+                            {/* 💡 메뉴 X 위치 수치 표시 */}
+                            <label className="form-label">위치 좌우 (X: {menu.x}%)</label>
+                            <input type="range" min="0" max="100" value={menu.x} onChange={(e) => updateMenu({ x: Number(e.target.value) })} />
+                        </div>
+                        <div className="form-group">
+                            {/* 💡 메뉴 Y 위치 수치 표시 */}
+                            <label className="form-label">위치 상하 (Y: {menu.y}%)</label>
+                            <input type="range" min="0" max="100" value={menu.y} onChange={(e) => updateMenu({ y: Number(e.target.value) })} />
+                        </div>
+                    </div>
+
+                    <div className="form-row" style={{ borderTop: '1px dashed #e9ecef', paddingTop: '15px' }}>
+                        <div className="form-group">
+                            <label className="form-label">글자 색상</label>
+                            <input type="color" className="color-circle" value={menu.color} onChange={(e) => updateMenu({ color: e.target.value })} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">박스 배경색</label>
+                            <input type="color" className="color-circle" value={menu.bgColor} onChange={(e) => updateMenu({ bgColor: e.target.value })} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">박스 불투명도 ({(menu.bgOpacity * 100).toFixed(0)}%)</label>
+                            <input type="range" min="0" max="1" step="0.05" value={menu.bgOpacity} onChange={(e) => updateMenu({ bgOpacity: Number(e.target.value) })} />
+                        </div>
+                    </div>
+
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label className="form-label">박스 여백 ({menu.padding})</label>
+                            <input type="range" min="0" max="100" value={menu.padding} onChange={(e) => updateMenu({ padding: Number(e.target.value) })} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">박스 둥글기 ({menu.borderRadius})</label>
+                            <input type="range" min="0" max="50" value={menu.borderRadius} onChange={(e) => updateMenu({ borderRadius: Number(e.target.value) })} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <input type="checkbox" checked={menu.useOutline} onChange={(e) => updateMenu({ useOutline: e.target.checked })} /> 
+                                박스 및 글자 외곽선
+                            </label>
+                            {menu.useOutline && <input type="color" className="color-circle" value={menu.outlineColor} onChange={(e) => updateMenu({ outlineColor: e.target.value })} />}
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     );

@@ -1,0 +1,135 @@
+/* src/pages/Customizer/StepEventEditor.css */
+
+/* =========================================================
+   1. 전체 레이아웃 & 토글
+   ========================================================= */
+.editor-container { width: 100%; max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.preview-toggle-wrap { display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
+.toggle-switch-label { position: relative; display: inline-block; width: 50px; height: 24px; }
+.toggle-switch-bg { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; border-radius: 24px; transition: .4s; }
+.toggle-switch-knob { position: absolute; height: 16px; width: 16px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+
+/* =========================================================
+   2. 인게임 미리보기 윈도우 (Win 95 스타일)
+   ========================================================= */
+.sticky-win95-preview {
+    position: sticky; top: 10px; z-index: 100;
+    background-color: #c0c0c0; padding: 3px;
+    border-top: 2px solid #fff; border-left: 2px solid #fff;
+    border-right: 2px solid #000; border-bottom: 2px solid #000;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+}
+.win95-preview-title {
+    display: flex; justify-content: space-between; align-items: center;
+    background: linear-gradient(to right, #000080, #1084d0);
+    padding: 4px 8px; margin-bottom: 10px; font-family: 'DOSGothic', sans-serif;
+}
+.win95-preview-title h5 { margin: 0; color: white; font-size: 14px; font-weight: bold; }
+.win95-close-btn {
+    background: #c0c0c0; color: #000; font-size: 12px; cursor: pointer; font-weight: bold;
+    padding: 1px 6px; font-family: 'DOSGothic', sans-serif;
+    border-top: 2px solid #fff; border-left: 2px solid #fff; border-right: 2px solid #000; border-bottom: 2px solid #000;
+}
+.win95-preview-monitor {
+    position: relative; width: 100%; aspect-ratio: 16/9; background-color: #000;
+    overflow: hidden; container-type: size;
+    border-top: 3px solid #808080; border-left: 3px solid #808080;
+    border-right: 3px solid #fff; border-bottom: 3px solid #fff;
+}
+
+/* =========================================================
+   3. 이벤트 탭 네비게이션
+   ========================================================= */
+.event-tabs-wrap { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; border-bottom: 2px solid #eee; }
+.event-tab { position: relative; display: flex; }
+.event-tab-btn {
+    padding: 10px 30px 10px 20px; border-radius: 8px 8px 0 0; border: none; cursor: pointer; white-space: nowrap; font-weight: bold;
+}
+.event-tab-btn.active { background-color: #1971c2; color: white; }
+.event-tab-btn.inactive { background-color: #e9ecef; color: #495057; }
+.event-tab-del { position: absolute; right: 5px; top: 10px; background: none; border: none; cursor: pointer; font-weight: bold; }
+.event-add-btn { padding: 10px 20px; border-radius: 8px 8px 0 0; border: 2px dashed #adb5bd; background-color: transparent; cursor: pointer; color: #495057; font-weight: bold; }
+
+/* =========================================================
+   4. 에디터 본문 및 공통 UI
+   ========================================================= */
+.editor-main-area { background-color: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #dee2e6; border-top: none; }
+.config-panel { margin-bottom: 30px; padding: 20px; background-color: #fff; border-radius: 8px; border: 1px solid #ced4da; display: flex; flex-wrap: wrap; gap: 30px; }
+.config-title { margin: 0 0 10px 0; color: #495057; }
+
+/* 시나리오 카드 리스트 */
+.scenario-list { display: flex; flex-direction: column; gap: 15px; }
+.scenario-card { padding: 15px; background-color: #fff; border-radius: 8px; display: flex; gap: 15px; border: 1px solid #ced4da; transition: all 0.2s; }
+.scenario-card.branch-option1 { margin-left: 20px; }
+.scenario-card.branch-option2 { margin-left: 40px; }
+.scenario-card.is-cg { border: 2px solid #845ef7; }
+.scenario-card.preview-active { border: 3px solid #ff6b6b; box-shadow: 0 0 10px rgba(255,107,107,0.4); cursor: pointer; }
+.scenario-card.type-ending { background-color: #212529; border-color: #343a40; flex-direction: column; align-items: center; }
+.scenario-card.type-cg-banner { border: 3px dashed #845ef7; background-color: #f3f0ff; text-align: center; flex-direction: column; align-items: center; }
+
+/* 시나리오 카드 내부 디자인 */
+.scenario-sidebar { width: 90px; border-right: 1px dashed #dee2e6; padding-right: 10px; display: flex; flex-direction: column; align-items: center; }
+.scenario-main { flex: 1; }
+.scenario-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+.badge { font-size: 11px; color: white; padding: 2px 6px; border-radius: 4px; }
+.badge.opt1 { background: #40c057; }
+.badge.opt2 { background: #fd7e14; }
+.badge.cg { background: #845ef7; }
+.btn-text-del { background: none; border: none; color: #fa5252; cursor: pointer; font-weight: bold; }
+
+/* 입력창 및 페이스 셀렉터 */
+.input-base { padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+.face-panel { flex: 1; padding: 10px; background-color: #f1f3f5; border-radius: 6px; }
+.face-list { display: flex; gap: 5px; overflow-x: auto; padding: 5px 0; }
+.face-img { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid #ccc; }
+.face-img.active-p { border-color: #1971c2; border-width: 3px; }
+.face-img.active-h { border-color: #d6336c; border-width: 3px; }
+
+/* 하단 컨트롤러 버튼 */
+.controller-group { display: flex; gap: 10px; margin-top: 20px; }
+.btn-large { flex: 1; padding: 12px; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-align: center; }
+.bg-blue { background-color: #339af0; }
+.bg-green { background-color: #40c057; }
+.bg-orange { background-color: #fd7e14; }
+.bg-purple { background-color: #845ef7; }
+.bg-indigo { background-color: #5c7cfa; }
+.bg-gray { background-color: #adb5bd; }
+.btn-ending { flex: 1; padding: 12px; background-color: #212529; color: #ffd43b; border: 2px dashed #ffd43b; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+/* =========================================================
+   5. 인게임 미리보기 절대좌표 및 반응형 UI
+   ========================================================= */
+.ig-calendar-group { position: absolute; left: 13.02%; top: 4.63%; display: flex; align-items: center; gap: 1.3cqw; z-index: 11; }
+.ig-calendar-box { width: 7.81cqw; height: 7.81cqw; display: flex; align-items: center; justify-content: center; background-size: 100% 100%; }
+.ig-calendar-text { display: flex; flex-direction: column; gap: 0.8cqh; }
+
+.ig-portrait-area { position: absolute; left: 13.02%; top: 72.22%; width: 13.02%; height: 23.15%; z-index: 10; overflow: visible; }
+/* 달력 안의 큰 숫자 (12 등) */
+.ig-calendar-box span {
+    font-size: 5cqh;
+}
+
+/* 오른쪽 DATE: / TIME: 글자들 */
+.ig-calendar-text span {
+    font-size: 3cqh;
+}
+.ig-namebox { 
+    position: absolute; 
+    left: 27.6%; 
+    top: 66.66%; 
+    z-index: 11; 
+    background-size: 100% 100%;
+    
+    /* 반응형 핵심 코드 */
+    width: fit-content; 
+    min-width: 150px; 
+    height: 4.63%; 
+    padding: 10px 30px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.ig-dialogbox { position: absolute; left: 27.6%; top: 72.22%; width: 57.3%; height: 23.15%; padding: 3cqh 4cqw; box-sizing: border-box; z-index: 11; background-size: 100% 100%; }

@@ -48,7 +48,7 @@ export default function Customizer() {
     const store = useCustomizerStore();
     const { 
         setEvents, setProtagonist, setCharacters, setPFontStyle, 
-        setGlobalUi, setStartMenu, addCustomFont 
+        setGlobalUi, setStartMenu, addCustomFont, resetStore
     } = store;
 
     // --------------------------------------------------------
@@ -146,6 +146,7 @@ export default function Customizer() {
         try {
             const result = await saveProjectToServer(newId, newPw);
             if (result.success) {
+                resetStore();
                 alert('🎉 새 프로젝트가 생성되었습니다!');
                 setShowAuthPopup(false);
                 setCurrentStep(2);

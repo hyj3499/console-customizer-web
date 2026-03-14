@@ -142,7 +142,10 @@ app.post('/api/projects/save', async (req, res) => {
                 if (char.images) char.images = char.images.map(replaceUrl);
             });
         }
-
+        //추가
+        if (parsedData.startMenu && parsedData.startMenu.bgImage) {
+                parsedData.startMenu.bgImage = replaceUrl(parsedData.startMenu.bgImage);
+            }
         // JSON 및 HTML 저장
         const jsonBuffer = Buffer.from(JSON.stringify(parsedData, null, 2), 'utf-8');
         await s3.send(new PutObjectCommand({ 
