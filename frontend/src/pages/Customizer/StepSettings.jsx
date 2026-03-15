@@ -405,33 +405,46 @@ const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOption
  * 📺 인게임 미리보기 화면 (타이핑 애니메이션 포함)
  */
 const InGamePreview = ({ previewBg, standingImg, currentGlobalUi, textShadowStr, isP, pAsset, nAsset, dAsset, cAsset, activeStyle, renderFontFamily, activeChar, protagonist }) => {
-  const charName = activeChar?.name || (isP ? '주인공' : '등장인물');
-  const fullText = `"${charName}의 대사가 이곳에 출력됩니다. 설정한 타이핑 속도로 한 글자씩 표시됩니다!"`;
+const charName = activeChar?.name || (isP ? (protagonist?.name || '주인공') : '등장인물');
+  const fullText = `현재 선택된 '${charName}' 캐릭터의 대사가 이곳에 출력됩니다. 선택한 폰트, 대사창의 색상과 투명도, 그리고 텍스트 외곽선 설정이 실제 게임에서 어떻게 보일지 이 미리보기 영역을 통해 실시간으로 체크해 보세요.`;
+  
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(true);
 
-  // 시각적 타이핑 애니메이션 효과 (반복 재생)
-  useEffect(() => {
-    if (!isTyping) return;
-    let currentIndex = 0;
+  // 2. ⭐ 타이핑 로직 수정 (핵심 부분)
+useEffect(() => {
+  setDisplayedText(""); 
+  setIsTyping(true);
+  
+  let currentIndex = 0;
+  let waitCount = 0;       // 다 치고 나서 대기하는 시간을 계산하기 위한 변수
+  const WAIT_TIME = 30;    // 다 치고 나서 약 1.5초간 대기 (50ms * 30)
 
-    const typingInterval = setInterval(() => {
-      if (currentIndex < fullText.length) {
-        setDisplayedText((prev) => prev + fullText[currentIndex]);
-        currentIndex++;
-      } else {
-        clearInterval(typingInterval);
-        setIsTyping(false);
-        // 타이핑 종료 3초 후 다시 초기화하여 반복 재생
-        setTimeout(() => {
-          setDisplayedText("");
-          setIsTyping(true);
-        }, 3000);
+  const timer = setInterval(() => {
+    // 1. 아직 타이핑 중일 때
+    if (currentIndex < fullText.length) {
+      const nextText = fullText.slice(0, currentIndex + 1);
+      setDisplayedText(nextText);
+      currentIndex++;
+    } 
+    // 2. 글자를 다 쳤을 때 (루프 시작)
+    else {
+      setIsTyping(false); // 타이핑 중이 아님을 표시 (필요 시 애니메이션 멈춤용)
+      waitCount++;
+
+      // 정해진 대기 시간이 지나면 다시 초기화
+      if (waitCount > WAIT_TIME) {
+        currentIndex = 0;
+        waitCount = 0;
+        setDisplayedText("");
+        setIsTyping(true);
       }
-    }, 50);
+    }
+  }, 50);
 
-    return () => clearInterval(typingInterval);
-  }, [isTyping, fullText]);
+  return () => clearInterval(timer);
+}, [fullText]);
+
 
   // 동적 스타일링 계산
   const finalDialogBorder = activeStyle.useDialogBorder === false ? 'none' : dAsset.border;

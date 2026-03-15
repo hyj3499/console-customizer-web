@@ -74,11 +74,9 @@
     height: 5.4cqh; 
     
     /* 2. 동적 너비 설정 */
-    width: fit-content; 
-    /* ❗ 중요: 고정 픽셀(px) 대신 비율(cqw) 사용 */
-    min-width: 12cqw;   /* 최소 너비 제한을 화면 너비의 12%로 */
-    padding: 0 2.5cqw;  /* 양옆 여백도 화면 너비의 2.5%로 */
-    
+    width: fit-content !important; 
+    min-width: 7cqw !important;  /* 1은 너무 작을 수 있으니 5~8 정도로 테스트 */
+    padding: 0 1cqw !important;
     /* 3. 정렬 및 넘침 방지 */
     display: flex; 
     align-items: center; 
