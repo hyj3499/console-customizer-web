@@ -8,7 +8,7 @@ const useCustomizerStore = create((set) => ({
         color: '',
         protagonist: { name: '', images: [] },
         pFontStyle: { 
-            font: '', color: '#ffffff', useOutline: false, outline: '#000000', 
+            font: 'Galmuri14', color: '#ffffff', useOutline: false, outline: '#000000', 
             dialogFrame: 'simple', dialogColor: 'rgba(255,182,193,0.8)', dialogBorderColor: '#dddddd', 
             nameFrame: 'simple', nameColor: 'rgba(255,182,193,0.8)', nameBorderColor: '#dddddd', 
             portraitStyle: 'square', portraitColor: '#ffffff', portraitBorderColor: '#dddddd',
@@ -16,7 +16,7 @@ const useCustomizerStore = create((set) => ({
         },
         globalUi: { 
             calendarFrame: 'retro', calendarColor: 'rgba(255,182,193,0.8)', calendarTextColor: '#5C4033',
-            calendarTextUseOutline: true, calendarTextOutlineColor: '#ffffff', systemFont: 'Pretendard', 
+            calendarTextUseOutline: true, calendarTextOutlineColor: '#ffffff', systemFont: 'Galmuri14', 
             cursor: 'default', saveLoadStyle: 'modern' 
         },
         customBackgrounds: [],
@@ -25,7 +25,7 @@ const useCustomizerStore = create((set) => ({
             { 
                 id: Date.now(), name: '', images: [], 
                 fontStyle: { 
-                    font: 'Pretendard', color: '#EBEBEB', useOutline: false, outline: '#000000',
+                    font: 'Galmuri14', color: '#EBEBEB', useOutline: false, outline: '#000000',
                     dialogFrame: 'simple', dialogColor: 'rgba(0,0,0,0.8)', nameFrame: 'simple', nameColor: 'rgba(0,0,0,0.8)'
                 } 
             }
@@ -72,7 +72,7 @@ const useCustomizerStore = create((set) => ({
 
     globalUi: { 
         calendarFrame: 'retro', calendarColor: 'rgba(255,182,193,0.8)', calendarTextColor: '#5C4033',
-        calendarTextUseOutline: true, calendarTextOutlineColor: '#ffffff', systemFont: 'Pretendard', 
+        calendarTextUseOutline: true, calendarTextOutlineColor: '#ffffff', systemFont: 'Galmuri14', 
         cursor: 'default', saveLoadStyle: 'modern' 
     },
     setGlobalUi: (ui) => set((state) => ({ globalUi: { ...state.globalUi, ...ui } })),
@@ -84,7 +84,7 @@ const useCustomizerStore = create((set) => ({
         { 
             id: Date.now(), name: '', images: [], 
             fontStyle: { 
-                font: 'Pretendard', color: '#EBEBEB', useOutline: false, outline: '#000000',
+                font: 'Galmuri14', color: '#EBEBEB', useOutline: false, outline: '#000000',
                 dialogFrame: 'simple', dialogColor: 'rgba(0,0,0,0.8)', nameFrame: 'simple', nameColor: 'rgba(0,0,0,0.8)'
             } 
         }

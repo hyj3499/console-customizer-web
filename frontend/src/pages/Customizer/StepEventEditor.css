@@ -48,9 +48,16 @@ div:has(> .editor-container) {
 }
 .win95-preview-title h5 { margin: 0; color: white; font-size: 14px; font-weight: bold; }
 .win95-close-btn {
-    background: #c0c0c0; color: #000; font-size: 12px; cursor: pointer; font-weight: bold;
+    background: #fa5252; /* 배경을 예쁜 빨간색으로 변경 */
+    color: #fff; /* X 글씨를 하얀색으로 변경 */
+    font-size: 12px; cursor: pointer; font-weight: bold;
     padding: 1px 6px; font-family: 'DOSGothic', sans-serif;
     border-top: 2px solid #fff; border-left: 2px solid #fff; border-right: 2px solid #000; border-bottom: 2px solid #000;
+}
+
+/* (선택사항) 마우스 올렸을 때 살짝 더 진해지게 하는 효과 */
+.win95-close-btn:hover {
+    background: #e03131; 
 }
 .win95-preview-monitor {
     position: relative; width: 100%; aspect-ratio: 16/9; background-color: #000;

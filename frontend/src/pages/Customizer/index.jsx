@@ -11,6 +11,8 @@ import StepEventEditor from './StepEventEditor';
 import StepStartMenu from './StepStartMenu'; // ✅ Step 4 컴포넌트 추가
 import useCustomizerStore from '../../store/useCustomizerStore';
 
+
+
 // 🎨 공통 UI 스타일 정의
 const STYLES = {
     label: { fontSize: '12px', fontWeight: 'bold', color: '#495057', marginBottom: '5px', display: 'block' },
@@ -18,6 +20,8 @@ const STYLES = {
     btnBase: { width: '100%', padding: '14px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '15px', marginTop: '15px', transition: 'all 0.2s' },
     overlay: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(4px)' }
 };
+
+
 
 // 💡 추가된 도우미 함수: 현재 시나리오가 엔딩으로 꽉 차있는지 검사합니다.
 const checkIsFullyEnded = (scenarios) => {
@@ -203,8 +207,23 @@ return (
         }}>
             
             {/* 상단 타이틀 (모바일에서도 글자가 잘리지 않도록 유동적 크기 적용) */}
-            <h1 style={{ color: 'white', textShadow: '2px 2px #000', marginBottom: '10px', fontSize: 'calc(1.5rem + 1vw)', textAlign: 'center' }}>
-                🎨 Codename: Choiae Customizer
+            <h1 style={{ 
+                color: 'white', 
+                textShadow: '2px 2px #000', 
+                marginBottom: '10px', 
+                fontSize: 'calc(1.5rem + 1vw)', 
+                textAlign: 'center',
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                gap: '20px' 
+            }}>
+                <img 
+                    src="/images/palette_icon.png" 
+                    alt="Icon" 
+                    style={{ height: '1em', verticalAlign: 'middle' }} 
+                />
+                게임 제작 에디터
             </h1>
             <div style={{ marginBottom: '3vw', color: '#ffff00', fontWeight: 'bold', fontSize: 'calc(1rem + 0.5vw)', textShadow: '1px 1px #000' }}>
                 Step {currentStep} / 5

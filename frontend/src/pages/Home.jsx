@@ -71,7 +71,7 @@ export default function Home() {
                 {/* ⭐ 진짜로 넘어가는 게임 실행 아이콘 (더블클릭!) */}
                 <DesktopIcon 
                     icon="🎮" 
-                    label="코드네임_최애.exe" 
+                    label="최애로운_생활.exe" 
                     onDoubleClick={() => navigate('/customizer')} 
                 />
             </div>
@@ -85,23 +85,23 @@ export default function Home() {
                 boxShadow: '2px 2px 10px rgba(0,0,0,0.5)' 
             }}>
                 <div className="win95-title-bar" style={{ display: 'flex', justifyContent: 'space-between', background: 'linear-gradient(to right, #000080, #1084d0)', padding: '4px 8px', color: 'white' }}>
-                    <span style={{ fontWeight: 'bold' }}>Setup.exe</span>
+                    <span style={{ fontWeight: 'bold' }}>최애로운_생활.exe</span>
                     <button className="win95-button" style={{ minWidth: 'auto', padding: '0 6px', fontWeight: 'bold' }}>X</button>
                 </div>
 
                 <div className="win95-window-inner" style={{ backgroundColor: '#c0c0c0', padding: '30px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <img src="/images/logo.png" alt="로고" style={{ width: '200px', marginBottom: '20px', imageRendering: 'pixelated' }} />
-                    <h2 style={{ fontSize: '18px', color: '#000', marginBottom: '10px' }}>콘솔 커스텀 설치 마법사</h2>
+                    <h2 style={{ fontSize: '18px', color: '#000', marginBottom: '10px' }}>커스텀 비쥬얼 노벨 게임 제작하기</h2>
                     <p style={{ fontSize: '13px', color: '#000', marginBottom: '30px', lineHeight: '1.5' }}>
-                        바탕화면의 [코드네임_최애.exe]를 더블클릭 하거나,<br/>
-                        아래 [설치 시작] 버튼을 눌러주십시오.
+                        바탕화면의 [최애로운_생활.exe]를 더블클릭 하거나,<br/>
+                        아래 [게임 제작] 버튼을 눌러주십시오.
                     </p>
                     <button 
                         className="win95-button" 
                         onClick={() => navigate('/customizer')} 
                         style={{ padding: '8px 25px', fontSize: '14px', fontWeight: 'bold' }}
                     >
-                        설치 시작(N) {'>'}
+                        게임 제작(N) {'>'}
                     </button>
                 </div>
             </div>
@@ -126,7 +126,7 @@ export default function Home() {
                         borderRight: '2px solid #fff', borderBottom: '2px solid #fff', 
                         backgroundColor: '#dfdfdf', height: '100%', fontWeight: 'bold', color: '#000', fontSize: '12px' 
                     }}>
-                        Setup.exe
+                        최애로운_생활.exe
                     </div>
                 </div>
 

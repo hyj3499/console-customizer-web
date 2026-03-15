@@ -72,6 +72,18 @@ export default function StepEventEditor() {
     const scenarios = activeEvent.scenarios;
     const hasChoiceNode = scenarios.some(s => s.type === 'choice');
 
+    // ⭐ [여기에 아래 7줄을 통째로 추가해 주세요!] ⭐
+    useEffect(() => {
+        if (hasChoiceNode) {
+            // 1번 루트 엔딩이 있거나, 2번 루트 대사가 이미 하나라도 있다면 무조건 2번 루트로 복구!
+            const hasOpt2 = scenarios.some(s => s.branch === 'option2'); 
+            const opt1Ended = scenarios.some(s => s.branch === 'option1' && s.type === 'ending');
+            
+            setCurrentBranch((hasOpt2 || opt1Ended) ? 'option2' : 'option1');
+        } else {
+            setCurrentBranch('main');
+        }
+    }, [activeEventId]); // 이벤트 탭을 바꿀 때마다 새로 갱신되도록 추가
     const defaultSpeaker = 'PROTAGONIST'; 
     const displayProtagonistName = protagonist.name || '주인공';
 
@@ -497,10 +509,24 @@ export default function StepEventEditor() {
                 </div>
             )}
 
-            <div className="event-tabs-wrap">
+                <div className="event-tabs-wrap">
                 {events.map(ev => (
                     <div key={ev.id} className="event-tab">
-                        <button onClick={() => { setActiveEventId(ev.id); setPreviewScenario(null); setCurrentBranch('main'); setIsCgMode(false); }}
+                        <button onClick={() => { 
+                                setActiveEventId(ev.id); 
+                                setPreviewScenario(null); 
+                                setIsCgMode(false);
+                                
+                                // ⭐ [버그 픽스] 엔딩이 없더라도 2번 루트 대사가 존재하면 2번 작성 모드로 똑똑하게 진입
+                                const hasChoice = ev.scenarios.some(s => s.type === 'choice');
+                                if (hasChoice) {
+                                    const hasOpt2 = ev.scenarios.some(s => s.branch === 'option2');
+                                    const opt1Ended = ev.scenarios.some(s => s.branch === 'option1' && s.type === 'ending');
+                                    setCurrentBranch((hasOpt2 || opt1Ended) ? 'option2' : 'option1');
+                                } else {
+                                    setCurrentBranch('main');
+                                }
+                            }}
                             className={`event-tab-btn ${activeEventId === ev.id ? 'active' : 'inactive'}`}
                         >
                             {ev.title}
@@ -611,20 +637,53 @@ export default function StepEventEditor() {
 
                                 {/* 우측 메인 영역 */}
                                 <div className="scenario-main">
-                                    <div className="scenario-header">
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span style={{ fontWeight: 'bold', color: '#495057' }}>{scenario.type === 'choice' ? '🔀 선택지 분기' : `컷 ${index + 1}`}</span>
-                                            {scenario.branch === 'option1' && <span className="badge opt1">선택지 1번</span>}
-                                            {scenario.branch === 'option2' && <span className="badge opt2">선택지 2번</span>}
-                                            {scenario.isCg && <span className="badge cg">🖼️ CG 일러</span>}
+<div className="scenario-header" style={{ paddingBottom: '10px', borderBottom: '1px solid #f1f3f5', marginBottom: '15px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            {scenario.type === 'choice' ? (
+                                                <span style={{ backgroundColor: '#1971c2', color: 'white', padding: '4px 12px', borderRadius: '15px', fontWeight: '900', fontSize: '14px', letterSpacing: '1px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                                                    🔀 분기 설정
+                                                </span>
+                                            ) : (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <span style={{ 
+                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', 
+                                                        width: '28px', height: '28px', backgroundColor: '#343a40', color: 'white', 
+                                                        borderRadius: '50%', fontWeight: 'bold', fontSize: '14px', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' 
+                                                    }}>
+                                                        {index + 1}
+                                                    </span>
+                                                    <span style={{ fontWeight: 'bold', color: '#495057', fontSize: '15px' }}>번째 컷</span>
+                                                </div>
+                                            )}
+
+                                            <div style={{ display: 'flex', gap: '6px' }}>
+                                                {scenario.branch === 'option1' && <span className="badge opt1" style={{ fontSize: '12px', padding: '3px 8px' }}>루트 A (선택지 1)</span>}
+                                                {scenario.branch === 'option2' && <span className="badge opt2" style={{ fontSize: '12px', padding: '3px 8px' }}>루트 B (선택지 2)</span>}
+                                                {scenario.isCg && <span className="badge cg" style={{ fontSize: '12px', padding: '3px 8px' }}>🖼️ CG 모드</span>}
+                                            </div>
                                         </div>
+
                                         {!isFirstMainDialog && (
-                                            <button onClick={(e) => { e.stopPropagation(); removeScenarioInput(index); }} className="btn-text-del">삭제</button>
+                                            <button onClick={(e) => { e.stopPropagation(); removeScenarioInput(index); }} 
+                                                    style={{ backgroundColor: '#ffe3e3', color: '#e03131', border: '1px solid #ffc9c9', padding: '4px 10px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', transition: '0.2s' }}
+                                                    onMouseOver={(e) => e.target.style.backgroundColor = '#ffc9c9'}
+                                                    onMouseOut={(e) => e.target.style.backgroundColor = '#ffe3e3'}>
+                                                🗑️ 컷 삭제
+                                            </button>
                                         )}
                                     </div>
-
                                     {scenario.type === 'choice' ? (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            
+                                            {/* ⭐ [추가됨] 예쁜 파란색 안내 박스 */}
+                                            <div style={{ padding: '12px', backgroundColor: '#e7f5ff', borderLeft: '4px solid #1971c2', borderRadius: '4px', fontSize: '13px', color: '#1864ab', lineHeight: '1.5' }}>
+                                                <strong>💡 화면에 표시될 두 가지 선택지를 입력해 주세요.</strong><br/>
+                                                각 선택지에 따라 스토리가 A/B 루트로 나뉩니다.<br/>
+                                                <span style={{ color: '#495057', fontSize: '12px' }}>
+                                                    (※ 루트 마지막에 🎬엔딩을 넣지 않으면, 어느 쪽을 고르든 자연스럽게 다음 이벤트로 넘어갑니다.)
+                                                </span>
+                                            </div>
+
                                             <input type="text" placeholder="선택지 1 텍스트" value={scenario.option1 || ''} onChange={(e) => handleScenarioChange(index, 'option1', e.target.value)} className="input-base" />
                                             <input type="text" placeholder="선택지 2 텍스트" value={scenario.option2 || ''} onChange={(e) => handleScenarioChange(index, 'option2', e.target.value)} className="input-base" />
                                         </div>
@@ -706,14 +765,16 @@ export default function StepEventEditor() {
                     })}
                 </div>
 
-                <div className="controller-group">
+<div className="controller-group">
                     {!hasEndingInCurrentBranch ? (
                         <>
-                            {currentBranch === 'main' && <button onClick={addScenarioInput} className="btn-large bg-blue">+ 일반 대사 추가</button>}
+                            {/* ⭐ [수정됨] !hasChoiceNode를 추가하여, 선택지가 있으면 메인 대사 추가를 강제 차단합니다. */}
+                            {currentBranch === 'main' && !hasChoiceNode && <button onClick={addScenarioInput} className="btn-large bg-blue">+ 일반 대사 추가</button>}
                             {currentBranch === 'option1' && <button onClick={addScenarioInput} className="btn-large bg-green">+ 선택지 1번 루트 대사 추가</button>}
                             {currentBranch === 'option2' && <button onClick={addScenarioInput} className="btn-large bg-orange">+ 선택지 2번 루트 대사 추가</button>}
                             
-                            {!isCgMode && (
+                            {/* ⭐ [수정됨] 선택지가 생성된 이후 메인 루트에서는 CG 추가/선택지 추가 버튼도 뜨지 않게 차단 */}
+                            {!isCgMode && (currentBranch !== 'main' || !hasChoiceNode) && (
                                 <label className="btn-large bg-purple">
                                     🖼️ 이벤트 CG 추가 <input type="file" accept="image/*" onChange={handleCgUpload} style={{ display: 'none' }} />
                                 </label>
@@ -722,7 +783,7 @@ export default function StepEventEditor() {
                             
                             {currentBranch === 'main' && !isCgMode && !hasChoiceNode && <button onClick={addChoiceInput} className="btn-large bg-gray">+ 선택지 분기 추가</button>}
 
-                            {!isCgMode && (
+                            {!isCgMode && (currentBranch !== 'main' || !hasChoiceNode) && (
                                 <button onClick={addEndingInput} className="btn-ending">🎬 엔딩 추가</button>
                             )}
                         </>
@@ -732,9 +793,8 @@ export default function StepEventEditor() {
                         </div>
                     )}
                 </div>
-
                 {currentBranch === 'option1' && (
-                    <button onClick={() => { setIsCgMode(false); setCurrentBranch('option2'); }} className="btn-large bg-green" style={{ width: '100%', marginTop: '10px' }}>
+                    <button onClick={() => { setIsCgMode(false); setCurrentBranch('option2'); }} className="btn-large bg-orange" style={{ width: '100%', marginTop: '10px' }}>
                         ✔️ 선택지 1번 루트 종료 (2번 작성 시작)
                     </button>
                 )}

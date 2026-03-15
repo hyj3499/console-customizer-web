@@ -194,7 +194,7 @@
     .ig-system-menu {
         /* 세로 화면에서는 우측 상단 70%에 두면 짤리므로, 중앙(50%)으로 이동 */
         left: 70% !important; 
-        width: 95% !important; 
+        width: 90% !important; 
         justify-content: center !important;
         gap: 2.5cqw !important; /* 15px 고정값 대신 비율로 좁게 */
     }

@@ -57,7 +57,7 @@ return (
                 color: '#000', fontWeight: 'bold', fontSize: '13px', fontFamily: "'DOSGothic', monospace",
                 whiteSpace: 'nowrap' // 글자 짤림 방지
             }}>
-                Customizer
+                최애로운 생활
             </span>
         </Link>
         

@@ -13,7 +13,7 @@ const { startMenu, setStartMenu, globalUi, customFonts } = useCustomizerStore();
     const fileInputRef = useRef(null);
 
     // ⭐ 튼튼한 방어 코드: 만약 옛날 데이터라 title/menu가 없으면 기본값을 억지로 쥐여줍니다.
-    const title = startMenu.title || { text: '나만의 시뮬레이션', x: 50, y: 30, fontSize: 8, color: '#ffffff', font: '', useOutline: true, outlineColor: '#000000' };
+    const title = startMenu.title || { text: '최애로운 생활', x: 50, y: 30, fontSize: 8, color: '#ffffff', font: '', useOutline: true, outlineColor: '#000000' };
     const menu = startMenu.menu || { x: 50, y: 75, fontSize: 4, color: '#ffffff', font: '', useOutline: true, outlineColor: '#000000', bgColor: '#000000', bgOpacity: 0.5, padding: 20, borderRadius: 8 };
 
     // --------------------------------------------------------
@@ -21,8 +21,10 @@ const { startMenu, setStartMenu, globalUi, customFonts } = useCustomizerStore();
     // --------------------------------------------------------
     const fontOptions = [
         { name: '시스템 폰트 사용', value: '' },
-        { name: 'Pretendard', value: 'Pretendard' }, 
-        { name: '둥근모꼴', value: 'DungGeunMo' }, 
+        { name: 'Galmuri14', value: 'Galmuri14' },
+        { name: 'Pretendard', value: 'Pretendard' },
+        { name: '둥근모꼴', value: 'DungGeunMo' },
+        { name: 'Griun_PolSensibility-Rg', value: 'Griun_PolSensibility-Rg' },
         ...customFonts.map(f => ({ name: `📁 ${f.name}`, value: f.name }))
     ];
 
@@ -115,7 +117,7 @@ const { startMenu, setStartMenu, globalUi, customFonts } = useCustomizerStore();
                         borderRadius: `${menu.borderRadius}px`, display: 'flex', flexDirection: 'column', gap: '2cqh', alignItems: 'center',
                         border: menu.useOutline ? `2px solid ${menu.outlineColor}` : 'none', zIndex: 10
                     }}>
-                        {['NEW GAME', 'LOAD', 'EXIT'].map(text => (
+                        {['NEW GAME', 'LOAD', 'SETTING', 'EXIT'].map(text => (
                             <span key={text} style={{ fontFamily: getFontFamily(menu.font), fontSize: `${menu.fontSize}cqh`, color: menu.color, textShadow: getTextShadow(menu.useOutline, menu.outlineColor), fontWeight: 'bold', cursor: 'pointer', transition: '0.2s' }}>
                                 {text}
                             </span>
