@@ -31,7 +31,7 @@ const useCustomizerStore = create((set) => ({
             }
         ],
         events: [{ 
-            id: 1, title: '이벤트 1', bgm: null, baseDate: { month: 'JAN', day: '01', time: '12:00' },
+            id: 1, title: '이벤트 1', bgm: null, baseDate: {month: 'DATE: 1月', day: '01日', time: 'TIME: 12:00' },
             scenarios: [{ type: 'dialog', branch: 'main', speaker: 'PROTAGONIST', protagonistImage: null, heroineImage: null, text: '', bgImage: null, bgType: 'bg_school', dateOverride: null }] 
         }],
         activeEventId: 1,
@@ -101,7 +101,7 @@ const useCustomizerStore = create((set) => ({
     // --- 3단계: 무한 이벤트 에디터 상태 ---
     events: [
         { 
-            id: 1, title: '이벤트 1', bgm: null, baseDate: { month: 'JAN', day: '01', time: '12:00' }, 
+            id: 1, title: '이벤트 1', bgm: null, baseDate: { month: 'DATE: 1月', day: '01日', time: 'TIME: 12:00' }, 
             scenarios: [{ type: 'dialog', branch: 'main', speaker: '', protagonistImage: null, heroineImage: null, text: '', bgImage: null, bgType: 'bg_school', dateOverride: null }] 
         }
     ],

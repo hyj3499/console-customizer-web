@@ -190,37 +190,76 @@ export default function Customizer() {
         }
     };
 
-    return (
-        <div id="capture-area" style={{ padding: '40px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', minHeight: '100vh', backgroundColor: '#fdfdfd' }}>
-            <h1 style={{ color: '#333', marginBottom: '10px' }}>🎨 Codename: Choiae Customizer</h1>
-            <div style={{ marginBottom: '40px', color: '#1971c2', fontWeight: 'bold', fontSize: '18px' }}>
-                Step {currentStep} / 5
+return (
+    // 1. 최상위 컨테이너: 배경 투명 (body의 청록색이 보임)
+    <div id="capture-area" style={{ 
+        padding: '40px 20px', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        width: '100%', 
+        minHeight: '100vh', 
+        backgroundColor: 'transparent' 
+    }}>
+        
+        {/* 상단 타이틀 (청록색 배경 위에서 잘 보이게 하얀색+그림자 추천) */}
+        <h1 style={{ color: 'white', textShadow: '2px 2px #000', marginBottom: '10px' }}>🎨 Codename: Choiae Customizer</h1>
+        <div style={{ marginBottom: '40px', color: '#ffff00', fontWeight: 'bold', fontSize: '18px', textShadow: '1px 1px #000' }}>
+            Step {currentStep} / 5
+        </div>
+
+        {/* ⭐ 2. 중앙 하얀색 컨텐츠 영역 (윈도우 95 창 스타일) */}
+        <div className="win95-window" style={{ 
+            width: '100%', 
+            maxWidth: '1000px', // 본문 너비 조절
+            backgroundColor: '#ffffff', // 본문은 하얀색!
+            boxShadow: '10px 10px 0px rgba(0,0,0,0.2)', // 레트로한 각진 그림자
+            display: 'flex',
+            flexDirection: 'column'
+        }}>
+            {/* 창 상단 타이틀바 (선택사항, 윈도우 느낌을 더해줌) */}
+            <div className="win95-title-bar" style={{ margin: '2px' }}>
+                <span style={{ fontSize: '12px' }}>Customizer_System_v1.0.exe</span>
+                <div style={{ display: 'flex', gap: '2px' }}>
+                    <button style={{ width: '14px', height: '14px', fontSize: '9px', padding: 0 }}>_</button>
+                    <button style={{ width: '14px', height: '14px', fontSize: '9px', padding: 0 }}>X</button>
+                </div>
             </div>
 
-            {/* 단계별 컴포넌트 렌더링 */}
-            {currentStep === 1 && <StepModeSelect selectedMode={selectedMode} onSelectMode={setSelectedMode} />}
-            {currentStep === 2 && <StepSettings />}
-            {currentStep === 3 && <StepEventEditor />}
-            {currentStep === 4 && <StepStartMenu />} {/* ✅ Step 4 연결 */}
+            {/* 3. 실제 내용이 들어가는 구역 (하얀색 배경) */}
+            <div style={{ padding: '40px 20px', backgroundColor: '#ffffff' }}>
+                {currentStep === 1 && <StepModeSelect selectedMode={selectedMode} onSelectMode={setSelectedMode} />}
+                {currentStep === 2 && <StepSettings />}
+                {currentStep === 3 && <StepEventEditor />}
+                {currentStep === 4 && <StepStartMenu />}
+            </div>
 
-            {/* 네비게이션 바 */}
-            <div style={{ marginTop: '50px', display: 'flex', gap: '20px' }} data-html2canvas-ignore="true">
+            {/* 4. 네비게이션 바 (창 하단에 고정) */}
+            <div style={{ 
+                padding: '20px', 
+                backgroundColor: '#f1f3f5', 
+                borderTop: '1px solid #dee2e6',
+                display: 'flex', 
+                justifyContent: 'center', 
+                gap: '20px' 
+            }} data-html2canvas-ignore="true">
                 {currentStep > 1 && (
-                    <button onClick={() => setCurrentStep(prev => prev - 1)} style={{ padding: '12px 30px', borderRadius: '8px', border: '1px solid #ced4da', backgroundColor: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>
+                    <button onClick={() => setCurrentStep(prev => prev - 1)} className="win95-button">
                         ⬅️ 이전
                     </button>
                 )}
                 {currentStep > 1 && (
-                    <button onClick={handleSave} style={{ padding: '12px 30px', backgroundColor: '#20c997', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                    <button onClick={handleSave} className="win95-button" style={{ backgroundColor: '#20c997', color: 'white' }}>
                         💾 현재 상태 저장
                     </button>
                 )}
                 {currentStep < 5 && (
-                    <button onClick={handleNextStep} style={{ padding: '12px 30px', backgroundColor: '#646cff', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                    <button onClick={handleNextStep} className="win95-button" style={{ backgroundColor: '#646cff', color: 'white' }}>
                         다음 단계로 ➡️
                     </button>
                 )}
             </div>
+        </div>
 
             {/* 계정 인증 모달 */}
             {showAuthPopup && (

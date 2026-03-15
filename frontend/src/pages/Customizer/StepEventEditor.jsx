@@ -122,7 +122,7 @@ export default function StepEventEditor() {
         const newTitle = `이벤트 ${events.length + 1}`; 
         
         setEvents([...events, { 
-            id: newId, title: newTitle, bgm: null, baseDate: { month: 'JAN', day: '01', time: '12:00' },
+            id: newId, title: newTitle, bgm: null, baseDate: { month: 'DATE: 1月', day: '01日', time: 'TIME: 12:00' },
             scenarios: [{ type: 'dialog', branch: 'main', speaker: defaultSpeaker, protagonistImage: null, heroineImage: null, text: '', bgImage: null, bgType: 'bg_school', dateOverride: null }] 
         }]);
         setActiveEventId(newId);
@@ -403,23 +403,29 @@ export default function StepEventEditor() {
                                 {previewScenario.bgImage && <img src={previewScenario.bgImage} alt="bg" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
                                 {previewScenario.heroineImage && <img src={previewScenario.heroineImage} alt="standing" style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', height: '92.6%', objectFit: 'contain' }} />}
 
-                                {!previewScenario.isCg && (
+                                    {!previewScenario.isCg && (
                                     <div className="ig-calendar-group">
-                                        <div className="ig-calendar-box" style={{ 
-                                            backgroundColor: cAsset.type === 'image' ? 'transparent' : (currentGlobalUi.calendarColor || 'rgba(255,255,255,0.8)'),
-                                            backgroundImage: cAsset.type === 'image' ? `url(${cAsset.src})` : 'none',
-                                            // ⭐ 정상적으로 cAsset(달력) 코드로 교체!
-                                            border: cAsset.type === 'css' ? cAsset.border : 'none', 
-                                            borderRadius: cAsset.type === 'css' ? cAsset.borderRadius : '0' 
-                                        }}>
-                                        <span style={{ fontFamily: currentGlobalUi.systemFont || 'sans-serif', color: '#5C4033', fontWeight: 'bold', textShadow: getCalendarTextShadow(), marginTop: '10px' }}>{previewDate.day}</span>                                        </div>
+                                        {/* ⭐ 1. 달력 틀이 'none'이 아닐 때만 네모 박스 표시 */}
+                                        {currentGlobalUi.calendarFrame !== 'none' && (
+                                            <div className="ig-calendar-box" style={{ 
+                                                backgroundColor: cAsset.type === 'image' ? 'transparent' : (currentGlobalUi.calendarColor || 'rgba(255,255,255,0.8)'),
+                                                backgroundImage: cAsset.type === 'image' ? `url(${cAsset.src})` : 'none',
+                                                border: cAsset.type === 'css' ? cAsset.border : 'none', 
+                                                borderRadius: cAsset.type === 'css' ? cAsset.borderRadius : '0' 
+                                            }}>
+                                                <span style={{ fontFamily: currentGlobalUi.systemFont || 'sans-serif', color: '#5C4033', fontWeight: 'bold', textShadow: getCalendarTextShadow(), marginTop: '10px' }}>{previewDate.day}</span>
+                                            </div>
+                                        )}
+                                        
+                                        {/* ⭐ 2. 하드코딩된 'DATE:', 'TIME:' 문구 삭제 */}
                                         <div className="ig-calendar-text">
                                             <span style={{ fontFamily: currentGlobalUi.systemFont || 'sans-serif', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: getCalendarTextShadow() }}>
-                                                DATE: {previewDate.month} {previewDate.day}
+                                                {previewDate.month} {previewDate.day}
                                             </span>
                                             <span style={{ fontFamily: currentGlobalUi.systemFont || 'sans-serif', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: getCalendarTextShadow() }}>
-                                                TIME: {previewDate.time}
-                                            </span>                                        </div>
+                                                {previewDate.time}
+                                            </span>
+                                        </div>
                                     </div>
                                 )}
                                 {previewScenario.protagonistImage && (
@@ -456,9 +462,38 @@ export default function StepEventEditor() {
                                         {previewScenario.text}
                                     </p>
                                 </div>
+                                
+                         {/* ⭐ [추가] 이벤트 에디터 미리보기용 시스템 퀵 메뉴 */}
+                                <div style={{
+                                    position: 'absolute',
+                                    bottom: '95cqh', // 유정님이 아까 원하셨던 하단 위치로 조정 (95cqh는 너무 위에요!)
+                                    left: '70%',
+                                    transform: 'translateX(-50%)',
+                                    display: 'flex',
+                                    gap: '15px',
+                                    zIndex: 100,
+                                    backgroundColor: 'transparent',
+                                    width: 'auto',
+                                    whiteSpace: 'nowrap'
+                                }}>
+                                    {['되감기', '대사록', '자동진행', '저장하기', '불러오기', '설정'].map((menu) => (
+                                        <span key={menu} style={{
+                                            fontFamily: currentGlobalUi.systemFont || 'sans-serif',
+                                            fontSize: '1.7cqh',
+                                            color: '#ffffff',
+                                            cursor: 'pointer',
+                                            fontWeight: 'normal',
+                                            textShadow: '1px 1px 3px rgba(0,0,0,1), 0px 0px 5px rgba(0,0,0,0.5)',
+                                            opacity: 0.9
+                                        }}>
+                                            {menu}
+                                        </span>
+                                    ))}
+                                </div>
                             </>
                         )}
                     </div>
+                    
                 </div>
             )}
 

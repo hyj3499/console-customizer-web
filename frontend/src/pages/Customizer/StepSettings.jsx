@@ -1,7 +1,7 @@
 // ==============================================================================
 // 📄 파일 경로 : src/pages/Customizer/StepSettings.jsx
 // 🎯 주요 역할 : 게임 커스터마이징 Step 2 (등장인물/주인공 설정 및 UI 테마 커스텀)
-// 💡 추가 기능 : 타이핑 애니메이션 연출, 캐릭터별 타이핑 효과음, 외곽선 및 네임칸 반응형
+// 💡 추가 기능 : 타이핑 애니메이션 연출, 캐릭터별 타이핑 효과음, 썸네일 클릭 시 프리뷰 동기화
 // ==============================================================================
 
 import { useState, useEffect, useRef } from 'react';
@@ -36,12 +36,11 @@ const PREVIEW_BACKGROUNDS = [
     { name: '숲', value: 'https://via.placeholder.com/1920x1080/228b22/ffffff?text=Forest' }
 ];
 
-// ⭐ 타이핑 효과음 목록 설정
 const SOUND_EFFECTS = [
-    { id: 'type1', name: '일반 타자기 (Type 1)', src: '/sounds/type1.wav' }, 
-    { id: 'type2', name: '경쾌한 키보드 (Type 2)', src: '/sounds/type2.wav' },
-    { id: 'type3', name: '전자음 띡띡 (Type 3)', src: '/sounds/type3.wav' },
-    { id: 'type4', name: '묵직한 기계음 (Type 4)', src: '/sounds/type4.wav' },
+    { id: 'type1', name: '일반 타자기 (Type 1)', src: '/sounds/SFX_RetroSinglev1.wav' }, 
+    { id: 'type2', name: '경쾌한 키보드 (Type 2)', src: '/sounds/SFX_RetroSinglev2.wav' },
+    { id: 'type3', name: '전자음 띡띡 (Type 3)', src: '/sounds/SFX_RetroSinglev3.wav' },
+    { id: 'type4', name: '묵직한 기계음 (Type 4)', src: '/sounds/SFX_RetroSinglev4.wav' },
     { id: 'none', name: '음소거', src: null }
 ];
 
@@ -67,7 +66,8 @@ const UI_ASSETS = {
     },
     calendar: {
         simple: (bg, border='#dddddd') => ({ name: '심플형', type: 'css', border: `2px solid ${border}`, borderRadius: '4px' }),
-        retro:  (bg) => ({ name: '🕹️ 레트로', type: 'image', src: `/images/retro_calendar_${getColorId(bg)}.png` }) 
+        retro:  (bg) => ({ name: '🕹️ 레트로', type: 'image', src: `/images/retro_calendar_${getColorId(bg)}.png` }),
+        none: () => ({ name: '🚫 표시 안 함', type: 'none' }) 
     }
 };
 
@@ -114,12 +114,15 @@ const SmartColorPicker = ({ label, rgba, borderColor, onChange, onBorderChange, 
                 </div>
             ) : (
                 <div className="color-slider-row">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: rgba, border: '2px solid #fff', outline: '1px solid #dee2e6', position: 'relative', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
                             <input type="color" value={hex} onChange={(e) => onChange(toRgba(e.target.value, alpha))} style={{ opacity: 0, position: 'absolute', inset: 0, cursor: 'pointer' }} />
                         </div>
-                        <input type="range" min="0" max="1" step="0.05" value={alpha} onChange={(e) => onChange(toRgba(hex, e.target.value))} style={{ width: '45px' }} />
-                    </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <span style={{ fontSize: '10px', color: '#666', fontWeight: 'bold' }}>불투명도</span>
+                            <input type="range" min="0" max="1" step="0.05" value={alpha} onChange={(e) => onChange(toRgba(hex, e.target.value))} style={{ width: '80px', cursor: 'pointer' }} />
+                        </div>
+                    </div>      
                     
                     {onBorderChange && onUseBorderChange !== undefined && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '1px solid #dee2e6', paddingLeft: '15px' }}>
@@ -147,15 +150,19 @@ const MiniPreview = ({ type, frameKey, color, borderColor }) => {
     
     return (
         <div className="mini-preview-box">
-            {asset.type === 'image' ? 
+            {asset.type === 'none' ? (
+                <span style={{ fontSize: '12px', color: '#888', fontWeight: 'bold' }}>표시 안 함</span>
+            ) : asset.type === 'image' ? (
                 <img src={asset.src} alt="preview" style={{ width: '90%', height: '90%', objectFit: 'contain' }} /> 
-                : <div style={{ width: isPortrait ? '40px' : '80%', height: isPortrait ? '40px' : '50%', backgroundColor: color || '#333', border: asset.border, borderRadius: asset.borderRadius }} />
-            }
+            ) : (
+                <div style={{ width: isPortrait ? '40px' : '80%', height: isPortrait ? '40px' : '50%', backgroundColor: color || '#333', border: asset.border, borderRadius: asset.borderRadius }} />
+            )}
         </div>
     );
 };
 
-const CharacterForm = ({ charData, isProtagonist, onUpdate, onImageUpload, onRemoveImage, onRemoveChar, totalCount }) => {
+// ⭐ [수정] 썸네일 클릭 시 onImageClick 이벤트 호출
+const CharacterForm = ({ charData, isProtagonist, onUpdate, onImageUpload, onRemoveImage, onRemoveChar, totalCount, onImageClick }) => {
     const typeText = isProtagonist ? '😎 주인공 (Player)' : `🎭 등장인물`;
     const themeClass = isProtagonist ? 'protagonist' : 'character';
     return (
@@ -172,9 +179,13 @@ const CharacterForm = ({ charData, isProtagonist, onUpdate, onImageUpload, onRem
             </div>
             <div className="thumbnail-list">
                 {charData.images.map((img, idx) => (
-                    <div key={idx} className="thumbnail-item">
+                    <div key={idx} className="thumbnail-item" 
+                         onClick={() => onImageClick(isProtagonist ? 'protagonist' : charData.id, idx)} 
+                         style={{ cursor: 'pointer' }} 
+                         title="클릭 시 미리보기에 적용됩니다"
+                    >
                         <img src={getImgUrl(img)} alt="thumb" className="thumbnail-img" />
-                        <button className="btn-del-img" onClick={() => onRemoveImage(idx)}>×</button>
+                        <button className="btn-del-img" onClick={(e) => { e.stopPropagation(); onRemoveImage(idx); }}>×</button>
                     </div>
                 ))}
             </div>
@@ -182,12 +193,50 @@ const CharacterForm = ({ charData, isProtagonist, onUpdate, onImageUpload, onRem
     );
 };
 
+let globalPreviewInterval = null;
+let globalActiveAudio = null;
+
 const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOptions, showPortrait }) => {
+    
+    const stopSound = () => {
+        if (globalPreviewInterval) {
+            clearInterval(globalPreviewInterval);
+            globalPreviewInterval = null;
+        }
+        if (globalActiveAudio) {
+            globalActiveAudio.pause();
+            globalActiveAudio.currentTime = 0;
+            globalActiveAudio = null;
+        }
+    };
+
+    useEffect(() => {
+        return () => { stopSound(); };
+    }, []);
+
     const playSound = (soundId) => {
+        stopSound();
         const sound = SOUND_EFFECTS.find(s => s.id === soundId);
         if (sound && sound.src) {
-            const audio = new Audio(sound.src);
-            audio.play().catch(e => console.log('자동재생 막힘', e));
+            globalActiveAudio = new Audio(sound.src);
+            let elapsed = 0;
+            const duration = 1000; 
+            const intervalMs = 100;  
+
+            globalActiveAudio.currentTime = 0;
+            globalActiveAudio.play().catch(e => console.log('자동재생 막힘', e));
+
+            globalPreviewInterval = setInterval(() => {
+                elapsed += intervalMs;
+                if (elapsed >= duration) {
+                    stopSound();
+                    return;
+                }
+                if (globalActiveAudio) {
+                    globalActiveAudio.currentTime = 0;
+                    globalActiveAudio.play().catch(e => console.log('자동재생 막힘', e));
+                }
+            }, intervalMs);
         }
     };
 
@@ -212,11 +261,23 @@ const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOption
             <div className="theme-divider">
                 <div style={{ flex: 1 }}>
                     <label className="input-label">🎵 타이핑 효과음</label>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                        <select className="theme-select" value={fontStyle.typingSound || 'type1'} onChange={(e) => onUpdate({ typingSound: e.target.value })}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <select 
+                            className="theme-select" 
+                            value={fontStyle.typingSound || 'type1'} 
+                            onChange={(e) => onUpdate({ typingSound: e.target.value })}
+                            style={{ height: '32px', padding: '4px 8px', margin: 0, boxSizing: 'border-box' }}
+                        >
                             {SOUND_EFFECTS.map(sound => <option key={sound.id} value={sound.id}>{sound.name}</option>)}
                         </select>
-                        <button onClick={() => playSound(fontStyle.typingSound || 'type1')} style={{ padding: '6px 12px', background: '#333', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>▶️ 듣기</button>
+                        <button 
+                            onClick={() => playSound(fontStyle.typingSound || 'type1')} 
+                            style={{ height: '32px', padding: '0 16px', background: '#333', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >▶️ 듣기</button>
+                        <button 
+                            onClick={stopSound} 
+                            style={{ height: '32px', padding: '0 16px', background: '#dc3545', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >⏹️ 정지</button>
                     </div>
                 </div>
             </div>
@@ -265,29 +326,17 @@ const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOption
     );
 };
 
+// 📺 인게임 미리보기 화면 (⭐ selectedImg 매개변수 추가 적용)
 const InGamePreview = ({ previewBg, standingImg, currentGlobalUi, textShadowStr, isP, pAsset, nAsset, dAsset, cAsset, activeStyle, renderFontFamily, activeChar, protagonist }) => {
     const charName = activeChar?.name || (isP ? '주인공' : '등장인물');
     const fullText = `"${charName}의 대사가 이곳에 출력됩니다. 설정한 타이핑 속도로 한 글자씩 표시됩니다!"`;
     const [displayedText, setDisplayedText] = useState("");
     const [isTyping, setIsTyping] = useState(true);
-    const audioRef = useRef(null);
 
-    useEffect(() => {
-        setDisplayedText(""); setIsTyping(true);
-        const soundId = activeStyle.typingSound || 'type1';
-        const sound = SOUND_EFFECTS.find(s => s.id === soundId);
-        if (sound && sound.src) {
-            audioRef.current = new Audio(sound.src);
-            audioRef.current.loop = true; 
-        } else {
-            audioRef.current = null;
-        }
-    }, [activeChar, isP, activeStyle.typingSound]);
-
+    // 시각적 타이핑 애니메이션 효과
     useEffect(() => {
         if (!isTyping) return;
         let currentIndex = 0;
-        if (audioRef.current) audioRef.current.play().catch(e => console.log("자동재생 막힘"));
 
         const typingInterval = setInterval(() => {
             if (currentIndex < fullText.length) {
@@ -296,11 +345,11 @@ const InGamePreview = ({ previewBg, standingImg, currentGlobalUi, textShadowStr,
             } else {
                 clearInterval(typingInterval);
                 setIsTyping(false);
-                if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
                 setTimeout(() => { setDisplayedText(""); setIsTyping(true); }, 3000);
             }
         }, 50);
-        return () => { clearInterval(typingInterval); if (audioRef.current) audioRef.current.pause(); };
+
+        return () => clearInterval(typingInterval);
     }, [isTyping, fullText]);
 
     const finalDialogBorder = activeStyle.useDialogBorder === false ? 'none' : dAsset.border;
@@ -312,20 +361,31 @@ const InGamePreview = ({ previewBg, standingImg, currentGlobalUi, textShadowStr,
     return (
         <div className="preview-container" style={{
             backgroundImage: previewBg === 'default' ? 'radial-gradient(circle, #343a40 10%, transparent 10%), radial-gradient(circle, #343a40 10%, transparent 10%)' : `url(${previewBg})`,
-            backgroundSize: previewBg === 'default' ? '20px 20px' : 'cover', backgroundPosition: previewBg === 'default' ? '0 0, 10px 10px' : 'center'
+            backgroundSize: previewBg === 'default' ? '20px 20px' : 'cover', 
+            backgroundPosition: previewBg === 'default' ? '0 0, 10px 10px' : 'center'
         }}>
-            {standingImg && <img src={standingImg} alt="스탠딩" style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', height: '92.6%', objectFit: 'contain' }} />}
+            {/* ⭐ 스탠딩 이미지: 주인공이 아닐 때(!isP)만 나타나며, CSS 클래스로 위치를 잡습니다 */}
+            {!isP && standingImg && (
+                <img 
+                    src={standingImg} 
+                    alt="standing" 
+                    className="ig-standing" 
+                />
+            )}
 
             <div className="ig-calendar-group">
-                <div className="ig-calendar-box" style={{ backgroundColor: cAsset.type === 'image' ? 'transparent' : currentGlobalUi.calendarColor, backgroundImage: cAsset.type === 'image' ? `url(${cAsset.src})` : 'none', border: cAsset.type === 'css' ? cAsset.border : 'none', borderRadius: cAsset.type === 'css' ? cAsset.borderRadius : '0' }}>
-                    <span style={{ fontFamily: currentGlobalUi.systemFont, fontSize: '5cqh', color: '#5C4033', fontWeight: 'bold', textShadow: textShadowStr, marginTop: '10px' }}>12</span>
-                </div>
+                {currentGlobalUi.calendarFrame !== 'none' && (
+                    <div className="ig-calendar-box" style={{ backgroundColor: cAsset.type === 'image' ? 'transparent' : currentGlobalUi.calendarColor, backgroundImage: cAsset.type === 'image' ? `url(${cAsset.src})` : 'none', border: cAsset.type === 'css' ? cAsset.border : 'none', borderRadius: cAsset.type === 'css' ? cAsset.borderRadius : '0' }}>
+                        <span style={{ fontFamily: currentGlobalUi.systemFont, fontSize: '5cqh', color: '#5C4033', fontWeight: 'bold', textShadow: textShadowStr, marginTop: '10px' }}>12日</span>
+                    </div>
+                )}
                 <div className="ig-calendar-text">
-                    <span style={{ fontFamily: currentGlobalUi.systemFont, fontSize: '3cqh', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: textShadowStr }}>DATE: OCT 12</span>
-                    <span style={{ fontFamily: currentGlobalUi.systemFont, fontSize: '3cqh', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: textShadowStr }}>TIME: 14:30</span>
+                    <span style={{ fontFamily: currentGlobalUi.systemFont, fontSize: '3cqh', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: textShadowStr }}>2月 12日</span>
+                    <span style={{ fontFamily: currentGlobalUi.systemFont, fontSize: '3cqh', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: textShadowStr }}>AM 02:30</span>
                 </div>
             </div>
 
+            {/* 주인공 초상화(페이스 박스): 주인공일 때(isP)만 나타납니다 */}
             {isP && pAsset && (
                 <div className="ig-portrait-area">
                     {pAsset.type === 'image' && <img src={pAsset.src} alt="Frame" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill', zIndex: 1 }} />}
@@ -350,23 +410,54 @@ const InGamePreview = ({ previewBg, standingImg, currentGlobalUi, textShadowStr,
                 backgroundColor: dAsset.type === 'image' ? 'transparent' : activeStyle.dialogColor, 
                 backgroundImage: dAsset.type === 'image' ? `url(${dAsset.src})` : 'none', 
                 border: dAsset.type === 'css' ? finalDialogBorder : 'none',
-                borderRadius: dAsset.type === 'css' ? dAsset.borderRadius : '0' 
+                borderRadius: dAsset.type === 'css' ? dAsset.borderRadius : '0'
             }}>
                 <p style={{ fontFamily: renderFontFamily, color: activeStyle.color, fontSize: '3cqh', margin: 0, whiteSpace: 'pre-wrap', textShadow: charTextShadowStr }}>
                     {displayedText}
                 </p>
             </div>
+            
+            <div style={{
+                position: 'absolute',
+                bottom: '95cqh', 
+                left: '70%', 
+                transform: 'translateX(-50%)',
+                display: 'flex',
+                gap: '15px',
+                zIndex: 100,
+                backgroundColor: 'transparent',
+                width: 'auto',
+                whiteSpace: 'nowrap'
+            }}>
+                {['되감기', '대사록', '자동진행', '저장하기', '불러오기', '설정'].map((menu) => (
+                    <span key={menu} style={{
+                        fontFamily: currentGlobalUi.systemFont || 'sans-serif',
+                        fontSize: '1.7cqh',
+                        color: '#ffffff',
+                        cursor: 'pointer',
+                        fontWeight: 'normal',
+                        textShadow: '1px 1px 3px rgba(0,0,0,1), 0px 0px 5px rgba(0,0,0,0.5)',
+                        opacity: 0.9 
+                    }}>
+                        {menu}
+                    </span>
+                ))}
+            </div>
         </div>
     );
 };
-
 // --------------------------------------------------------
 // 3. 메인 부모 컴포넌트
 // --------------------------------------------------------
 export default function StepSettings() {
     const { protagonist, setProtagonist, pFontStyle, setPFontStyle, characters, setCharacters, customFonts, addCustomFont, globalUi, setGlobalUi } = useCustomizerStore();
+    
     const [previewTarget, setPreviewTarget] = useState('protagonist');
     const [previewBg, setPreviewBg] = useState('default');
+    
+    // ⭐ [추가] 각 캐릭터별로 선택된 이미지의 인덱스를 기억하는 상태 
+    // 예: { protagonist: 2, '1711223344': 0 }
+    const [selectedImageIndices, setSelectedImageIndices] = useState({});
 
     useEffect(() => {
         if (!protagonist.name) setProtagonist({ ...protagonist, name: '주인공' });
@@ -374,16 +465,16 @@ export default function StepSettings() {
         if (hasEmptyNameChar) setCharacters(characters.map((c, index) => c.name ? c : { ...c, name: `등장인물 ${index + 1}` }));
     }, []);
 
-    const currentGlobalUi = globalUi || { calendarFrame: 'retro', /* 생략 */ };
+    const currentGlobalUi = globalUi || { calendarFrame: 'retro' };
     const safeSetGlobalUi = setGlobalUi || (() => {});
     
-    // ⭐ [수정] 배열에 중복된 폰트가 있더라도 이름(name) 기준으로 한 번만 나오도록 필터링!
     const uniqueCustomFonts = Array.from(new Map(customFonts.map(f => [f.name, f])).values());
     const fontOptions = [
         { name: 'Pretendard (기본)', value: 'Pretendard' }, 
         { name: '둥근모꼴', value: 'DungGeunMo' }, 
         ...uniqueCustomFonts.map(f => ({ name: `📁 ${f.name}`, value: f.name }))
     ];
+
     const addCharacter = () => {
         if (characters.length >= 10) return alert('최대 10명!');
         const nextNum = characters.length + 1;
@@ -433,12 +524,27 @@ export default function StepSettings() {
         reader.readAsDataURL(file);
     };
 
+    // ⭐ [추가] 썸네일 클릭 핸들러
+    const handleImageClick = (targetId, imgIndex) => {
+        setPreviewTarget(targetId); // 1. 미리보기 탭 전환
+        setSelectedImageIndices(prev => ({ ...prev, [targetId]: imgIndex })); // 2. 선택된 이미지 기억
+    };
+
+    // ⭐ [수정] 미리보기 이미지 결정 로직 연동
     const isP = previewTarget === 'protagonist';
     const activeChar = isP ? protagonist : characters.find(c => c.id === previewTarget);
     const activeStyle = isP ? pFontStyle : (activeChar?.fontStyle || pFontStyle);
+    
+    // 현재 선택된 타겟(주인공 or 캐릭터)이 기억하고 있는 이미지 인덱스를 가져옴 (기본값 0)
+    const activeImgIndex = selectedImageIndices[previewTarget] || 0;
+    
     let standingImg = null;
-    if (!isP && activeChar?.images?.length > 0) standingImg = getImgUrl(activeChar.images[0]);
-    else if (isP && characters.length > 0 && characters[0].images.length > 0) standingImg = getImgUrl(characters[0].images[0]);
+    if (activeChar?.images?.length > activeImgIndex) {
+        standingImg = getImgUrl(activeChar.images[activeImgIndex]);
+    } else if (activeChar?.images?.length > 0) {
+        // 혹시 이미지를 지워서 인덱스가 초과했다면 첫 번째 이미지로 폴백
+        standingImg = getImgUrl(activeChar.images[0]); 
+    }
 
     const dAsset = (UI_ASSETS.dialog[activeStyle.dialogFrame] || UI_ASSETS.dialog.simple)(activeStyle.dialogColor, activeStyle.dialogBorderColor);
     const nAsset = (UI_ASSETS.namebox[activeStyle.nameFrame] || UI_ASSETS.namebox.simple)(activeStyle.nameColor, activeStyle.nameBorderColor);
@@ -465,14 +571,14 @@ export default function StepSettings() {
                     {characters.map(char => <button key={char.id} className={`tab-btn ${!isP && previewTarget === char.id ? 'active-c' : 'inactive'}`} onClick={() => setPreviewTarget(char.id)}>🎭 {char.name || '캐릭터'} 시점</button>)}
                 </div>
 
-                <InGamePreview previewBg={previewBg} standingImg={standingImg} currentGlobalUi={currentGlobalUi} textShadowStr={textShadowStr} isP={isP} pAsset={pAsset} nAsset={nAsset} dAsset={dAsset} cAsset={cAsset} activeStyle={activeStyle} renderFontFamily={renderFontFamily} activeChar={activeChar} protagonist={protagonist} />
+                <InGamePreview previewBg={previewBg} standingImg={standingImg} currentGlobalUi={currentGlobalUi} textShadowStr={textShadowStr} isP={isP} pAsset={pAsset} nAsset={nAsset} dAsset={dAsset} cAsset={cAsset} activeStyle={activeStyle} renderFontFamily={renderFontFamily} activeChar={activeChar} protagonist={protagonist} selectedImg={standingImg} />
             </div>
 
             <h4 className="sub-header">👤 2. 이름 및 스탠딩 일러 설정</h4>
             <div className="char-list-container">
-                <CharacterForm charData={protagonist} isProtagonist={true} onUpdate={(k, v) => setProtagonist({...protagonist, [k]: v})} onImageUpload={(e) => handleImageUpload(e, 'protagonist')} onRemoveImage={(idx) => setProtagonist({...protagonist, images: protagonist.images.filter((_, i) => i !== idx)})} />
+                <CharacterForm charData={protagonist} isProtagonist={true} onUpdate={(k, v) => setProtagonist({...protagonist, [k]: v})} onImageUpload={(e) => handleImageUpload(e, 'protagonist')} onRemoveImage={(idx) => setProtagonist({...protagonist, images: protagonist.images.filter((_, i) => i !== idx)})} onImageClick={handleImageClick} />
                 {characters.map(char => (
-                    <CharacterForm key={char.id} charData={char} isProtagonist={false} totalCount={characters.length} onUpdate={(k, v) => setCharacters(characters.map(c => c.id === char.id ? { ...c, [k]: v } : c))} onImageUpload={(e) => handleImageUpload(e, char.id)} onRemoveImage={(idx) => setCharacters(characters.map(c => c.id === char.id ? { ...c, images: c.images.filter((_, i) => i !== idx) } : c))} onRemoveChar={(id) => setCharacters(characters.filter(c => c.id !== id))} />
+                    <CharacterForm key={char.id} charData={char} isProtagonist={false} totalCount={characters.length} onUpdate={(k, v) => setCharacters(characters.map(c => c.id === char.id ? { ...c, [k]: v } : c))} onImageUpload={(e) => handleImageUpload(e, char.id)} onRemoveImage={(idx) => setCharacters(characters.map(c => c.id === char.id ? { ...c, images: c.images.filter((_, i) => i !== idx) } : c))} onRemoveChar={(id) => setCharacters(characters.filter(c => c.id !== id))} onImageClick={handleImageClick} />
                 ))}
                 <button className="btn-add-char" onClick={addCharacter}>➕ 등장인물 추가하기 ({characters.length} / 10)</button>
             </div>

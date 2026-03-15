@@ -67,6 +67,17 @@
     display: flex; align-items: center; justify-content: center; white-space: nowrap; box-sizing: border-box;
 }
 
+.ig-standing {
+    position: absolute;
+    bottom: 0;                /* 화면 맨 아래에 딱 붙임 */
+    left: 50%;                /* 가로 중앙 위치 */
+    transform: translateX(-50%); /* 정확한 정중앙을 위해 너비의 절반만큼 이동 */
+    height: 95cqh;            /* 부모 컨테이너(16:9 비율) 높이의 95% 크기. 대화창 살짝 위로 올라오게 조절 가능 */
+    object-fit: contain;      /* 이미지 비율 찌그러짐 방지 */
+    z-index: 5;               /* 배경(0)과 달력/초상화(10), 대화창(11) 사이의 깊이 */
+    pointer-events: none;     /* 스탠딩 이미지 뒤의 요소를 클릭할 수 있도록 (선택 사항) */
+}
+
 .ig-dialogbox { position: absolute; left: 27.6%; top: 72.22%; width: 57.3%; height: 23.15%; padding: 3cqh 4cqw; box-sizing: border-box; z-index: 11; background-size: 100% 100%; }
 
 /* =========================================================
