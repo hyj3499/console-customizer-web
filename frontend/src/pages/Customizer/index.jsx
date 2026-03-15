@@ -3,16 +3,14 @@
 // 🎯 주요 역할 : 게임 커스터마이징 기능의 '메인 부모 컴포넌트 (관제탑)'
 // ==============================================================================
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { saveProjectToServer, uploadAndSaveProject } from "../../services/ProjectService.js";
 import StepModeSelect from './StepModeSelect';
 import StepSettings from './StepSettings';
 import StepEventEditor from './StepEventEditor';
-import StepStartMenu from './StepStartMenu'; // ✅ Step 4 컴포넌트 추가
+import StepStartMenu from './StepStartMenu';
 import StepCheck from './StepCheck';
 import useCustomizerStore from '../../store/useCustomizerStore';
-
-
 
 // 🎨 공통 UI 스타일 정의
 const STYLES = {
@@ -21,8 +19,6 @@ const STYLES = {
     btnBase: { width: '100%', padding: '14px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '15px', marginTop: '15px', transition: 'all 0.2s' },
     overlay: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(4px)' }
 };
-
-
 
 // 💡 추가된 도우미 함수: 현재 시나리오가 엔딩으로 꽉 차있는지 검사합니다.
 const checkIsFullyEnded = (scenarios) => {
@@ -53,8 +49,57 @@ export default function Customizer() {
     const store = useCustomizerStore();
     const { 
         setEvents, setProtagonist, setCharacters, setPFontStyle, 
-        setGlobalUi, setStartMenu, addCustomFont, resetStore
+        setGlobalUi, setStartMenu, addCustomFont, resetStore,
+        setIsEditing // ⭐ 전역 상태 변경 함수 추가
     } = store;
+
+    // --------------------------------------------------------
+    // ⭐ [핵심 방어막] 새로고침, 탭 닫기, 뒤로 가기, 헤더 이탈 방어
+    // --------------------------------------------------------
+    useEffect(() => {
+        // 1. 2단계 이상이면 스토어에 "편집 중"이라고 알림 (헤더가 이걸 보고 막음)
+        const isCurrentlyEditing = currentStep >= 2;
+        setIsEditing(isCurrentlyEditing);
+
+        // 2. 브라우저 새로고침/탭 닫기 방어
+        const handleBeforeUnload = (e) => {
+            if (isCurrentlyEditing) {
+                e.preventDefault();
+                e.returnValue = ''; // 크롬 등 최신 브라우저 필수 설정
+            }
+        };
+
+        // 3. 브라우저 뒤로 가기 버튼 방어
+        const preventGoBack = () => {
+            if (isCurrentlyEditing) {
+                const confirmLeave = window.confirm("초기 화면으로 돌아가면 작업 내용이 사라질 수 있습니다. 정말 나가시겠습니까?");
+                if (!confirmLeave) {
+                    // 취소하면 다시 가짜 히스토리를 밀어넣어 못 가게 함
+                    window.history.pushState(null, "", window.location.href);
+                } else {
+                    // 허락하면 스토어 깃발 내리고 진짜 1단계로 강제 전송
+                    setIsEditing(false);
+                    window.removeEventListener('popstate', preventGoBack);
+                    setCurrentStep(1); 
+                }
+            }
+        };
+
+        // 이벤트 리스너 부착
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        if (isCurrentlyEditing) {
+            // 뒤로가기를 잡기 위한 가짜 히스토리 하나 추가
+            window.history.pushState(null, "", window.location.href);
+            window.addEventListener('popstate', preventGoBack);
+        }
+
+        // 클린업: 단계가 변하거나 컴포넌트가 사라질 때 리스너 제거
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+            window.removeEventListener('popstate', preventGoBack);
+        };
+    }, [currentStep, setIsEditing]); // ⭐ currentStep이 바뀔 때마다 재실행
 
     // --------------------------------------------------------
     // 2. 단계 이동 핸들러
@@ -68,7 +113,7 @@ export default function Customizer() {
     };
 
     // --------------------------------------------------------
-    // 3. 기존 프로젝트 불러오기 (연동 로직 업데이트 🌟)
+    // 3. 기존 프로젝트 불러오기
     // --------------------------------------------------------
     const handleLoadProject = async () => {
         if (!loadId || !loadPw) return alert('아이디와 비밀번호를 입력해주세요.');
@@ -84,7 +129,6 @@ export default function Customizer() {
                 const data = await response.json(); 
                 console.log("☁️ 클라우드 데이터 로드 완료:", data);
 
-                // ⭐ 이미지 정규화 헬퍼
                 const ensureImageObject = (img) => {
                     if (!img) return null;
                     if (typeof img === 'object' && img.preview) return img;
@@ -92,7 +136,6 @@ export default function Customizer() {
                     return null;
                 };
 
-                // ✅ 폰트 복원
                 if (data.customFonts && data.customFonts.length > 0) {
                     data.customFonts.forEach(font => {
                         const newFont = new FontFace(font.name, `url(${font.url})`);
@@ -103,7 +146,6 @@ export default function Customizer() {
                     });
                 }
 
-                // ✅ 시작 메뉴 데이터 복원 및 이미지 정규화
                 if (data.startMenu) {
                     setStartMenu({
                         ...data.startMenu,
@@ -111,7 +153,6 @@ export default function Customizer() {
                     });
                 }
 
-                // ✅ 기본 UI 및 캐릭터 데이터 복원
                 if (data.globalUi) setGlobalUi(data.globalUi);
                 if (data.pFontStyle) setPFontStyle(data.pFontStyle);
                 
@@ -168,9 +209,7 @@ export default function Customizer() {
         const state = useCustomizerStore.getState();
         const activeEvent = state.events.find(ev => ev.id === state.activeEventId);
         
-        // 🚨 방어 로직 추가: activeEvent와 scenarios가 안전하게 존재하는지 확인 후 실행합니다.
         if (activeEvent && activeEvent.scenarios) {
-            // 엔딩 도달 여부 체크 (위의 checkIsFullyEnded 함수 로직 활용)
             if (checkIsFullyEnded(activeEvent.scenarios)) {
                 const nextEvents = state.events.filter(ev => ev.id > state.activeEventId);
                 if (nextEvents.length > 0) {
@@ -195,10 +234,9 @@ export default function Customizer() {
         }
     };
 
-return (
-        // 1. 최상위 컨테이너: 배경 투명 (body의 청록색이 보임), 모바일을 고려한 패딩 축소
+    return (
         <div id="capture-area" style={{ 
-            padding: '2vw', // 모바일에서는 패딩이 줄어듦
+            padding: '2vw',
             display: 'flex', 
             flexDirection: 'column', 
             alignItems: 'center', 
@@ -207,7 +245,6 @@ return (
             backgroundColor: 'transparent' 
         }}>
             
-            {/* 상단 타이틀 (모바일에서도 글자가 잘리지 않도록 유동적 크기 적용) */}
             <h1 style={{ 
                 color: 'white', 
                 textShadow: '2px 2px #000', 
@@ -230,16 +267,14 @@ return (
                 Step {currentStep} / 5
             </div>
 
-            {/* ⭐ 2. 중앙 하얀색 컨텐츠 영역 (윈도우 95 창 스타일) */}
             <div className="win95-window" style={{ 
-                width: '98%', // ⭐ 모바일에서 화면을 꽉 채우도록 변경
-                maxWidth: '1000px', // PC에서는 최대 1000px까지만 늘어남
+                width: '98%',
+                maxWidth: '1000px',
                 backgroundColor: '#ffffff', 
                 boxShadow: '10px 10px 0px rgba(0,0,0,0.2)', 
                 display: 'flex',
                 flexDirection: 'column'
             }}>
-                {/* 창 상단 타이틀바 */}
                 <div className="win95-title-bar" style={{ margin: '2px' }}>
                     <span style={{ fontSize: '12px' }}>Customizer_System_v1.0.exe</span>
                     <div style={{ display: 'flex', gap: '2px' }}>
@@ -248,15 +283,14 @@ return (
                     </div>
                 </div>
 
-                {/* 3. 실제 내용이 들어가는 구역 (모바일 패딩 축소) */}
                 <div style={{ padding: '3vw', backgroundColor: '#ffffff', overflowX: 'hidden' }}>
                     {currentStep === 1 && <StepModeSelect selectedMode={selectedMode} onSelectMode={setSelectedMode} />}
                     {currentStep === 2 && <StepSettings />}
                     {currentStep === 3 && <StepEventEditor />}
                     {currentStep === 4 && <StepStartMenu />}
-                    {currentStep === 5 && <StepCheck projectId={newId || loadId} />}                </div>
+                    {currentStep === 5 && <StepCheck projectId={newId || loadId} />}                
+                </div>
 
-                {/* 4. 네비게이션 바 (모바일에서 버튼이 안 깨지도록 래핑) */}
                 <div style={{ 
                     padding: '3vw', 
                     backgroundColor: '#f1f3f5', 
@@ -264,10 +298,18 @@ return (
                     display: 'flex', 
                     justifyContent: 'center', 
                     gap: '10px',
-                    flexWrap: 'wrap' // ⭐ 모바일 화면이 좁으면 버튼이 아래로 내려가게 함
+                    flexWrap: 'wrap'
                 }} data-html2canvas-ignore="true">
                     {currentStep > 1 && (
-                        <button onClick={() => setCurrentStep(prev => prev - 1)} className="win95-button" style={{ flex: '1', minWidth: '100px' }}>
+                        <button onClick={() => {
+                            // ⭐ 에디터 내부의 [이전] 버튼 로직
+                            if (currentStep === 2) {
+                                const confirmLeave = window.confirm("초기 화면(Step 1)으로 돌아가면 현재 연결된 프로젝트 정보가 초기화될 수 있습니다. 정말 돌아가시겠습니까?");
+                                if (!confirmLeave) return;
+                                setIsEditing(false); // 1단계로 가므로 편집 깃발 내림
+                            }
+                            setCurrentStep(prev => prev - 1);
+                        }} className="win95-button" style={{ flex: '1', minWidth: '100px' }}>
                             ⬅️ 이전
                         </button>
                     )}
@@ -284,13 +326,13 @@ return (
                 </div>
             </div>
 
-            {/* 계정 인증 모달 (모바일 환경에 맞춰 크기 조정) */}
+            {/* 계정 인증 모달 */}
             {showAuthPopup && (
                 <div style={STYLES.overlay}>
                     <div style={{ 
                         backgroundColor: 'white', borderRadius: '16px', padding: '3vw', 
                         width: '90%', maxWidth: '780px', 
-                        display: 'flex', flexDirection: 'column', // ⭐ 모바일에서는 위아래로 쌓이게 함
+                        display: 'flex', flexDirection: 'column', 
                         gap: '20px', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' 
                     }}>
                         <button onClick={() => setShowAuthPopup(false)} style={{ position: 'absolute', top: '10px', right: '15px', background: 'none', border: 'none', fontSize: '28px', cursor: 'pointer', color: '#adb5bd' }}>&times;</button>
@@ -304,7 +346,7 @@ return (
                             <button onClick={handleLoadProject} style={{...STYLES.btnBase, backgroundColor: '#1971c2', color: 'white'}}>데이터 로드하기</button>
                         </div>
 
-                        <div style={{ borderBottom: '1px solid #f1f3f5' }}></div> {/* 모바일용 구분선 */}
+                        <div style={{ borderBottom: '1px solid #f1f3f5' }}></div>
 
                         <div style={{ flex: 1 }}>
                             <h3 style={{ color: '#2b8a3e', marginBottom: '15px' }}>🆕 새 프로젝트 시작</h3>

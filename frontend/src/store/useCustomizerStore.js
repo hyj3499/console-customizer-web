@@ -1,10 +1,10 @@
-// src/store/useCustomizerStore.js
 import { create } from 'zustand';
 
 const useCustomizerStore = create((set) => ({
 
     // ⭐ 1. 새 프로젝트 (모든 상태를 초기 기본값으로 완벽하게 덮어쓰기)
     resetStore: () => set({
+        isEditing: false, // ⭐ 초기화 시 편집 상태 해제
         color: '',
         protagonist: { name: '', images: [] },
         pFontStyle: { 
@@ -44,21 +44,26 @@ const useCustomizerStore = create((set) => ({
         }
     }),
 
-    // ⭐ 2. 프로젝트 파일 불러오기 (기존 데이터 무시하고 덮어쓰기)
+    // ⭐ 2. 프로젝트 파일 불러오기
     loadProjectData: (loadedData) => set((state) => ({
         ...state,         
         ...loadedData,    
+        isEditing: true, // ⭐ 데이터를 불러오면 즉시 편집 모드로 간주
         activeEventId: loadedData.events?.[0]?.id || 1, 
         showPreview: false,
         previewScenario: null
     })),
     
+    // --- ⭐ 전역 편집 상태 관리 ---
+    isEditing: false, // ⭐ 현재 에디터 작업 중인지 여부 (Step 2~5)
+    setIsEditing: (bool) => set({ isEditing: bool }),
+
     // --- 1단계 상태 ---
     color: '',
     setColor: (color) => set({ color }),
 
     // --- 2단계 상태 ---
-    protagonist: { name: '', images: [] }, // images 안에는 { file, preview } 가 들어감
+    protagonist: { name: '', images: [] },
     setProtagonist: (protagonist) => set({ protagonist }),
     
     pFontStyle: { 
@@ -93,7 +98,6 @@ const useCustomizerStore = create((set) => ({
 
     customFonts: [], 
     addCustomFont: (fontName, url, file) => set((state) => {
-        // ⭐ [수정] 이미 똑같은 이름의 폰트가 스토어에 있다면 추가하지 않고 무시함 (중복 방지)
         if (state.customFonts.some(f => f.name === fontName)) return state;
         return { customFonts: [...state.customFonts, { name: fontName, url, file }] };
     }), 
