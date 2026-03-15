@@ -9,6 +9,7 @@ import StepModeSelect from './StepModeSelect';
 import StepSettings from './StepSettings';
 import StepEventEditor from './StepEventEditor';
 import StepStartMenu from './StepStartMenu'; // ✅ Step 4 컴포넌트 추가
+import StepCheck from './StepCheck';
 import useCustomizerStore from '../../store/useCustomizerStore';
 
 
@@ -253,7 +254,7 @@ return (
                     {currentStep === 2 && <StepSettings />}
                     {currentStep === 3 && <StepEventEditor />}
                     {currentStep === 4 && <StepStartMenu />}
-                </div>
+                    {currentStep === 5 && <StepCheck projectId={newId || loadId} />}                </div>
 
                 {/* 4. 네비게이션 바 (모바일에서 버튼이 안 깨지도록 래핑) */}
                 <div style={{ 
