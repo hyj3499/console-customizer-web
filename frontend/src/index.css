@@ -14,7 +14,7 @@
 /* 예시: 새로운 레트로 폰트 추가 */
 @font-face {
   font-family: 'Griun_PolSensibility-Rg'; /* JS에서 사용할 이름 */
-  src: url('./public/fonts/Griun_PolSensibility-Rg.ttf') format('truetype');
+  src: url('/fonts/Griun_PolSensibility-Rg.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -22,8 +22,9 @@
 
 /* 예시: 또 다른 폰트 추가 */
 @font-face {
-  font-family: 'Galmuri14'; /* JS에서 사용할 이름 */
-  src: url('./public/fonts/Galmuri14.ttf') format('truetype');
+  font-family: 'Galmuri14';
+  /* 앞에 ./public을 빼고 바로 /fonts로 시작해야 합니다 */
+  src: url('/fonts/Galmuri14.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
