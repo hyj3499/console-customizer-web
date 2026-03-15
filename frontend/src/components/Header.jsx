@@ -17,71 +17,96 @@ export default function Header() {
         fontFamily: "'DOSGothic', 'Courier New', monospace",
         display: 'inline-block',
         outline: 'none',
-        cursor: 'pointer'
+        cursor: 'pointer',
+        whiteSpace: 'nowrap' // 글자 줄바꿈 방지
     };
 
-    return (
-        <header style={{ 
-            backgroundColor: '#c0c0c0',
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            padding: '8px 20px', 
-            // 💡 상단은 하이라이트, 하단은 강한 그림자로 입체감 부여
-            borderTop: '2px solid #fff',
-            borderLeft: '2px solid #fff',
-            borderBottom: '2px solid #000', 
-            alignItems: 'center',
-            userSelect: 'none'
-        }}>
-            
-            {/* 📁 로고 영역 (내 컴퓨터 아이콘 느낌) */}
-            <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', gap: '10px' }}>
-                <div style={{
-                    padding: '2px',
-                    border: '1px inset #fff', // 로고 주변을 살짝 파인 느낌으로
-                    backgroundColor: '#dfdfdf'
-                }}>
-                    <img 
-                        src="/images/logo.png" 
-                        alt="LOGO" 
-                        style={{ 
-                            height: '32px', 
-                            display: 'block',
-                            imageRendering: 'pixelated' // 도트 느낌 강조
-                        }} 
-                    />
-                </div>
-                <span style={{ 
-                    color: '#000', 
-                    fontWeight: 'bold', 
-                    fontSize: '14px',
-                    fontFamily: "'DOSGothic', monospace"
-                }}>
-                    Customizer.exe
-                </span>
-            </Link>
-            
-            {/* 🕹️ 메뉴 영역 (탭 메뉴 스타일) */}
-            <nav style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
-                <Link to="/about" style={win95ButtonStyle} className="win95-nav-btn">제품 소개(A)</Link>
-                <Link to="/faq" style={win95ButtonStyle} className="win95-nav-btn">FAQ(F)</Link>
-                <Link to="/notice" style={win95ButtonStyle} className="win95-nav-btn">공지사항(N)</Link>
-                <Link to="/contact" style={win95ButtonStyle} className="win95-nav-btn">문의하기(C)</Link>
-            </nav>
+// src/components/Header.jsx (주요 수정 부분)
 
-            {/* CSS 효과 (버튼 눌림 효과 등) */}
-            <style>{`
-                .win95-nav-btn:active {
-                    border-top: 2px solid #808080 !important;
-                    border-left: 2px solid #808080 !important;
-                    border-right: 2px solid #fff !important;
-                    border-bottom: 2px solid #fff !important;
-                    padding: 6px 14px 4px 16px !important; /* 눌렸을 때 살짝 밀리는 효과 */
+// src/components/Header.jsx (수정된 버전)
+
+return (
+    <header className="win95-header" style={{ 
+        backgroundColor: '#c0c0c0',
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        padding: '5px 10px', 
+        borderTop: '2px solid #fff',
+        borderLeft: '2px solid #fff',
+        borderBottom: '2px solid #000', 
+        alignItems: 'center',
+        userSelect: 'none',
+        flexWrap: 'nowrap', // ⭐ 절대 줄바꿈 금지 (무조건 한 줄)
+        gap: '5px'
+    }}>
+        
+        {/* 📁 로고 영역 (아이콘 + 텍스트) */}
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', gap: '5px', flexShrink: 0 }}>
+            <div style={{
+                padding: '1px',
+                border: '1px inset #fff',
+                backgroundColor: '#dfdfdf'
+            }}>
+                <img 
+                    src="/images/logo.png" 
+                    alt="L" 
+                    style={{ height: '22px', display: 'block', imageRendering: 'pixelated' }} 
+                />
+            </div>
+            <span className="logo-text" style={{ 
+                color: '#000', fontWeight: 'bold', fontSize: '13px', fontFamily: "'DOSGothic', monospace",
+                whiteSpace: 'nowrap' // 글자 짤림 방지
+            }}>
+                Customizer
+            </span>
+        </Link>
+        
+        {/* 🕹️ 메뉴 영역 (1행 4열 배치) */}
+        <nav className="win95-nav" style={{ 
+            display: 'flex', 
+            gap: '3px', 
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            flexShrink: 1 // 공간 부족 시 네비게이션이 유연하게 반응
+        }}>
+            <Link to="/about" style={win95ButtonStyle} className="win95-nav-btn">소개</Link>
+            <Link to="/faq" style={win95ButtonStyle} className="win95-nav-btn">FAQ</Link>
+            <Link to="/notice" style={win95ButtonStyle} className="win95-nav-btn">공지</Link>
+            <Link to="/contact" style={win95ButtonStyle} className="win95-nav-btn">문의</Link>
+        </nav>
+
+        <style>{`
+            /* 📱 모바일 세로 모드 최적화 (로고+버튼 무조건 한 줄) */
+            @media screen and (max-width: 600px) {
+                .win95-header {
+                    padding: 4px 6px !important; /* 헤더 여백 최소화 */
                 }
-                .win95-nav-btn:hover {
-                    background-color: #dfdfdf !important;
+
+                .logo-text {
+                    font-size: 11px !important; /* 로고 글자 살짝 축소 */
                 }
-            `}</style>
-        </header>
-    );
+
+                .win95-nav {
+                    gap: 2px !important; /* 버튼 사이 간격 좁힘 */
+                }
+
+                .win95-nav-btn {
+                    padding: 4px 3px !important; /* 버튼 내부 여백 대폭 축소 */
+                    font-size: 10px !important;   /* 폰트 크기 최적화 */
+                    min-width: 0 !important;      /* 너비 제한 해제 */
+                    flex: 0 1 auto !important;    /* 꽉 채우지 않고 글자 크기에 맞춤 */
+                    text-align: center !important;
+                }
+            }
+
+            .win95-nav-btn:active {
+                border-top: 2px solid #808080 !important;
+                border-left: 2px solid #808080 !important;
+                border-right: 2px solid #fff !important;
+                border-bottom: 2px solid #fff !important;
+                padding: 5px 2px 3px 4px !important; /* 눌림 효과 시 여백 유지 */
+            }
+        `}</style>
+    </header>
+);
 }

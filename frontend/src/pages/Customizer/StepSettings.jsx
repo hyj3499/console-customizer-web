@@ -396,12 +396,18 @@ const InGamePreview = ({ previewBg, standingImg, currentGlobalUi, textShadowStr,
             )}
 
             <div className="ig-namebox" style={{ 
+                // 이미지인지 색상인지에 따라 바뀌는 부분만 JSX에 남김
                 backgroundColor: nAsset.type === 'image' ? 'transparent' : activeStyle.nameColor, 
                 backgroundImage: nAsset.type === 'image' ? `url(${nAsset.src})` : 'none', 
                 border: nAsset.type === 'css' ? finalNameBorder : 'none', 
                 borderRadius: nAsset.type === 'css' ? nAsset.borderRadius : '0'
             }}>
-                <span style={{ fontFamily: renderFontFamily, color: activeStyle.color, fontWeight: 'bold', textShadow: charTextShadowStr }}>
+                <span style={{ 
+                    // 선택한 폰트와 색상에 따라 바뀌는 부분만 JSX에 남김
+                    fontFamily: renderFontFamily, 
+                    color: activeStyle.color, 
+                    textShadow: charTextShadowStr 
+                }}>
                     {charName}
                 </span>
             </div>
@@ -417,7 +423,7 @@ const InGamePreview = ({ previewBg, standingImg, currentGlobalUi, textShadowStr,
                 </p>
             </div>
             
-            <div style={{
+<div className="ig-system-menu" style={{
                 position: 'absolute',
                 bottom: '95cqh', 
                 left: '70%', 

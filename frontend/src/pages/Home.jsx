@@ -108,7 +108,7 @@ export default function Home() {
 
             {/* 🏁 하단 작업 표시줄 (Taskbar) */}
             <div style={{ 
-                position: 'absolute', bottom: 0, left: 0, width: '100%', height: '32px', 
+                position: 'fixed', bottom: 0, left: 0, width: '100%', height: '32px', 
                 backgroundColor: '#c0c0c0', 
                 borderTop: '2px solid #fff', borderBottom: '2px solid #000',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center', 

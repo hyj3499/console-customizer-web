@@ -191,84 +191,92 @@ export default function Customizer() {
     };
 
 return (
-    // 1. 최상위 컨테이너: 배경 투명 (body의 청록색이 보임)
-    <div id="capture-area" style={{ 
-        padding: '40px 20px', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
-        width: '100%', 
-        minHeight: '100vh', 
-        backgroundColor: 'transparent' 
-    }}>
-        
-        {/* 상단 타이틀 (청록색 배경 위에서 잘 보이게 하얀색+그림자 추천) */}
-        <h1 style={{ color: 'white', textShadow: '2px 2px #000', marginBottom: '10px' }}>🎨 Codename: Choiae Customizer</h1>
-        <div style={{ marginBottom: '40px', color: '#ffff00', fontWeight: 'bold', fontSize: '18px', textShadow: '1px 1px #000' }}>
-            Step {currentStep} / 5
-        </div>
-
-        {/* ⭐ 2. 중앙 하얀색 컨텐츠 영역 (윈도우 95 창 스타일) */}
-        <div className="win95-window" style={{ 
+        // 1. 최상위 컨테이너: 배경 투명 (body의 청록색이 보임), 모바일을 고려한 패딩 축소
+        <div id="capture-area" style={{ 
+            padding: '2vw', // 모바일에서는 패딩이 줄어듦
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
             width: '100%', 
-            maxWidth: '1000px', // 본문 너비 조절
-            backgroundColor: '#ffffff', // 본문은 하얀색!
-            boxShadow: '10px 10px 0px rgba(0,0,0,0.2)', // 레트로한 각진 그림자
-            display: 'flex',
-            flexDirection: 'column'
+            minHeight: '100vh', 
+            backgroundColor: 'transparent' 
         }}>
-            {/* 창 상단 타이틀바 (선택사항, 윈도우 느낌을 더해줌) */}
-            <div className="win95-title-bar" style={{ margin: '2px' }}>
-                <span style={{ fontSize: '12px' }}>Customizer_System_v1.0.exe</span>
-                <div style={{ display: 'flex', gap: '2px' }}>
-                    <button style={{ width: '14px', height: '14px', fontSize: '9px', padding: 0 }}>_</button>
-                    <button style={{ width: '14px', height: '14px', fontSize: '9px', padding: 0 }}>X</button>
+            
+            {/* 상단 타이틀 (모바일에서도 글자가 잘리지 않도록 유동적 크기 적용) */}
+            <h1 style={{ color: 'white', textShadow: '2px 2px #000', marginBottom: '10px', fontSize: 'calc(1.5rem + 1vw)', textAlign: 'center' }}>
+                🎨 Codename: Choiae Customizer
+            </h1>
+            <div style={{ marginBottom: '3vw', color: '#ffff00', fontWeight: 'bold', fontSize: 'calc(1rem + 0.5vw)', textShadow: '1px 1px #000' }}>
+                Step {currentStep} / 5
+            </div>
+
+            {/* ⭐ 2. 중앙 하얀색 컨텐츠 영역 (윈도우 95 창 스타일) */}
+            <div className="win95-window" style={{ 
+                width: '98%', // ⭐ 모바일에서 화면을 꽉 채우도록 변경
+                maxWidth: '1000px', // PC에서는 최대 1000px까지만 늘어남
+                backgroundColor: '#ffffff', 
+                boxShadow: '10px 10px 0px rgba(0,0,0,0.2)', 
+                display: 'flex',
+                flexDirection: 'column'
+            }}>
+                {/* 창 상단 타이틀바 */}
+                <div className="win95-title-bar" style={{ margin: '2px' }}>
+                    <span style={{ fontSize: '12px' }}>Customizer_System_v1.0.exe</span>
+                    <div style={{ display: 'flex', gap: '2px' }}>
+                        <button style={{ width: '14px', height: '14px', fontSize: '9px', padding: 0 }}>_</button>
+                        <button style={{ width: '14px', height: '14px', fontSize: '9px', padding: 0 }}>X</button>
+                    </div>
+                </div>
+
+                {/* 3. 실제 내용이 들어가는 구역 (모바일 패딩 축소) */}
+                <div style={{ padding: '3vw', backgroundColor: '#ffffff', overflowX: 'hidden' }}>
+                    {currentStep === 1 && <StepModeSelect selectedMode={selectedMode} onSelectMode={setSelectedMode} />}
+                    {currentStep === 2 && <StepSettings />}
+                    {currentStep === 3 && <StepEventEditor />}
+                    {currentStep === 4 && <StepStartMenu />}
+                </div>
+
+                {/* 4. 네비게이션 바 (모바일에서 버튼이 안 깨지도록 래핑) */}
+                <div style={{ 
+                    padding: '3vw', 
+                    backgroundColor: '#f1f3f5', 
+                    borderTop: '1px solid #dee2e6',
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    gap: '10px',
+                    flexWrap: 'wrap' // ⭐ 모바일 화면이 좁으면 버튼이 아래로 내려가게 함
+                }} data-html2canvas-ignore="true">
+                    {currentStep > 1 && (
+                        <button onClick={() => setCurrentStep(prev => prev - 1)} className="win95-button" style={{ flex: '1', minWidth: '100px' }}>
+                            ⬅️ 이전
+                        </button>
+                    )}
+                    {currentStep > 1 && (
+                        <button onClick={handleSave} className="win95-button" style={{ backgroundColor: '#20c997', color: 'white', flex: '1', minWidth: '100px' }}>
+                            💾 현재 상태 저장
+                        </button>
+                    )}
+                    {currentStep < 5 && (
+                        <button onClick={handleNextStep} className="win95-button" style={{ backgroundColor: '#646cff', color: 'white', flex: '1', minWidth: '100px' }}>
+                            다음 단계로 ➡️
+                        </button>
+                    )}
                 </div>
             </div>
 
-            {/* 3. 실제 내용이 들어가는 구역 (하얀색 배경) */}
-            <div style={{ padding: '40px 20px', backgroundColor: '#ffffff' }}>
-                {currentStep === 1 && <StepModeSelect selectedMode={selectedMode} onSelectMode={setSelectedMode} />}
-                {currentStep === 2 && <StepSettings />}
-                {currentStep === 3 && <StepEventEditor />}
-                {currentStep === 4 && <StepStartMenu />}
-            </div>
-
-            {/* 4. 네비게이션 바 (창 하단에 고정) */}
-            <div style={{ 
-                padding: '20px', 
-                backgroundColor: '#f1f3f5', 
-                borderTop: '1px solid #dee2e6',
-                display: 'flex', 
-                justifyContent: 'center', 
-                gap: '20px' 
-            }} data-html2canvas-ignore="true">
-                {currentStep > 1 && (
-                    <button onClick={() => setCurrentStep(prev => prev - 1)} className="win95-button">
-                        ⬅️ 이전
-                    </button>
-                )}
-                {currentStep > 1 && (
-                    <button onClick={handleSave} className="win95-button" style={{ backgroundColor: '#20c997', color: 'white' }}>
-                        💾 현재 상태 저장
-                    </button>
-                )}
-                {currentStep < 5 && (
-                    <button onClick={handleNextStep} className="win95-button" style={{ backgroundColor: '#646cff', color: 'white' }}>
-                        다음 단계로 ➡️
-                    </button>
-                )}
-            </div>
-        </div>
-
-            {/* 계정 인증 모달 */}
+            {/* 계정 인증 모달 (모바일 환경에 맞춰 크기 조정) */}
             {showAuthPopup && (
                 <div style={STYLES.overlay}>
-                    <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '45px', width: '780px', maxWidth: '95%', display: 'flex', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
-                        <button onClick={() => setShowAuthPopup(false)} style={{ position: 'absolute', top: '20px', right: '25px', background: 'none', border: 'none', fontSize: '28px', cursor: 'pointer', color: '#adb5bd' }}>&times;</button>
+                    <div style={{ 
+                        backgroundColor: 'white', borderRadius: '16px', padding: '3vw', 
+                        width: '90%', maxWidth: '780px', 
+                        display: 'flex', flexDirection: 'column', // ⭐ 모바일에서는 위아래로 쌓이게 함
+                        gap: '20px', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' 
+                    }}>
+                        <button onClick={() => setShowAuthPopup(false)} style={{ position: 'absolute', top: '10px', right: '15px', background: 'none', border: 'none', fontSize: '28px', cursor: 'pointer', color: '#adb5bd' }}>&times;</button>
 
-                        <div style={{ flex: 1, paddingRight: '40px', borderRight: '1px solid #f1f3f5' }}>
-                            <h3 style={{ color: '#1971c2', marginBottom: '25px' }}>📂 프로젝트 불러오기</h3>
+                        <div style={{ flex: 1 }}>
+                            <h3 style={{ color: '#1971c2', marginBottom: '15px' }}>📂 프로젝트 불러오기</h3>
                             <label style={STYLES.label}>프로젝트 ID</label>
                             <input type="text" value={loadId} onChange={(e) => setLoadId(e.target.value)} style={STYLES.input} />
                             <label style={STYLES.label}>비밀번호</label>
@@ -276,8 +284,10 @@ return (
                             <button onClick={handleLoadProject} style={{...STYLES.btnBase, backgroundColor: '#1971c2', color: 'white'}}>데이터 로드하기</button>
                         </div>
 
-                        <div style={{ flex: 1, paddingLeft: '40px' }}>
-                            <h3 style={{ color: '#2b8a3e', marginBottom: '25px' }}>🆕 새 프로젝트 시작</h3>
+                        <div style={{ borderBottom: '1px solid #f1f3f5' }}></div> {/* 모바일용 구분선 */}
+
+                        <div style={{ flex: 1 }}>
+                            <h3 style={{ color: '#2b8a3e', marginBottom: '15px' }}>🆕 새 프로젝트 시작</h3>
                             <label style={STYLES.label}>사용할 ID</label>
                             <input type="text" value={newId} onChange={(e) => setNewId(e.target.value)} style={STYLES.input} />
                             <label style={STYLES.label}>비밀번호 설정</label>

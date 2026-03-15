@@ -464,19 +464,19 @@ export default function StepEventEditor() {
                                 </div>
                                 
                          {/* ⭐ [추가] 이벤트 에디터 미리보기용 시스템 퀵 메뉴 */}
-                                <div style={{
-                                    position: 'absolute',
-                                    bottom: '95cqh', // 유정님이 아까 원하셨던 하단 위치로 조정 (95cqh는 너무 위에요!)
-                                    left: '70%',
-                                    transform: 'translateX(-50%)',
-                                    display: 'flex',
-                                    gap: '15px',
-                                    zIndex: 100,
-                                    backgroundColor: 'transparent',
-                                    width: 'auto',
-                                    whiteSpace: 'nowrap'
-                                }}>
-                                    {['되감기', '대사록', '자동진행', '저장하기', '불러오기', '설정'].map((menu) => (
+<div className="ig-system-menu" style={{
+                position: 'absolute',
+                bottom: '95cqh', 
+                left: '70%', 
+                transform: 'translateX(-50%)',
+                display: 'flex',
+                gap: '15px',
+                zIndex: 100,
+                backgroundColor: 'transparent',
+                width: 'auto',
+                whiteSpace: 'nowrap'
+            }}>
+                {['되감기', '대사록', '자동진행', '저장하기', '불러오기', '설정'].map((menu) => (
                                         <span key={menu} style={{
                                             fontFamily: currentGlobalUi.systemFont || 'sans-serif',
                                             fontSize: '1.7cqh',
