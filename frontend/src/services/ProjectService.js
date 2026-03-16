@@ -5,6 +5,7 @@
 // 💡 리팩토링 포인트 : 
 //   - Vercel 4.5MB 제한을 우회하기 위해 다이렉트 업로드(Presigned URL) 방식 도입
 //   - 상태 관리에 있는 모든 파일을 긁어모아 일괄 병렬 처리
+//   - [추가] 글로벌 캐시를 도입하여 중복 업로드(트래픽 낭비) 완벽 차단 🛡️
 // ==============================================================================
 
 import axios from 'axios';
@@ -12,6 +13,11 @@ import useCustomizerStore from '../store/useCustomizerStore';
 
 // Vercel 환경과 로컬 환경을 자동 구분하는 API 경로
 const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:8000/api/projects' : '/api/projects';
+
+// ==============================================================================
+// ⭐ [트래픽 방어] 이번 세션에서 이미 업로드에 성공한 파일의 최종 URL을 기억하는 전역 메모장
+// ==============================================================================
+const globalUrlMapCache = {}; 
 
 export const saveProjectToServer = async (id, pw) => {
     try {
@@ -81,16 +87,18 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
     });
 
     // ==============================================================================
-    // ⭐ [추가/변경] 다이렉트 업로드 프로세스 시작!
+    // ⭐ [추가/변경] 다이렉트 업로드 (캐시 메모장 확인 로직 추가)
     // ==============================================================================
     console.log("🚀 클라우드 저장 프로세스 시작...");
-    const urlMap = {}; // { "원본파일명.png": "https://pub-.../원본파일명.png" }
+    
+    // 💡 핵심: 수집된 파일 중 '전역 메모장에 없는(처음 보는) 파일'만 진짜 업로드 목록으로 추림
+    const filesToActuallyUpload = finalFiles.filter(file => !globalUrlMapCache[file.name]);
 
-    if (finalFiles.length > 0) {
-        console.log(`📡 1단계: 서버에 파일 ${finalFiles.length}개의 업로드 권한(Presigned URL) 요청...`);
+    if (filesToActuallyUpload.length > 0) {
+        console.log(`📡 1단계: 서버에 새 파일 ${filesToActuallyUpload.length}개의 업로드 권한(Presigned URL) 요청...`);
         
-        // 서버에 "이 파일들 올릴 테니 입장권 줘" 라고 요청
-        const filesInfo = finalFiles.map(f => ({ name: f.name, type: f.type }));
+        // 서버에 "이 파일들 올릴 테니 입장권 줘" 라고 요청 (새 파일만!)
+        const filesInfo = filesToActuallyUpload.map(f => ({ name: f.name, type: f.type }));
         const urlResponse = await axios.post(`${API_URL}/presigned`, { projectId, filesInfo });
         const { urls } = urlResponse.data;
 
@@ -98,23 +106,25 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
         
         // 입장권(URL)을 사용하여 R2 클라우드로 직접 PUT 요청 
         const uploadPromises = urls.map(async (urlInfo) => {
-            const file = finalFiles.find(f => f.name === urlInfo.originalName);
+            const file = filesToActuallyUpload.find(f => f.name === urlInfo.originalName);
             if (file) {
                 await axios.put(urlInfo.uploadUrl, file, {
                     headers: { 'Content-Type': file.type }
                 });
-                // 성공적으로 올라간 파일의 진짜 주소를 지도(urlMap)에 기록
-                urlMap[urlInfo.originalName] = urlInfo.finalUrl;
+                // ⭐ 성공적으로 올라간 파일의 진짜 주소를 '전역 메모장'에 영구 기록
+                globalUrlMapCache[urlInfo.originalName] = urlInfo.finalUrl;
             }
         });
         
         await Promise.all(uploadPromises); // 병렬 처리로 초고속 업로드
-        console.log("✅ 2단계 완료: 클라우드 업로드 성공!");
+        console.log("✅ 2단계 완료: 새 파일들 클라우드 업로드 성공!");
+    } else {
+        console.log("⏭️ 새로 추가된 이미지가 없어 S3 업로드를 건너뜁니다! (트래픽 방어 성공 🛡️)");
     }
 
 
     // ==============================================================================
-    // 3. 정제된 최종 JSON 데이터 조립 (이제 사진 대신 urlMap을 같이 보냄)
+    // 3. 정제된 최종 JSON 데이터 조립
     // ==============================================================================
     console.log("📄 3단계: 최종 데이터 백엔드 전송 준비...");
 
@@ -175,7 +185,8 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
         projectId,
         gameData: JSON.stringify(gameData),
         htmlContent: htmlString,
-        urlMap // 백엔드에게 "이 가짜 파일 이름들을 이 진짜 URL로 바꿔줘"라고 알려주는 지도
+        // ⭐ 핵심: 백엔드에게 '이번 세션에서 올라간 모든 파일의 진짜 URL 지도'를 넘겨줌
+        urlMap: globalUrlMapCache 
     });
     
     console.log("🎉 저장 대성공!");
