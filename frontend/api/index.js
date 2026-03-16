@@ -4,7 +4,8 @@ import dotenv from 'dotenv';
 // ⭐ HeadObjectCommand 추가 (파일 존재 여부 확인용)
 import { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-
+import { generateScreensRpy } from './renpyScreensConverter.js'; // ⭐ 임포트 추가
+import { generateScriptRpy } from './renpyScriptConverter.js'; // ⭐ 추가
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -204,7 +205,26 @@ app.post('/api/projects/save', async (req, res) => {
                 ContentType: 'text/html' 
             }));
         }
+// ⭐ 방금 만든 함수로 screens.rpy 텍스트 생성
+        const screensRpyContent = generateScreensRpy(parsedData);
+        const rpyBuffer = Buffer.from(screensRpyContent, 'utf-8');
+        
+        // ⭐ R2에 screens.rpy 업로드!
+        await s3.send(new PutObjectCommand({ 
+            Bucket: process.env.R2_BUCKET_NAME, 
+            Key: `${projectId}/screens.rpy`, // 폴더 안에 나란히 저장됩니다
+            Body: rpyBuffer, 
+            ContentType: 'text/plain' 
+        }));
 
+        const scriptRpyContent = generateScriptRpy(parsedData);
+        await s3.send(new PutObjectCommand({ 
+            Bucket: process.env.R2_BUCKET_NAME, 
+            Key: `${projectId}/script.rpy`, 
+            Body: Buffer.from(scriptRpyContent, 'utf-8'), 
+            ContentType: 'text/plain' 
+        }));
+        
         res.status(200).json({ success: true });
     } catch (error) {
         console.error("저장 에러:", error);

@@ -52,21 +52,34 @@ const { startMenu, setStartMenu, globalUi, customFonts } = useCustomizerStore();
         const file = e.target.files[0];
         if (!file) return;
 
-        const reader = new FileReader();
+const reader = new FileReader();
         reader.onload = (event) => {
             const img = new Image();
             img.src = event.target.result;
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                canvas.width = 1920; canvas.height = 1080;
+                canvas.width = 1920; 
+                canvas.height = 1080;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, 1920, 1080);
                 
-                // ⭐ 해결: toDataURL을 사용하여 이미지를 Base64 문자열로 변환 (용량 최적화를 위해 jpeg 0.8 사용)
-                const base64DataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                
-                // file 객체는 제외하고 영구적인 base64 텍스트만 저장
-                setStartMenu({ bgImage: { preview: base64DataUrl } });
+                // ⭐ 핵심 수정: 캔버스를 다시 '파일(Blob)' 형태로 되돌립니다.
+                canvas.toBlob((blob) => {
+                    // 1. R2 업로드를 위해 원본 파일명을 유지한 새 File 객체 생성
+                    const resizedFile = new File([blob], file.name, { type: 'image/jpeg' });
+                    
+                    // 2. 브라우저에서 즉시 보여주기 위한 임시 URL 생성
+                    const previewUrl = URL.createObjectURL(resizedFile);
+                    
+                    // 3. 스토어에 'file'과 'preview'를 함께 저장!
+                    // 이렇게 해야 ProjectService가 "오, 파일이 있네? R2에 올려야지!"라고 감지합니다.
+                    setStartMenu({ 
+                        bgImage: { 
+                            file: resizedFile, 
+                            preview: previewUrl 
+                        } 
+                    });
+                }, 'image/jpeg', 0.8);
             };
         };
         reader.readAsDataURL(file);

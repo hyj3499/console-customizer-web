@@ -14,7 +14,7 @@ import './StepSettings.css';
 
 const PRESET_COLORS = [
   { id: 'pink', name: '핑크', value: 'rgba(255,182,193,0.8)', colors: ['#ffb6c1', '#faafbe'] },
-  { id: 'black', name: '블랙', value: 'rgba(0,0,0,0.8)', colors: ['#444444', '#000000'] },
+  { id: 'black', name: '와인', value: 'rgba(0,0,0,0.8)', colors: ['#444444', '#000000'] },
   { id: 'white', name: '화이트', value: 'rgba(255,255,255,0.8)', colors: ['#ffffff', '#e0e0e0'] },
   { id: 'blue', name: '블루', value: 'rgba(173,216,230,0.8)', colors: ['#add8e6', '#87ceeb'] },
   { id: 'purple', name: '퍼플', value: 'rgba(205,180,219,0.8)', colors: ['#d8bfd8', '#b19cd9'] },
@@ -57,24 +57,24 @@ const UI_ASSETS = {
     simple: (bg, border = '#dddddd') => ({ name: '심플형', type: 'css', border: `2px solid ${border}`, borderRadius: '4px' }),
     gothic: (bg, border = '#a9a9a9') => ({ name: '고딕풍', type: 'css', border: `4px double ${border}`, borderRadius: '0px' }),
     cute: (bg, border = '#ffb3c6') => ({ name: '큐티', type: 'css', border: `3px dashed ${border}`, borderRadius: '15px' }),
-    retro: (bg) => ({ name: '🕹️ 레트로', type: 'image', src: `/images/retro_dialog_${getColorId(bg)}.png` }),
+    retro: (bg) => ({ name: '도트', type: 'image', src: `/images/retro_dialog_${getColorId(bg)}.png` }),
   },
   namebox: {
     simple: (bg, border = '#dddddd') => ({ name: '심플형', type: 'css', border: `2px solid ${border}`, borderRadius: '4px' }),
     gothic: (bg, border = '#a9a9a9') => ({ name: '고딕풍', type: 'css', border: `3px double ${border}`, borderRadius: '0px' }),
     cute: (bg, border = '#ffb3c6') => ({ name: '큐티', type: 'css', border: `2px dashed ${border}`, borderRadius: '15px' }),
-    retro: (bg) => ({ name: '🕹️ 레트로', type: 'image', src: `/images/retro_namebox_${getColorId(bg)}.png` }),
+    /*retro: (bg) => ({ name: '🕹️ 레트로', type: 'image', src: `/images/retro_namebox_${getColorId(bg)}.png` }),*/
   },
   portrait: {
     square: (bg, border = '#dddddd') => ({ name: '기본 사각형', type: 'css', border: `3px solid ${border}`, borderRadius: '0%' }),
     rounded: (bg, border = '#dddddd') => ({ name: '부드러운 사각', type: 'css', border: `3px solid ${border}`, borderRadius: '12%' }),
     circle: (bg, border = '#dddddd') => ({ name: '완벽한 원형', type: 'css', border: `3px solid ${border}`, borderRadius: '50%' }),
-    retro: (bg) => ({ name: '🎮 레트로 프레임', type: 'image', src: `/images/retro_frame_${getColorId(bg)}.png`, mask: '/images/retro_frame_mask.png' }),
-    reborn: (bg) => ({ name: '🕹️ 리본', type: 'image', src: `/images/reborn_frame_${getColorId(bg)}.png`, mask: '/images/retro_frame_mask.png' }),
+    retro: (bg) => ({ name: '도트', type: 'image', src: `/images/retro_frame_${getColorId(bg)}.png`, mask: '/images/retro_frame_mask.png' })
+    /*reborn: (bg) => ({ name: '🕹️ 리본', type: 'image', src: `/images/reborn_frame_${getColorId(bg)}.png`, mask: '/images/retro_frame_mask.png' }),*/
   },
   calendar: {
     simple: (bg, border = '#dddddd') => ({ name: '심플형', type: 'css', border: `2px solid ${border}`, borderRadius: '4px' }),
-    retro: (bg) => ({ name: '🕹️ 레트로', type: 'image', src: `/images/retro_calendar_${getColorId(bg)}.png` }),
+    retro: (bg) => ({ name: '도트 달력', type: 'image', src: `/images/retro_calendar_${getColorId(bg)}.png` }),
     none: () => ({ name: '🚫 표시 안 함', type: 'none' }),
   },
 };
