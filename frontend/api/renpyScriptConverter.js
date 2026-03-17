@@ -1,6 +1,15 @@
-// api/renpyScriptConverter.js
+/**
+ * 렌파이 스크립트 변환기 (최종 수정본)
+ * 주요 기능: 타음 오디오 로직, 유동적인 캐릭터 생성, 높이 95% 스탠딩 연출
+ */
 
-// 1. 색상 및 폰트 유틸리티 함수 (screens 변환기와 동일)
+const getFileName = (path) => {
+    if (!path) return "";
+    return path.split('/').pop();
+};
+
+// 색상 변환 헬퍼 추가 (텍스트 색상 개별 적용을 위함)
+// 색상 변환 헬퍼 (Script 파일 상단에 추가 필요)
 const rgbaToHex = (colorStr) => {
     if (!colorStr) return "#ffffff"; 
     if (colorStr.startsWith("#")) return colorStr;
@@ -9,162 +18,136 @@ const rgbaToHex = (colorStr) => {
     const r = parseInt(match[1], 10).toString(16).padStart(2, '0');
     const g = parseInt(match[2], 10).toString(16).padStart(2, '0');
     const b = parseInt(match[3], 10).toString(16).padStart(2, '0');
-    return `#${r}${g}${b}`; // 대사 텍스트 등은 보통 alpha값 없이 RGB만 사용
+    return `#${r}${g}${b}`;
 };
 
-const safeFont = (fontName) => {
-    if (!fontName || fontName === "시스템 폰트 사용" || fontName === "") return "DejaVuSans.ttf";
-    if (!fontName.toLowerCase().endsWith(".ttf") && !fontName.toLowerCase().endsWith(".otf")) {
-        return `${fontName}.ttf`;
+// ⭐ 버그 2 & 3 해결: 개별 외곽선과 이름 텍스트 색상을 확실하게 강제 부여
+const buildCharacterDef = (varName, charName, fontStyle, isProtagonist = false) => {
+    const soundGroup = fontStyle?.typingSound === 'type2' ? 'sounds_B' : 'sounds_A';
+    const stylePrefix = isProtagonist ? 'p' : varName; 
+    
+    let charArgs = `callback=type_sound_${soundGroup}, window_style="${stylePrefix}_window", namebox_style="${stylePrefix}_namebox"`;
+    
+    // 텍스트 색상 (what_color: 대사, who_color: 이름)
+    const textColor = fontStyle?.color ? rgbaToHex(fontStyle.color) : "#ffffff";
+    charArgs += `, what_color="${textColor}", who_color="${textColor}"`;
+    
+    // 외곽선이 켜져있다면, 대사와 이름 모두에 개별 외곽선 적용
+    if (fontStyle?.useOutline) {
+        const outlineColor = fontStyle.outline ? rgbaToHex(fontStyle.outline) : "#000000";
+        charArgs += `, what_outlines=[(2, "${outlineColor}", 0, 0)], who_outlines=[(2, "${outlineColor}", 0, 0)]`;
     }
-    return fontName;
+
+    return `define ${varName} = Character("${charName}", ${charArgs})\n`;
 };
 
-// 2. 스크립트 렌더링 함수
 export const generateScriptRpy = (data) => {
     let script = `################################################################################\n`;
-    script += `## 캐릭터 및 초기 변수 세팅\n`;
+    script += `## 1. 랜덤 타이핑 오디오 로직 (Python 블록)\n`;
+    script += `################################################################################\n`;
+    
+    script += `init python:\n`;
+    script += `    import random\n\n`;
+    
+    script += `    # 오디오 파일 정의\n`;
+    script += `    sounds_A = ['audio/A1.ogg', 'audio/A2.ogg', 'audio/A3.ogg', 'audio/A4.ogg', 'audio/A5.ogg']\n`;
+    script += `    sounds_B = ['audio/B1.ogg', 'audio/B2.ogg', 'audio/B3.ogg', 'audio/B4.ogg', 'audio/B5.ogg']\n\n`;
+
+    script += `    def type_sound_callback(event, sound_list, interact=True, **kwargs):\n`;
+    script += `        if not interact: return\n`;
+    script += `        if event == "show":\n`;
+    script += `            renpy.sound.play(random.choice(sound_list))\n`;
+    script += `            for i in range(15): # 연속적인 소리를 위해 큐 생성\n`;
+    script += `                renpy.sound.queue(random.choice(sound_list))\n`;
+    script += `        elif event == "slow_done" or event == "end":\n`;
+    script += `            renpy.sound.stop()\n\n`;
+
+    script += `    type_sound_sounds_A = lambda event, **kwargs: type_sound_callback(event, sounds_A, **kwargs)\n`;
+    script += `    type_sound_sounds_B = lambda event, **kwargs: type_sound_callback(event, sounds_B, **kwargs)\n\n`;
+
+    script += `################################################################################\n`;
+    script += `## 2. 전역 변수 및 캐릭터 선언\n`;
     script += `################################################################################\n\n`;
 
-    // 💡 달력용 변수 선언
     script += `default current_month = ""\n`;
     script += `default current_day = ""\n`;
-    script += `default current_time = ""\n\n`;
+    script += `default current_time = ""\n`;
+    script += `default current_p_image = ""\n\n`;
 
-    // 👤 주인공 캐릭터 정의
+    // 주인공 선언
     const pName = data.protagonist?.name || '주인공';
-    const pColor = rgbaToHex(data.pFontStyle?.color);
-    const pFont = safeFont(data.pFontStyle?.font);
-    
-    // who_color(이름 색상), who_font(이름 폰트), what_color(대사 색상), what_font(대사 폰트)
-    script += `define p = Character("${pName}", who_color="${pColor}", what_color="${pColor}", who_font="${pFont}", what_font="${pFont}")\n`;
+    script += buildCharacterDef("p", pName, data.pFontStyle);
 
-    // 🎭 등장인물 캐릭터 정의
-    if (data.characters && data.characters.length > 0) {
+    // 추가 캐릭터 선언
+    if (data.characters) {
         data.characters.forEach(char => {
             if (char.name) {
-                const cColor = rgbaToHex(char.fontStyle?.color);
-                const cFont = safeFont(char.fontStyle?.font);
-                script += `define char_${char.id} = Character("${char.name}", who_color="${cColor}", what_color="${cColor}", who_font="${cFont}", what_font="${cFont}")\n`;
+                script += buildCharacterDef(`char_${char.id}`, char.name, char.fontStyle);
             }
         });
     }
 
     script += `\n################################################################################\n`;
-    script += `## 메인 스토리 시작점\n`;
+    script += `## 3. 게임 실행 루프\n`;
     script += `################################################################################\n`;
     script += `label start:\n`;
     
+    // 첫 번째 이벤트로 자동 시작
     if (data.events && data.events.length > 0) {
         script += `    jump event_${data.events[0].id}\n\n`;
-    } else {
-        script += `    "설정된 이벤트가 없습니다."\n    return\n\n`;
     }
 
-    // 🎬 이벤트 파싱 및 라벨 생성
+    // 각 이벤트 레이블 생성
     if (data.events) {
         data.events.forEach(event => {
-            const branches = {};
+            script += `label event_${event.id}:\n`;
+            
+            // 상단 UI용 날짜 데이터 갱신
+            if (event.baseDate) {
+                script += `    $ current_month = "${event.baseDate.month || ''}"\n`;
+                script += `    $ current_day = "${event.baseDate.day || ''}"\n`;
+                script += `    $ current_time = "${event.baseDate.time || ''}"\n`;
+            }
+
             event.scenarios.forEach(sc => {
-                const branchName = sc.branch || 'main';
-                if (!branches[branchName]) branches[branchName] = [];
-                branches[branchName].push(sc);
-            });
-
-            Object.keys(branches).forEach(branch => {
-                const labelName = branch === 'main' ? `event_${event.id}` : `event_${event.id}_${branch}`;
-                script += `label ${labelName}:\n`;
-
-                // 메인 브랜치에서만 환경 세팅 (배경음악, 달력)
-                if (branch === 'main') {
-                    if (event.baseDate) {
-                        script += `    $ current_month = "${event.baseDate.month || ''}"\n`;
-                        script += `    $ current_day = "${event.baseDate.day || ''}"\n`;
-                        script += `    $ current_time = "${event.baseDate.time || ''}"\n`;
-                    }
-                    if (event.bgm) {
-                        script += `    play music "${event.bgm}" loop\n`;
-                    }
+                script += `\n    # 시나리오 타입: [${sc.type}]\n`;
+                
+                // 🖼️ 배경 이미지 설정
+                if (sc.bgImage) {
+                    script += `    scene expression "${getFileName(sc.bgImage)}" with dissolve\n`;
+                }
+                
+                // 👤 주인공 페이스칩 데이터 갱신 (스크린에서 참조)
+                if (sc.protagonistImage) {
+                    script += `    $ current_p_image = "${getFileName(sc.protagonistImage)}"\n`;
+                }
+                
+                // 👥 등장인물 스탠딩 이미지 연출 (95% 높이 최적화)
+                if (sc.heroineImage) {
+                    const fileName = getFileName(sc.heroineImage);
+                    script += `    show expression "${fileName}" as h_sprite:\n`;
+                    script += `        xalign 0.5\n`;
+                    script += `        yalign 1.0\n`;
+                    // ⭐ 게임 화면 높이의 95%로 강제 고정하며 비율 유지
+                    script += `        ysize int(config.screen_height * 0.95)\n`;
+                    script += `        fit "contain"\n`;
                 }
 
-                branches[branch].forEach((sc) => {
-                    script += `\n    # [씬 타입: ${sc.type}]\n`;
-
-                    // 배경 처리
-                    if (sc.bgImage && sc.bgType === 'custom_cg') {
-                        script += `    scene expression "${sc.bgImage}"\n`;
-                    } else if (sc.bgType && sc.bgType !== 'custom_cg') {
-                        script += `    scene ${sc.bgType}\n`;
+                // 💬 대사 출력
+                if (sc.type === 'dialog') {
+                    let speaker = 'p'; // 기본값 주인공
+                    if (sc.speaker !== 'PROTAGONIST' && sc.speaker !== '나레이션') {
+                        const c = data.characters.find(char => char.name === sc.speaker);
+                        speaker = c ? `char_${c.id}` : `"${sc.speaker}"`;
+                    } else if (sc.speaker === '나레이션') {
+                        speaker = '""'; // 나레이션은 화자 이름 없음
                     }
-
-                    // 스탠딩 이미지 (URL 지원)
-                    if (sc.protagonistImage) {
-                        script += `    show expression "${sc.protagonistImage}" as p_sprite at left\n`;
-                    } else {
-                        script += `    hide p_sprite\n`;
-                    }
-
-                    if (sc.heroineImage) {
-                        script += `    show expression "${sc.heroineImage}" as h_sprite at right\n`;
-                    } else {
-                        script += `    hide h_sprite\n`;
-                    }
-
-                    // 대사 처리
-                    if (sc.type === 'dialog') {
-                        let speakerVar = '""'; 
-                        if (sc.speaker === 'PROTAGONIST') {
-                            speakerVar = 'p';
-                        } else if (sc.speaker !== '나레이션') {
-                            const speakerChar = data.characters.find(c => c.name === sc.speaker);
-                            speakerVar = speakerChar ? `char_${speakerChar.id}` : `"${sc.speaker}"`;
-                        }
-
-                        // 이스케이프 처리 (줄바꿈, 따옴표)
-                        const safeText = sc.text ? sc.text.replace(/\n/g, "\\n").replace(/"/g, "\\\"") : "";
-                        script += `    ${speakerVar} "${safeText}"\n`;
-                    }
-                    // 선택지 처리
-                    else if (sc.type === 'choice') {
-                        script += `    menu:\n`;
-                        if (sc.option1) {
-                            script += `        "${sc.option1}":\n`;
-                            script += `            jump event_${event.id}_option1\n`;
-                        }
-                        if (sc.option2) {
-                            script += `        "${sc.option2}":\n`;
-                            script += `            jump event_${event.id}_option2\n`;
-                        }
-                    }
-                    // CG 이미지 강조
-                    else if (sc.type === 'cg_image') {
-                        if (sc.src) script += `    show expression "${sc.src}" as cg_overlay with dissolve\n`;
-                    }
-                    // 엔딩 처리
-                    else if (sc.type === 'ending') {
-                        const safeText = sc.text ? sc.text.replace(/\n/g, "\\n").replace(/"/g, "\\\"") : "";
-                        script += `    scene black with dissolve\n`;
-                        script += `    centered "{size=+20}${safeText}{/size}"\n`;
-                        script += `    return\n`;
-                    }
-                });
-
-                // 브랜치 흐름 정리
-                const lastSc = branches[branch][branches[branch].length - 1];
-                if (lastSc && lastSc.type !== 'choice' && lastSc.type !== 'ending') {
-                    if (branch === 'main') {
-                        const nextEventIndex = data.events.findIndex(e => e.id === event.id) + 1;
-                        if (nextEventIndex < data.events.length) {
-                            script += `    jump event_${data.events[nextEventIndex].id}\n`;
-                        } else {
-                            script += `    return\n`;
-                        }
-                    } else {
-                        script += `    return\n`;
-                    }
+                    
+                    const text = sc.text ? sc.text.replace(/"/g, '\\"') : "";
+                    script += `    ${speaker} "${text}"\n`;
                 }
-                script += `\n`;
             });
+            script += `    return\n\n`;
         });
     }
 
