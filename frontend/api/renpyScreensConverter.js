@@ -30,14 +30,11 @@ const safeFont = (fontName) => {
     return fontName;
 };
 
-/**
- * ⭐ 핵심 로직: 둥근 모서리 제거 및 투명도 완벽 보존형 이중 테두리 조립
- */
+// ⭐ CSS 박스 모델을 렌파이 Composite로 번역하는 핵심 함수
 const getBgStr = (frameType, bgColorVal, borderColorVal, useBorder, isNamebox) => {
     const w = isNamebox ? 180 : 1100;
     const h = isNamebox ? 50 : 250;
 
-    // 1. 레트로(도트) 모드
     if (frameType === 'retro') {
         const size = isNamebox ? 50 : 150;
         const prefix = isNamebox ? 'namebox' : 'dialog';
@@ -47,53 +44,36 @@ const getBgStr = (frameType, bgColorVal, borderColorVal, useBorder, isNamebox) =
     const bgColorHex = rgbaToHex(bgColorVal); 
     const bdColorHex = rgbaToHex(borderColorVal || '#dddddd');
 
-    // 테두리 미사용 시: 단일 투명 배경만 반환
     if (!useBorder) {
         return `Transform(Solid("${bgColorHex}"), xysize=(${w}, ${h}))`;
     }
 
-    /**
-     * 2. 고딕풍 (이중 테두리 로직)
-     * 테두리가 중앙을 가리지 않도록 얇은 선 4개를 조립하여 액자를 만들고,
-     * 그 안에 조금 더 작은 액자를 하나 더 넣은 뒤, 마지막에 투명 배경을 꽂습니다.
-     */
-if (frameType === 'gothic') {
-        const line1 = 1; // 바깥쪽 선 두께
-        const gap = 2;   // 선 사이 간격
-        const line2 = 1; // 안쪽 선 두께
+    if (frameType === 'gothic') {
+        const line1 = 1; 
+        const gap = 2;   
+        const line2 = 1; 
         const totalBw = line1 + gap + line2; 
-
         const innerW = w - (totalBw * 2);
         const innerH = h - (totalBw * 2);
 
         return `Composite((${w}, ${h}),
-            # 1. 바깥쪽 테두리 액자
             (0, 0), Transform(Solid("${bdColorHex}"), xysize=(${w}, ${line1})),
             (0, ${h - line1}), Transform(Solid("${bdColorHex}"), xysize=(${w}, ${line1})),
             (0, ${line1}), Transform(Solid("${bdColorHex}"), xysize=(${line1}, ${h - line1 * 2})),
             (${w - line1}, ${line1}), Transform(Solid("${bdColorHex}"), xysize=(${line1}, ${h - line1 * 2})),
-            
-            # 2. ⭐ 선 사이 간격(Gap) 채우기
-            # 테두리 사이의 비어있는 공간을 배경색(bgColorHex)으로 미리 채워줍니다.
             (${line1}, ${line1}), Transform(Solid("${bgColorHex}"), xysize=(${w - line1 * 2}, ${gap})),
             (${line1}, ${h - line1 - gap}), Transform(Solid("${bgColorHex}"), xysize=(${w - line1 * 2}, ${gap})),
             (${line1}, ${line1 + gap}), Transform(Solid("${bgColorHex}"), xysize=(${gap}, ${h - (line1 + gap) * 2})),
             (${w - line1 - gap}, ${line1 + gap}), Transform(Solid("${bgColorHex}"), xysize=(${gap}, ${h - (line1 + gap) * 2})),
-
-            # 3. 안쪽 테두리 액자 (gap만큼 띄우고 배치)
             (${line1 + gap}, ${line1 + gap}), Transform(Solid("${bdColorHex}"), xysize=(${w - (line1 + gap) * 2}, ${line2})),
             (${line1 + gap}, ${h - (line1 + gap) - line2}), Transform(Solid("${bdColorHex}"), xysize=(${w - (line1 + gap) * 2}, ${line2})),
             (${line1 + gap}, ${line1 + gap + line2}), Transform(Solid("${bdColorHex}"), xysize=(${line2}, ${h - (line1 + gap + line2) * 2})),
             (${w - (line1 + gap) - line2}, ${line1 + gap + line2}), Transform(Solid("${bdColorHex}"), xysize=(${line2}, ${h - (line1 + gap + line2) * 2})),
-            
-            # 4. 중앙 투명 배경
             (${totalBw}, ${totalBw}), Transform(Solid("${bgColorHex}"), xysize=(${innerW}, ${innerH}))
         )`;
     }
-    /**
-     * 3. 심플형/큐티형 (단일 테두리 로직)
-     */
-    let bw = (frameType === 'cute') ? 3 : 2;
+
+    let bw = 2;
     const sInnerW = w - (bw * 2);
     const sInnerH = h - (bw * 2);
 
@@ -114,7 +94,6 @@ export const generateScreensRpy = (data) => {
     const mainFont = safeFont(pStyle.font || ui.systemFont);
     const mainColor = rgbaToHex(pStyle.color);
     
-    // 초상화 배경용 (액자 조립 방식 적용)
     const getPortraitBgStr = () => {
         if (pStyle.portraitStyle === 'retro') {
             return `Transform("images/retro_frame_${getColorId(pStyle.portraitColor)}.png", xysize=(250, 250))`;
@@ -143,6 +122,10 @@ export const generateScreensRpy = (data) => {
     const menuX = (start.menuPos?.x || 50) / 100;
     const menuY = (start.menuPos?.y || 70) / 100;
     const titleSize = start.textStyle?.fontSize || 40;
+
+    const portraitImageCode = pStyle.portraitStyle === 'retro' 
+        ? `AlphaMask(Transform(getattr(store, "current_p_image", ""), xysize=(face_size, face_size), fit="cover"), Transform("images/retro_frame_mask.png", xysize=(face_size, face_size)))`
+        : `Transform(getattr(store, "current_p_image", ""), xysize=(face_size, face_size), fit="cover")`;
 
     let rpy = `
 ################################################################################
@@ -179,6 +162,18 @@ style say_dialogue:
     size 30
     line_spacing 5
     adjust_spacing False
+
+# ⭐ 인게임 시스템 메뉴용 스타일 정의
+style ig_sysmenu_text is text:
+    font "${mainFont}"
+    size 18
+    color "#ffffff"
+    outlines [(1, "#00000080", 0, 0)] # 그림자 효과 (opacity 0.5)
+    hover_color "#ffd43b"
+
+style ig_sysmenu_button is button:
+    background None
+    padding (10, 5)
 
 ################################################################################
 ## 🎨 캐릭터별 전용 스타일 동적 생성
@@ -219,6 +214,7 @@ screen say(who, what):
     $ top_y = 50           
     $ box_x = ui_x + face_size + gap 
 
+    # 📅 달력 UI
     if "${ui.calendarFrame}" != "none":
         hbox:
             xpos ui_x
@@ -244,17 +240,29 @@ screen say(who, what):
                     color "${calText}"
                     ${ui.calendarTextUseOutline ? `outlines [(2, "${calLine}")]` : ""}
 
+    # 🔧 시스템 메뉴 (우측 상단, translateX(-50%) 효과를 위한 align 설정)
+    hbox:
+        align (0.7, 0.05) # left 70%, bottom 95cqh(top 5%) 와 유사한 위치
+        spacing 15
+        
+        textbutton "되감기" action Rollback() text_style "ig_sysmenu_text" style "ig_sysmenu_button"
+        textbutton "대사록" action ShowMenu('history') text_style "ig_sysmenu_text" style "ig_sysmenu_button"
+        textbutton "자동진행" action Preference("auto-forward", "toggle") text_style "ig_sysmenu_text" style "ig_sysmenu_button"
+        textbutton "저장하기" action ShowMenu('save') text_style "ig_sysmenu_text" style "ig_sysmenu_button"
+        textbutton "불러오기" action ShowMenu('load') text_style "ig_sysmenu_text" style "ig_sysmenu_button"
+        textbutton "설정" action ShowMenu('preferences') text_style "ig_sysmenu_text" style "ig_sysmenu_button"
+
+
+    # 👤 주인공 얼굴
     if getattr(store, "current_p_image", "") != "":
         fixed:
             xpos ui_x
             ypos ui_y
             xysize (face_size, face_size)
             add ${getPortraitBgStr()}
-            add AlphaMask(
-                Transform(getattr(store, "current_p_image", ""), xysize=(face_size, face_size), fit="cover"),
-                Transform("images/retro_frame_mask.png", xysize=(face_size, face_size))
-            ) align(0.5, 0.5)
+            add ${portraitImageCode} align(0.5, 0.5)
 
+    # 💬 대화창
     window:
         id "window"
         xpos box_x          
@@ -267,6 +275,7 @@ screen say(who, what):
             ypos 30       
             xsize (tb_w - 70) 
 
+    # 🏷️ 네임박스
     if who is not None:
         window:
             id "namebox"

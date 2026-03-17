@@ -348,13 +348,22 @@ export default function StepEventEditor() {
     };
 
     // 항상 최신 렌더링 값 가져오기
+// 💡 [수정] 스타일 로직 분리: 대화창 스타일(화자 기준) vs 초상화 스타일(주인공 고정)
+
+    // 1. 현재 말하는 사람의 스타일 (대화창, 이름표, 폰트용)
     const activeStyle = previewScenario ? getActiveSpeakerStyle(previewScenario.speaker) : pFontStyle;
-    // 💡 [수정] 1. 폰트 동기화: 설정된 시스템 폰트가 있으면 우선 적용하고, 없으면 sans-serif
+
+    // 2. 폰트 설정
     const renderFontFamily = activeStyle?.font || currentGlobalUi?.systemFont || 'sans-serif';
-    
+
+    // 3. 대화창 & 이름표 에셋 (화자의 스타일을 따름)
     const dAsset = (UI_ASSETS.dialog[activeStyle.dialogFrame] || UI_ASSETS.dialog.simple)(activeStyle.dialogColor, activeStyle.dialogBorderColor);
     const nAsset = (UI_ASSETS.namebox[activeStyle.nameFrame] || UI_ASSETS.namebox.simple)(activeStyle.nameColor, activeStyle.nameBorderColor);
-    const pAsset = (UI_ASSETS.portrait[activeStyle.portraitStyle] || UI_ASSETS.portrait.square)(activeStyle.portraitColor, activeStyle.portraitBorderColor);
+
+    // 4. ⭐ [핵심 수정] 초상화 에셋 (화자가 누구든 항상 '주인공의 스타일' pFontStyle을 따름)
+    const pAsset = (UI_ASSETS.portrait[pFontStyle.portraitStyle] || UI_ASSETS.portrait.square)(pFontStyle.portraitColor, pFontStyle.portraitBorderColor);
+
+    // 5. 달력 에셋
     const cAsset = (UI_ASSETS.calendar[currentGlobalUi.calendarFrame] || UI_ASSETS.calendar.retro)(currentGlobalUi.calendarColor); 
 
     const getCalendarTextShadow = () => {
@@ -362,11 +371,11 @@ export default function StepEventEditor() {
         const oc = currentGlobalUi.calendarTextOutlineColor || '#ffffff';
         return `-1px -1px 0 ${oc}, 1px -1px 0 ${oc}, -1px 1px 0 ${oc}, 1px 1px 0 ${oc}`;
     };
-// ⭐ [추가] 외곽선 해제 시 'none'으로 처리하는 변수들
+
+    // 6. 외곽선 적용 여부 결정 (초상화는 pFontStyle 기준)
     const finalDialogBorder = activeStyle?.useDialogBorder === false ? 'none' : dAsset.border;
     const finalNameBorder = activeStyle?.useNameBorder === false ? 'none' : nAsset.border;
-    const finalPortraitBorder = activeStyle?.usePortraitBorder === false ? 'none' : (pAsset ? pAsset.border : 'none');
-
+    const finalPortraitBorder = pFontStyle?.usePortraitBorder === false ? 'none' : (pAsset ? pAsset.border : 'none');
     const previewDate = previewScenario ? getEffectiveDateForIndex(previewScenario.index) : activeEvent.baseDate;
     const isNarration = previewScenario?.speaker === '나레이션';
 

@@ -190,7 +190,6 @@
        4. 시스템 메뉴 (우측 상단) 세로 모드 최적화
        ------------------------------------------- */
     .ig-system-menu {
-        /* 세로 화면에서는 우측 상단 70%에 두면 짤리므로, 중앙(50%)으로 이동 */
         left: 70% !important; 
         width: 90% !important; 
         justify-content: center !important;
