@@ -31,7 +31,6 @@ function DesktopIcon({ iconPath, label, onDoubleClick }) {
                     width: '32px', 
                     height: '32px', 
                     imageRendering: 'pixelated',
-                    // 선택 시 파스텔 핑크색 글로우 효과로 변경
                     filter: isSelected ? 'drop-shadow(0 0 5px #ffb6c1) brightness(0.9) contrast(1.1)' : 'none' 
                 }}
                 onError={(e) => { e.target.style.display = 'none'; }}
@@ -63,6 +62,10 @@ export default function Home() {
     const navigate = useNavigate();
     const [time, setTime] = useState(new Date());
 
+    // ⭐ 창 열림/닫힘 상태 관리
+    const [isNotepadOpen, setIsNotepadOpen] = useState(true);
+    const [isMinesweeperOpen, setIsMinesweeperOpen] = useState(true);
+
     // ⏰ 하단 작업표시줄 시계 타이머
     useEffect(() => {
         const timer = setInterval(() => setTime(new Date()), 1000);
@@ -71,7 +74,7 @@ export default function Home() {
 
     const formattedTime = time.toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' });
 
-    // 📂 아이콘 리스트 (list.txt 제거 완료)
+    // 📂 아이콘 리스트
     const iconList = [
         "this_computer", "recycle_bin_empty", "folder_closed", "3d_graphics_file",
         "3d_graphics_program", "aseprite", "aseprite_file", "audio_editor",
@@ -99,11 +102,10 @@ export default function Home() {
             userSelect: 'none'
         }}>
             
-            {/* ⭐ 모바일 최적화를 위한 CSS 스타일 블록 통합 */}
+            {/* ⭐ 모바일 최적화를 위한 CSS 스타일 블록 */}
             <style>{`
-                /* 📱 화면 너비가 768px 이하일 때 (모바일/태블릿) 적용되는 스타일 */
                 @media (max-width: 768px) {
-                    /* 📱 모바일 격자: 4열로 고정하고 가로로 채움 (짤림 방지) */
+                    /* 바탕화면 아이콘 4열 정렬 */
                     .desktop-icons-container {
                         display: grid !important;
                         grid-template-columns: repeat(4, 1fr) !important;
@@ -116,44 +118,54 @@ export default function Home() {
                         gap: 10px !important;
                     }
                     
-                    /* 💣 지뢰찾기 관련 요소 모두 숨김 */
+                    /* 지뢰찾기 숨김 */
                     .minesweeper-window { display: none !important; }
                     .taskbar-minesweeper-tab { display: none !important; }
                     
-                    /* 📝 메모장 크기 줄여서 상단 배치 */
+                    /* 📝 메모장: 메인 창 뒤에 겹치도록 위치 조정 */
                     .notepad-window {
-                        width: 90% !important;
-                        top: 5% !important;
+                        width: 85% !important;
+                        max-width: 300px !important;
+                        top: 15% !important; /* 조금 더 밑으로 내려서 자연스럽게 겹치게 */
                         left: 50% !important;
                         transform: translateX(-50%) !important;
+                        z-index: 5 !important; /* 메인 창(10)보다 뒤에 위치 */
                     }
                     .notepad-window .win95-window-inner {
-                        height: 120px !important; 
+                        height: 100px !important; 
                     }
                     
-                    /* 🪟 메인 프로그램 크기 줄여서 메모장 아래 겹치게 배치 */
+                    /* 🪟 메인 프로그램: 크기 확 줄이고 메모장 위로 겹치게 */
                     .main-window {
-                        width: 92% !important;
-                        top: 55% !important;
+                        width: 85% !important; /* 창 너비 축소 */
+                        max-width: 320px !important;
+                        top: 45% !important; /* 위로 올려서 메모장과 겹치게 */
                         left: 50% !important;
                         transform: translate(-50%, -50%) !important;
+                        z-index: 10 !important; /* 메모장보다 무조건 위에 오도록 보장 */
                     }
                     .main-window .win95-window-inner {
-                        padding: 15px !important; 
+                        padding: 15px 10px !important; /* 내부 여백 대폭 축소 */
                     }
                     .main-window img.main-logo {
-                        width: 100px !important; 
-                        margin-bottom: 10px !important;
+                        width: 80px !important; /* 로고 크기 축소 */
+                        margin-bottom: 8px !important;
                     }
                     .main-window h2 {
-                        font-size: 15px !important; 
+                        font-size: 14px !important; /* 제목 크기 축소 */
+                        margin-bottom: 8px !important;
                     }
                     .main-window p {
-                        font-size: 11px !important; 
-                        margin-bottom: 15px !important;
+                        font-size: 11px !important; /* 설명 텍스트 축소 */
+                        margin-bottom: 12px !important;
+                        line-height: 1.3 !important;
+                    }
+                    .main-window button {
+                        padding: 6px 15px !important; /* 버튼 크기 축소 */
+                        font-size: 12px !important;
                     }
 
-                    /* ⏰ 하단 작업표시줄 시계 텍스트 짤림 방지 */
+                    /* 하단 작업표시줄 시계 및 탭 최적화 */
                     .taskbar-clock {
                         padding: 0 4px !important;
                         font-size: 10px !important;
@@ -161,128 +173,105 @@ export default function Home() {
                         justify-content: center;
                     }
                     .clock-icon {
-                        display: none; /* 공간 확보를 위해 스피커 아이콘 숨김 */
+                        display: none; 
                     }
                     .taskbar-notepad-tab {
-                        display: none !important; /* 모바일 하단바 공간 확보를 위해 메모장 탭 숨김 */
+                        display: none !important; 
                     }
                 }
             `}</style>
 
             {/* 📁 바탕화면 아이콘 그리드 */}
             <div className="desktop-icons-container" style={{ 
-                display: 'grid', 
-                gridTemplateRows: 'repeat(auto-fill, 75px)', 
-                gridAutoFlow: 'column', 
-                height: 'calc(100vh - 40px)', 
-                padding: '10px',
-                columnGap: '15px',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                zIndex: 1
+                display: 'grid', gridTemplateRows: 'repeat(auto-fill, 75px)', gridAutoFlow: 'column', 
+                height: 'calc(100vh - 40px)', padding: '10px', columnGap: '15px', position: 'absolute', top: 0, left: 0, zIndex: 1
             }}>
-                {iconList.map((fileName) => {
-                    const fullPath = `/images/icons/${fileName}.png`;
-                    const displayLabel = fileName.replace(/_/g, ' ');
-
-                    return (
-                        <DesktopIcon 
-                            key={fileName}
-                            iconPath={fullPath} 
-                            label={displayLabel} 
-                            onDoubleClick={() => {
-                                if (fileName === "games" || fileName === "minecraft" || fileName === "stardew_valley" || fileName === "program") {
-                                    navigate('/customizer');
-                                }
-                            }}
-                        />
-                    );
-                })}
+                {iconList.map((fileName) => (
+                    <DesktopIcon 
+                        key={fileName}
+                        iconPath={`/images/icons/${fileName}.png`} 
+                        label={fileName.replace(/_/g, ' ')} 
+                        onDoubleClick={() => {
+                            if (fileName === "games" || fileName === "minecraft" || fileName === "stardew_valley" || fileName === "program") {
+                                navigate('/customizer');
+                            }
+                        }}
+                    />
+                ))}
             </div>
 
             {/* 📝 서브 창 1: README 메모장 */}
-            <div className="win95-window notepad-window" style={{ 
-                position: 'absolute', top: '15%', left: '12%', width: '280px',
-                boxShadow: '4px 4px 15px rgba(199, 139, 155, 0.4)', zIndex: 5 
-            }}>
-                <div className="win95-title-bar" style={{ display: 'flex', justifyContent: 'space-between', background: 'var(--win95-title-inactive-gray)', color: 'var(--win95-dark-shadow-black)' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <img src="/images/icons/notepad.png" alt="notepad" style={{ width: '14px', height: '14px', imageRendering: 'pixelated' }} onError={(e) => e.target.style.display='none'}/>
-                        README.txt - 메모장
-                    </span>
-                    <button className="win95-button" style={{ minWidth: 'auto', padding: '0 6px', fontWeight: 'bold' }}>X</button>
-                </div>
-                <div style={{ display: 'flex', gap: '10px', padding: '2px 5px', backgroundColor: 'var(--win95-base-gray)', borderBottom: '1px solid var(--win95-light-shadow-gray)', fontSize: '12px', color: '#5d4037' }}>
-                    <span><u style={{textUnderlineOffset: '2px'}}>F</u>ile</span>
-                    <span><u style={{textUnderlineOffset: '2px'}}>E</u>dit</span>
-                    <span><u style={{textUnderlineOffset: '2px'}}>S</u>earch</span>
-                    <span><u style={{textUnderlineOffset: '2px'}}>H</u>elp</span>
-                </div>
-                <div className="win95-window-inner" style={{ padding: 0, height: '180px' }}>
-                    <textarea 
-                        readOnly 
-                        defaultValue={`환영합니다!\n\n이곳은 파스텔 톤으로 꾸며진\n귀여운 레트로 데스크톱입니다.\n\n수많은 아이콘들을 둘러보시고,\n중앙의 [최애로운_생활.exe]를 실행하여\n나만의 비주얼 노벨을 만들어보세요!\n\n♡ ٩(❛ᴗ❛)۶ ♡`}
-                        style={{
-                            width: '100%', height: '100%', resize: 'none', border: 'none', outline: 'none',
-                            padding: '10px', fontFamily: "'DOSGothic', monospace", fontSize: '13px',
-                            color: '#5d4037', backgroundColor: 'var(--win95-content-white)', lineHeight: '1.5'
-                        }}
-                    />
-                </div>
-            </div>
-
-            {/* 💣 서브 창 2: 귀여운 지뢰찾기 (모바일에서는 숨김) */}
-            <div className="win95-window minesweeper-window" style={{ 
-                position: 'absolute', top: '10%', right: '10%', width: '180px',
-                boxShadow: '4px 4px 15px rgba(199, 139, 155, 0.4)', zIndex: 7 
-            }}>
-                <div className="win95-title-bar" style={{ display: 'flex', justifyContent: 'space-between', background: 'var(--win95-title-inactive-gray)', color: 'var(--win95-dark-shadow-black)' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>💣 지뢰찾기</span>
-                    <button className="win95-button" style={{ minWidth: 'auto', padding: '0 6px', fontWeight: 'bold' }}>X</button>
-                </div>
-                <div style={{ display: 'flex', gap: '10px', padding: '2px 5px', backgroundColor: 'var(--win95-base-gray)', borderBottom: '1px solid var(--win95-light-shadow-gray)', fontSize: '12px', color: '#5d4037' }}>
-                    <span>Game</span><span>Help</span>
-                </div>
-                <div className="win95-window-inner" style={{ backgroundColor: 'var(--win95-base-gray)', padding: '6px', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
-                    <div style={{ 
-                        width: '100%', display: 'flex', justifyContent: 'space-between', padding: '4px',
-                        borderTop: '2px solid var(--win95-dark-shadow-black)', borderLeft: '2px solid var(--win95-dark-shadow-black)',
-                        borderBottom: '2px solid var(--win95-highlight-gray)', borderRight: '2px solid var(--win95-highlight-gray)'
-                    }}>
-                        <div style={{ color: '#ff8eb3', fontFamily: 'monospace', fontSize: '18px', backgroundColor: '#000', padding: '0 4px', letterSpacing: '2px' }}>010</div>
-                        <button className="win95-button" style={{ minWidth: '26px', padding: '2px', fontSize: '16px' }}>😊</button>
-                        <div style={{ color: '#ff8eb3', fontFamily: 'monospace', fontSize: '18px', backgroundColor: '#000', padding: '0 4px', letterSpacing: '2px' }}>000</div>
+            {isNotepadOpen && (
+                <div className="win95-window notepad-window" style={{ 
+                    position: 'absolute', top: '15%', left: '12%', width: '280px',
+                    boxShadow: '4px 4px 15px rgba(199, 139, 155, 0.4)', zIndex: 5 
+                }}>
+                    <div className="win95-title-bar" style={{ display: 'flex', justifyContent: 'space-between', background: 'var(--win95-title-inactive-gray)', color: 'var(--win95-dark-shadow-black)' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <img src="/images/icons/notepad.png" alt="notepad" style={{ width: '14px', height: '14px', imageRendering: 'pixelated' }} onError={(e) => e.target.style.display='none'}/>
+                            README.txt - 메모장
+                        </span>
+                        <button className="win95-button" onClick={() => setIsNotepadOpen(false)} style={{ minWidth: 'auto', padding: '0 6px', fontWeight: 'bold' }}>X</button>
                     </div>
-                    <div style={{ 
-                        display: 'grid', gridTemplateColumns: 'repeat(8, 16px)', gridAutoRows: '16px',
-                        borderTop: '2px solid var(--win95-dark-shadow-black)', borderLeft: '2px solid var(--win95-dark-shadow-black)',
-                        borderBottom: '2px solid var(--win95-highlight-gray)', borderRight: '2px solid var(--win95-highlight-gray)'
-                    }}>
-                        {Array.from({ length: 64 }).map((_, i) => {
-                            const isOpened = i === 27 || i === 28 || i === 36;
-                            const isMine = i === 12;
-                            const content = i === 27 ? '1' : i === 28 ? '2' : isMine ? '🚩' : '';
-                            const color = content === '1' ? 'var(--win95-accent-blue)' : content === '2' ? 'green' : '';
-
-                            return (
-                                <div key={i} style={{
-                                    width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center',
-                                    fontSize: '10px', fontWeight: 'bold', color: color,
-                                    backgroundColor: isOpened ? 'var(--win95-content-white)' : 'var(--win95-base-gray)',
-                                    borderTop: isOpened ? '1px dotted var(--win95-light-shadow-gray)' : '2px solid var(--win95-highlight-gray)',
-                                    borderLeft: isOpened ? '1px dotted var(--win95-light-shadow-gray)' : '2px solid var(--win95-highlight-gray)',
-                                    borderBottom: isOpened ? 'none' : '2px solid var(--win95-dark-shadow-black)',
-                                    borderRight: isOpened ? 'none' : '2px solid var(--win95-dark-shadow-black)',
-                                    cursor: 'pointer'
-                                }}>{content}</div>
-                            );
-                        })}
+                    <div style={{ display: 'flex', gap: '10px', padding: '2px 5px', backgroundColor: 'var(--win95-base-gray)', borderBottom: '1px solid var(--win95-light-shadow-gray)', fontSize: '12px', color: '#5d4037' }}>
+                        <span><u style={{textUnderlineOffset: '2px'}}>F</u>ile</span>
+                        <span><u style={{textUnderlineOffset: '2px'}}>E</u>dit</span>
+                        <span><u style={{textUnderlineOffset: '2px'}}>S</u>earch</span>
+                        <span><u style={{textUnderlineOffset: '2px'}}>H</u>elp</span>
+                    </div>
+                    <div className="win95-window-inner" style={{ padding: 0, height: '180px' }}>
+                        <textarea 
+                            readOnly 
+                            defaultValue={`환영합니다!\n\n이곳은 파스텔 톤으로 꾸며진\n귀여운 레트로 데스크톱입니다.\n\n수많은 아이콘들을 둘러보시고,\n중앙의 [최애로운_생활.exe]를 실행하여\n나만의 비주얼 노벨을 만들어보세요!\n\n♡ ٩(❛ᴗ❛)۶ ♡`}
+                            style={{ width: '100%', height: '100%', resize: 'none', border: 'none', outline: 'none', padding: '10px', fontFamily: "'DOSGothic', monospace", fontSize: '13px', color: '#5d4037', backgroundColor: 'var(--win95-content-white)', lineHeight: '1.5' }}
+                        />
                     </div>
                 </div>
-            </div>
+            )}
 
-            {/* 🪟 메인 프로그램 */}
+            {/* 💣 서브 창 2: 귀여운 지뢰찾기 */}
+            {isMinesweeperOpen && (
+                <div className="win95-window minesweeper-window" style={{ 
+                    position: 'absolute', top: '10%', right: '10%', width: '180px',
+                    boxShadow: '4px 4px 15px rgba(199, 139, 155, 0.4)', zIndex: 7 
+                }}>
+                    <div className="win95-title-bar" style={{ display: 'flex', justifyContent: 'space-between', background: 'var(--win95-title-inactive-gray)', color: 'var(--win95-dark-shadow-black)' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>💣 지뢰찾기</span>
+                        <button className="win95-button" onClick={() => setIsMinesweeperOpen(false)} style={{ minWidth: 'auto', padding: '0 6px', fontWeight: 'bold' }}>X</button>
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px', padding: '2px 5px', backgroundColor: 'var(--win95-base-gray)', borderBottom: '1px solid var(--win95-light-shadow-gray)', fontSize: '12px', color: '#5d4037' }}>
+                        <span>Game</span><span>Help</span>
+                    </div>
+                    <div className="win95-window-inner" style={{ backgroundColor: 'var(--win95-base-gray)', padding: '6px', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', padding: '4px', borderTop: '2px solid var(--win95-dark-shadow-black)', borderLeft: '2px solid var(--win95-dark-shadow-black)', borderBottom: '2px solid var(--win95-highlight-gray)', borderRight: '2px solid var(--win95-highlight-gray)' }}>
+                            <div style={{ color: '#ff8eb3', fontFamily: 'monospace', fontSize: '18px', backgroundColor: '#000', padding: '0 4px', letterSpacing: '2px' }}>010</div>
+                            <button className="win95-button" style={{ minWidth: '26px', padding: '2px', fontSize: '16px' }}>😊</button>
+                            <div style={{ color: '#ff8eb3', fontFamily: 'monospace', fontSize: '18px', backgroundColor: '#000', padding: '0 4px', letterSpacing: '2px' }}>000</div>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 16px)', gridAutoRows: '16px', borderTop: '2px solid var(--win95-dark-shadow-black)', borderLeft: '2px solid var(--win95-dark-shadow-black)', borderBottom: '2px solid var(--win95-highlight-gray)', borderRight: '2px solid var(--win95-highlight-gray)' }}>
+                            {Array.from({ length: 64 }).map((_, i) => {
+                                const isOpened = i === 27 || i === 28 || i === 36;
+                                const isMine = i === 12;
+                                const content = i === 27 ? '1' : i === 28 ? '2' : isMine ? '🚩' : '';
+                                const color = content === '1' ? 'var(--win95-accent-blue)' : content === '2' ? 'green' : '';
+
+                                return (
+                                    <div key={i} style={{
+                                        width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '10px', fontWeight: 'bold', color: color,
+                                        backgroundColor: isOpened ? 'var(--win95-content-white)' : 'var(--win95-base-gray)',
+                                        borderTop: isOpened ? '1px dotted var(--win95-light-shadow-gray)' : '2px solid var(--win95-highlight-gray)',
+                                        borderLeft: isOpened ? '1px dotted var(--win95-light-shadow-gray)' : '2px solid var(--win95-highlight-gray)',
+                                        borderBottom: isOpened ? 'none' : '2px solid var(--win95-dark-shadow-black)',
+                                        borderRight: isOpened ? 'none' : '2px solid var(--win95-dark-shadow-black)', cursor: 'pointer'
+                                    }}>{content}</div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 🪟 메인 프로그램 (항상 켜져 있음) */}
             <div className="win95-window main-window" style={{ 
                 position: 'absolute', top: '55%', left: '50%', transform: 'translate(-50%, -50%)', 
                 width: '90%', maxWidth: '450px', boxShadow: '6px 6px 20px rgba(199, 139, 155, 0.5)', zIndex: 10 
@@ -302,7 +291,6 @@ export default function Home() {
                         바탕화면의 아이콘을 더블클릭 하거나,<br/>
                         아래 [게임 제작] 버튼을 눌러주십시오.
                     </p>
-                    {/* 🎨 게임 제작 버튼: 파스텔 노랑색 적용 */}
                     <button 
                         className="win95-button win95-button-yellow" 
                         onClick={() => navigate('/customizer')} 
@@ -317,10 +305,8 @@ export default function Home() {
             <div style={{ 
                 position: 'fixed', bottom: 0, left: 0, width: '100%', height: '32px', 
                 backgroundColor: 'var(--win95-base-gray)', 
-                borderTop: '2px solid var(--win95-highlight-gray)', 
-                borderBottom: '2px solid var(--win95-dark-shadow-black)',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-                padding: '2px', zIndex: 1000
+                borderTop: '2px solid var(--win95-highlight-gray)', borderBottom: '2px solid var(--win95-dark-shadow-black)',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '2px', zIndex: 1000
             }}>
                 <div style={{ display: 'flex', gap: '5px', height: '100%', alignItems: 'center', overflow: 'hidden' }}>
                     <button className="win95-button" style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '0 8px', fontWeight: 'bold', height: '100%' }}>
@@ -334,31 +320,36 @@ export default function Home() {
                         borderRight: '2px solid var(--win95-highlight-gray)', borderBottom: '2px solid var(--win95-highlight-gray)', 
                         backgroundColor: 'var(--win95-content-white)', height: '100%', fontWeight: 'bold', color: '#5d4037', fontSize: '12px' 
                     }}>
+                        <img src="/images/logo.png" alt="logo" style={{ width: '14px', height: '14px', marginRight: '6px', imageRendering: 'pixelated' }} />
                         최애로운_생활.exe
                     </div>
                     
-                    {/* 비활성 탭 1 (모바일에서는 숨김) */}
-                    <div className="taskbar-notepad-tab" style={{ 
-                        display: 'flex', alignItems: 'center', padding: '0 10px', whiteSpace: 'nowrap',
-                        borderTop: '2px solid var(--win95-highlight-gray)', borderLeft: '2px solid var(--win95-highlight-gray)', 
-                        borderRight: '2px solid var(--win95-dark-shadow-black)', borderBottom: '2px solid var(--win95-dark-shadow-black)', 
-                        backgroundColor: 'var(--win95-base-gray)', height: '100%', color: '#5d4037', fontSize: '12px', marginTop: '1px' 
-                    }}>
-                        README.txt
-                    </div>
+                    {/* 비활성 탭 1 */}
+                    {isNotepadOpen && (
+                        <div className="taskbar-notepad-tab" style={{ 
+                            display: 'flex', alignItems: 'center', padding: '0 10px', whiteSpace: 'nowrap',
+                            borderTop: '2px solid var(--win95-highlight-gray)', borderLeft: '2px solid var(--win95-highlight-gray)', 
+                            borderRight: '2px solid var(--win95-dark-shadow-black)', borderBottom: '2px solid var(--win95-dark-shadow-black)', 
+                            backgroundColor: 'var(--win95-base-gray)', height: '100%', color: '#5d4037', fontSize: '12px', marginTop: '1px' 
+                        }}>
+                            README.txt
+                        </div>
+                    )}
 
-                    {/* 비활성 탭 2 (지뢰찾기) */}
-                    <div className="taskbar-minesweeper-tab" style={{ 
-                        display: 'flex', alignItems: 'center', padding: '0 10px', whiteSpace: 'nowrap',
-                        borderTop: '2px solid var(--win95-highlight-gray)', borderLeft: '2px solid var(--win95-highlight-gray)', 
-                        borderRight: '2px solid var(--win95-dark-shadow-black)', borderBottom: '2px solid var(--win95-dark-shadow-black)', 
-                        backgroundColor: 'var(--win95-base-gray)', height: '100%', color: '#5d4037', fontSize: '12px', marginTop: '1px' 
-                    }}>
-                        💣 지뢰찾기
-                    </div>
+                    {/* 비활성 탭 2 */}
+                    {isMinesweeperOpen && (
+                        <div className="taskbar-minesweeper-tab" style={{ 
+                            display: 'flex', alignItems: 'center', padding: '0 10px', whiteSpace: 'nowrap',
+                            borderTop: '2px solid var(--win95-highlight-gray)', borderLeft: '2px solid var(--win95-highlight-gray)', 
+                            borderRight: '2px solid var(--win95-dark-shadow-black)', borderBottom: '2px solid var(--win95-dark-shadow-black)', 
+                            backgroundColor: 'var(--win95-base-gray)', height: '100%', color: '#5d4037', fontSize: '12px', marginTop: '1px' 
+                        }}>
+                            💣 지뢰찾기
+                        </div>
+                    )}
                 </div>
 
-                {/* ⏰ 시계 영역 (모바일 최적화 클래스 적용) */}
+                {/* ⏰ 시계 영역 */}
                 <div className="taskbar-clock" style={{ 
                     display: 'flex', alignItems: 'center', padding: '0 10px', whiteSpace: 'nowrap',
                     borderTop: '2px solid var(--win95-light-shadow-gray)', borderLeft: '2px solid var(--win95-light-shadow-gray)', 
