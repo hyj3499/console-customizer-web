@@ -17,7 +17,7 @@ const useCustomizerStore = create((set) => ({
         globalUi: { 
             calendarFrame: 'retro', calendarColor: 'rgba(255,182,193,0.8)', calendarTextColor: '#5C4033',
             calendarTextUseOutline: true, calendarTextOutlineColor: '#ffffff', systemFont: 'Galmuri14', 
-            cursor: 'default', saveLoadStyle: 'modern' 
+            cursor: 'default', saveLoadStyle: 'modern' , layoutMode: 'classic' // 🌟 추가: 기본값은 클래식(띄움형)
         },
         customBackgrounds: [],
         customFonts: [],
@@ -78,7 +78,7 @@ const useCustomizerStore = create((set) => ({
     globalUi: { 
         calendarFrame: 'retro', calendarColor: 'rgba(255,182,193,0.8)', calendarTextColor: '#5C4033',
         calendarTextUseOutline: true, calendarTextOutlineColor: '#ffffff', systemFont: 'Galmuri14', 
-        cursor: 'default', saveLoadStyle: 'modern' 
+        cursor: 'default', saveLoadStyle: 'modern' , layoutMode: 'classic' // 🌟 추가
     },
     setGlobalUi: (ui) => set((state) => ({ globalUi: { ...state.globalUi, ...ui } })),
 

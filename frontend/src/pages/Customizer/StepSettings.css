@@ -53,60 +53,36 @@
 }
 
 /* =========================================================
-   3. 인게임 화면 내 절대좌표 위치 
+   3. 인게임 화면 내 절대좌표 위치 (레이아웃 모드 분기)
    ========================================================= */
 .ig-calendar-group { position: absolute; left: 13.02%; top: 4.63%; display: flex; align-items: center; gap: 1.3cqw; z-index: 11; }
 .ig-calendar-box { width: 7.81cqw; height: 7.81cqw; display: flex; align-items: center; justify-content: center; background-size: 100% 100%; }
 .ig-calendar-text { display: flex; flex-direction: column; gap: 0.8cqh; }
-.ig-portrait-area { position: absolute; left: 13.02%; top: 72.22%; width: 13.02%; height: 23.15%; z-index: 10; overflow: visible; }
 
-/* ⭐ 네임칸 반응형 로직 CSS 이식 */
-/* ⭐ 네임박스 모바일 거대화 현상 해결 */
-/* ⭐ 네임박스: 모바일/PC 통합 비율 최적화 */
-/* 박스의 뼈대와 위치만 담당 */
+/* 🌟 공통 뼈대 (크기와 Z-index 등) */
+.ig-portrait-area { position: absolute; left: 13.02%; width: 13.02%; height: 23.15%; z-index: 10; overflow: visible; }
+.ig-dialogbox { position: absolute; left: 27.6%; width: 57.3%; height: 23.15%; padding: 3cqh 4cqw; box-sizing: border-box; z-index: 11; background-size: 100% 100%; }
 .ig-namebox { 
-    position: absolute; 
-    /* 대화창 상단 위치와 정밀하게 맞춤 */
-    left: 27.6%; 
-    top: 66.8%; 
-    
-    /* 1. 두께(세로) 고정: 컨테이너 높이의 5.4%로 고정해 굵어짐 방지 */
-    height: 5.4cqh; 
-    
-    /* 2. 동적 너비 설정 */
-    width: fit-content !important; 
-    min-width: 7cqw !important;  /* 1은 너무 작을 수 있으니 5~8 정도로 테스트 */
-    padding: 0 1cqw !important;
-    /* 3. 정렬 및 넘침 방지 */
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    box-sizing: border-box;
-    white-space: nowrap; /* 이름이 두 줄로 넘어가서 박스가 굵어지는 것 방지 */
-    z-index: 11; 
-    background-size: 100% 100%; 
+    position: absolute; left: 27.6%; height: 5.4cqh; 
+    width: fit-content !important; min-width: 7cqw !important; padding: 0 1cqw !important;
+    display: flex; align-items: center; justify-content: center; box-sizing: border-box; white-space: nowrap; z-index: 12; background-size: 100% 100%; 
 }
+.ig-standing { position: absolute; left: 50%; transform: translateX(-50%); object-fit: contain; z-index: 5; pointer-events: none; }
 
-.ig-namebox span {
-    /* 4. 글자 크기도 화면 높이에 맞춰 자동 조절 */
-    font-size: 2.8cqh; 
-    line-height: 1; /* 폰트 고유의 행간 때문에 박스가 벌어지는 현상 차단 */
-}
-.ig-standing {
-    position: absolute;
-    bottom: 0;                /* 화면 맨 아래에 딱 붙임 */
-    left: 50%;                /* 가로 중앙 위치 */
-    transform: translateX(-50%); /* 정확한 정중앙을 위해 너비의 절반만큼 이동 */
-    height: 95cqh;            /* 부모 컨테이너(16:9 비율) 높이의 95% 크기. 대화창 살짝 위로 올라오게 조절 가능 */
-    object-fit: contain;      /* 이미지 비율 찌그러짐 방지 */
-    z-index: 5;               /* 배경(0)과 달력/초상화(10), 대화창(11) 사이의 깊이 */
-    pointer-events: none;     /* 스탠딩 이미지 뒤의 요소를 클릭할 수 있도록 (선택 사항) */
-}
+/* 🌟 [모드 A] 기본 띄움형 (layout-classic) */
+.layout-classic .ig-portrait-area { top: 72.22%; bottom: auto; }
+.layout-classic .ig-dialogbox { top: 72.22%; bottom: auto; }
+.layout-classic .ig-namebox { top: 66.8%; bottom: auto; }
+.layout-classic .ig-standing { bottom: 0; top: auto; height: 95cqh; }
 
-.ig-dialogbox { position: absolute; left: 27.6%; top: 72.22%; width: 57.3%; height: 23.15%; padding: 3cqh 4cqw; box-sizing: border-box; z-index: 11; background-size: 100% 100%; }
+/* 🌟 [모드 B] 바닥 밀착형 (layout-bottom) */
+.layout-bottom .ig-portrait-area { top: auto !important; bottom: 0; }
+.layout-bottom .ig-dialogbox { top: auto !important; bottom: 0; }
+.layout-bottom .ig-namebox { top: auto !important; bottom: 23.15%; }
+.layout-bottom .ig-standing { top: auto !important; bottom: 23.15%; height: 72cqh; }
 
 /* =========================================================
-   4. 설정 폼 공통 UI (새로 추출한 클래스들)
+   4. 설정 폼 공통 UI
    ========================================================= */
 .char-list-container { display: flex; flex-direction: column; gap: 20px; margin-bottom: 40px; }
 .char-card { border: 1px solid #dee2e6; padding: 20px; border-radius: 8px; position: relative; background: #fff; }
@@ -136,7 +112,7 @@
 .theme-select { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ced4da; }
 
 /* =========================================================
-   5. 서브 컴포넌트 세부 UI
+   5. 서브 컴포넌트 세부 UI (레이아웃 토글 카드 포함)
    ========================================================= */
 .color-picker-wrap { display: flex; flex-direction: column; flex: 1; min-width: 250px; }
 .color-preset-list { display: flex; gap: 12px; align-items: center; }
@@ -152,83 +128,46 @@
 
 .font-upload-panel { margin-bottom: 25px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; }
 
+/* 🌟 레이아웃 선택 토글 카드 스타일 */
+.layout-toggle-container { margin-bottom: 20px; }
+.layout-card-group { display: flex; gap: 15px; flex-wrap: wrap; }
+.layout-card { flex: 1; min-width: 250px; padding: 15px; border: 2px solid #dee2e6; border-radius: 8px; background: #fff; cursor: pointer; transition: all 0.2s; text-align: left; }
+.layout-card:hover { border-color: #adb5bd; }
+.layout-card.active { border-color: #d6336c; background-color: #fff0f6; box-shadow: 0 4px 6px rgba(214, 51, 108, 0.15); transform: translateY(-2px); }
+.layout-card h5 { margin: 0 0 8px 0; font-size: 15px; color: #333; }
+.layout-card p { margin: 0; font-size: 12px; color: #666; line-height: 1.5; word-break: keep-all; }
+
 /* ⭐ 모바일 세로 화면(Portrait) 전용 정밀 보정 */
 @media screen and (max-width: 768px) and (orientation: portrait) {
     .preview-container {
-        /* 세로 모드에서도 16:9 비율을 절대적으로 유지 */
         aspect-ratio: 16 / 9 !important;
         height: auto !important;
     }
 
+    /* 네임박스와 대화창의 기본 공통 속성 */
     .ig-namebox {
-        /* 1. 박스 두께 강제 고정 (브라우저가 늘리지 못하게) */
         height: 6cqh !important; 
-        top: 66.2% !important; /* 위치 미세 조정 */
-        
-        /* 2. 모바일 세로에서 너무 길어지지 않게 최소 너비 축소 */
         min-width: 20cqw !important; 
         padding: 0 2cqw !important;
-        
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        display: flex !important; align-items: center !important; justify-content: center !important;
     }
+    .ig-namebox span { font-size: 3cqh !important; line-height: 1 !important; display: block !important; transform: translateY(-0.2cqh); }
+    .ig-dialogbox { padding: 2.5cqh 4cqw !important; }
 
-    .ig-namebox span {
-        /* 3. 글자 크기가 박스를 뚫고 나가지 않게 강제 조절 */
-        font-size: 3cqh !important;
-        line-height: 1 !important; /* 행간을 1로 죽여서 박스 벌어짐 방지 */
-        display: block !important;
-        transform: translateY(-0.2cqh); /* 글자를 수직 중앙으로 미세 이동 */
-    }
+    /* 모바일 모드 A (기본 띄움) */
+    .layout-classic .ig-namebox { top: 66.2% !important; bottom: auto !important; }
+    .layout-classic .ig-portrait-area, .layout-classic .ig-dialogbox { top: 72.22% !important; bottom: auto !important; }
+    .layout-classic .ig-standing { bottom: 0 !important; height: 95cqh !important; }
 
-    .ig-dialogbox {
-        /* 대화창 내부 텍스트 크기도 세로 모드에 맞춰 최적화 */
-        padding: 2.5cqh 4cqw !important;
-    }
-/* -------------------------------------------
-       4. 시스템 메뉴 (우측 상단) 세로 모드 최적화
-       ------------------------------------------- */
-    .ig-system-menu {
-        left: 70% !important; 
-        width: 90% !important; 
-        justify-content: center !important;
-        gap: 2.5cqw !important; /* 15px 고정값 대신 비율로 좁게 */
-    }
+    /* 모바일 모드 B (바닥 밀착) */
+    .layout-bottom .ig-namebox { top: auto !important; bottom: 23.15% !important; }
+    .layout-bottom .ig-portrait-area, .layout-bottom .ig-dialogbox { top: auto !important; bottom: 0 !important; }
+    .layout-bottom .ig-standing { bottom: 23.15% !important; height: 65cqh !important; }
 
-    .ig-system-menu span {
-        font-size: 2cqh !important;  /* 글자 크기 최적화 */
-        letter-spacing: -0.5px !important; /* 좁은 공간을 위해 자간 살짝 축소 */
-    }
-
-/* -------------------------------------------
-       5. 탭 버튼 (시점 변경) 세로 모드 다이어트
-       ------------------------------------------- */
-    .preview-tabs {
-        flex-wrap: wrap !important; 
-        gap: 2px !important;        /* 간격을 아주 좁게 */
-        padding-left: 2px !important;
-        justify-content: flex-start !important; /* 중앙 정렬 대신 왼쪽부터 차곡차곡 */
-        margin-bottom: 5px !important;
-    }
-
-    .tab-btn {
-        /* ⭐ 꽉 채우지 않고 글자 길이에 딱 맞게 조절 */
-        flex: 0 1 auto !important;  
-        padding: 3px 6px !important; /* 위아래 3px, 좌우 6px로 대폭 축소 */
-        font-size: 10px !important;  /* 글자 크기 살짝 축소 */
-        min-width: 0 !important;     /* 최소 너비 제한 해제 */
-        line-height: 1.2 !important;
-        
-        /* 레트로 입체감 유지 */
-        border-width: 1px !important; 
-    }
-
-    /* 활성화된 탭이 너무 툭 튀어나오지 않게 조정 */
-    .tab-btn.active-p, .tab-btn.active-c { 
-        transform: translateY(1px) !important; 
-        font-weight: bold !important;
-    }
+    .ig-system-menu { left: 70% !important; width: 90% !important; justify-content: center !important; gap: 2.5cqw !important; }
+    .ig-system-menu span { font-size: 2cqh !important; letter-spacing: -0.5px !important; }
     
+    .preview-tabs { flex-wrap: wrap !important; gap: 2px !important; padding-left: 2px !important; justify-content: flex-start !important; margin-bottom: 5px !important; }
+    .tab-btn { flex: 0 1 auto !important; padding: 3px 6px !important; font-size: 10px !important; min-width: 0 !important; line-height: 1.2 !important; border-width: 1px !important; }
+    .tab-btn.active-p, .tab-btn.active-c { transform: translateY(1px) !important; font-weight: bold !important; }
 }
-
