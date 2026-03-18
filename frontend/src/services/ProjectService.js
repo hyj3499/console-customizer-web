@@ -1,23 +1,27 @@
 // ==============================================================================
 // 📄 파일 경로 : frontend/src/services/ProjectService.js
 // 🎯 주요 역할 : 백엔드와 통신하며, 파일을 R2 클라우드에 직접 업로드하는 API 계층
-//
-// 💡 리팩토링 포인트 : 
-//   - Vercel 4.5MB 제한을 우회하기 위해 다이렉트 업로드(Presigned URL) 방식 도입
-//   - 상태 관리에 있는 모든 파일을 긁어모아 일괄 병렬 처리
-//   - [추가] 글로벌 캐시를 도입하여 중복 업로드(트래픽 낭비) 완벽 차단 🛡️
 // ==============================================================================
 
 import axios from 'axios';
 import useCustomizerStore from '../store/useCustomizerStore';
 
-// Vercel 환경과 로컬 환경을 자동 구분하는 API 경로
 const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:8000/api/projects' : '/api/projects';
 
-// ==============================================================================
-// ⭐ [트래픽 방어] 이번 세션에서 이미 업로드에 성공한 파일의 최종 URL을 기억하는 전역 메모장
-// ==============================================================================
-const globalUrlMapCache = {}; 
+// ⭐ [트래픽 방어] 지문(Fingerprint) 기반 전역 캐시
+// { "파일수정시간_용량": "최종 클라우드 URL" }
+const globalFingerprintCache = {}; 
+
+// 파일 내용 기반 지문 생성
+const getFileFingerprint = (file) => {
+    return `${file.lastModified.toString(36)}_${file.size.toString(36)}`;
+};
+
+// 고유 파일명 생성 (지문 + 원래이름)
+const generateUniqueName = (file) => {
+    const safeName = file.name.replace(/\s+/g, '_');
+    return `${getFileFingerprint(file)}_${safeName}`;
+};
 
 export const saveProjectToServer = async (id, pw) => {
     try {
@@ -29,14 +33,10 @@ export const saveProjectToServer = async (id, pw) => {
     }
 };
 
-// ==============================================================================
-// ⭐ 핵심 로직: 파일 수집 -> 클라우드 직접 전송 -> 최종 데이터 백엔드 전송
-// ==============================================================================
 export const uploadAndSaveProject = async (projectId, htmlString) => {
     const state = useCustomizerStore.getState();
     
-    // 1. 데이터 정제를 위한 바구니 준비
-    const blobToFileName = {};  
+    const blobToUniqueName = {};  
     const filesToUpload = [];   
 
     // --- 파일 수집 헬퍼 함수 ---
@@ -45,9 +45,9 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
         const url = item?.preview || item?.url;
         
         if (file && url) {
-            blobToFileName[url] = file.name;
-            filesToUpload.push(file);
-            console.log("📌 수집된 파일:", file.name);
+            const uniqueName = generateUniqueName(file);
+            blobToUniqueName[url] = uniqueName;
+            filesToUpload.push({ file, uniqueName });
         }
     };
 
@@ -59,85 +59,94 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
 
     state.events?.forEach(event => {
         if (event.bgmFile && event.bgm?.startsWith('blob:')) {
-            blobToFileName[event.bgm] = event.bgmFile.name;
-            filesToUpload.push(event.bgmFile);
+            const uniqueName = generateUniqueName(event.bgmFile);
+            blobToUniqueName[event.bgm] = uniqueName;
+            filesToUpload.push({ file: event.bgmFile, uniqueName });
         }
 
         event.scenarios?.forEach(sc => {
             if (sc.file) {
-                if (sc.src?.startsWith('blob:')) blobToFileName[sc.src] = sc.file.name;
-                if (sc.bgImage?.startsWith('blob:')) blobToFileName[sc.bgImage] = sc.file.name;
-                filesToUpload.push(sc.file);
+                const uniqueName = generateUniqueName(sc.file);
+                if (sc.src?.startsWith('blob:')) blobToUniqueName[sc.src] = uniqueName;
+                if (sc.bgImage?.startsWith('blob:')) blobToUniqueName[sc.bgImage] = uniqueName;
+                filesToUpload.push({ file: sc.file, uniqueName });
             }
         });
     });
 
-    if (state.startMenu?.bgImage) {
-        collectFile(state.startMenu.bgImage);
-    }
+    if (state.startMenu?.bgImage) collectFile(state.startMenu.bgImage);
+    if (state.startMenu?.bgm) collectFile(state.startMenu.bgm);
 
     // --- 중복 파일 제거 ---
     const finalFiles = [];
     const seenNames = new Set();
-    filesToUpload.forEach(file => {
-        if (file && !seenNames.has(file.name)) {
-            seenNames.add(file.name);
-            finalFiles.push(file);
+    filesToUpload.forEach(item => {
+        if (item && !seenNames.has(item.uniqueName)) {
+            seenNames.add(item.uniqueName);
+            finalFiles.push(item);
         }
     });
 
-    // ==============================================================================
-    // ⭐ [추가/변경] 다이렉트 업로드 (캐시 메모장 확인 로직 추가)
-    // ==============================================================================
     console.log("🚀 클라우드 저장 프로세스 시작...");
     
-    // 💡 핵심: 수집된 파일 중 '전역 메모장에 없는(처음 보는) 파일'만 진짜 업로드 목록으로 추림
-    const filesToActuallyUpload = finalFiles.filter(file => !globalUrlMapCache[file.name]);
+    // ⭐ 백엔드에 전달할 "정확한 이름 -> URL" 지도
+    const uniqueNameToUrlMap = {}; 
+    const filesToActuallyUpload = [];
+
+    // 업로드할 파일과 스킵할 파일 분류
+    finalFiles.forEach(item => {
+        const fingerprint = getFileFingerprint(item.file);
+        if (globalFingerprintCache[fingerprint]) {
+            // 이전에 업로드했던 똑같은 내용의 파일이라면, 지도에 이전 URL만 슥 적어둠
+            uniqueNameToUrlMap[item.uniqueName] = globalFingerprintCache[fingerprint];
+        } else {
+            filesToActuallyUpload.push(item);
+        }
+    });
 
     if (filesToActuallyUpload.length > 0) {
         console.log(`📡 1단계: 서버에 새 파일 ${filesToActuallyUpload.length}개의 업로드 권한(Presigned URL) 요청...`);
         
-        // 서버에 "이 파일들 올릴 테니 입장권 줘" 라고 요청 (새 파일만!)
-        const filesInfo = filesToActuallyUpload.map(f => ({ name: f.name, type: f.type }));
+        const filesInfo = filesToActuallyUpload.map(item => ({ name: item.uniqueName, type: item.file.type }));
         const urlResponse = await axios.post(`${API_URL}/presigned`, { projectId, filesInfo });
         const { urls } = urlResponse.data;
 
-        console.log("🚀 2단계: R2 클라우드로 파일 다이렉트 업로드 시작! (Vercel 제한 없음)");
+        console.log("🚀 2단계: R2 클라우드로 파일 다이렉트 업로드 시작!");
         
-        // 입장권(URL)을 사용하여 R2 클라우드로 직접 PUT 요청 
         const uploadPromises = urls.map(async (urlInfo) => {
-            const file = filesToActuallyUpload.find(f => f.name === urlInfo.originalName);
-            if (file) {
-                await axios.put(urlInfo.uploadUrl, file, {
-                    headers: { 'Content-Type': file.type }
+            const item = filesToActuallyUpload.find(f => f.uniqueName === urlInfo.originalName);
+            if (item) {
+                await axios.put(urlInfo.uploadUrl, item.file, {
+                    headers: { 'Content-Type': item.file.type }
                 });
-                // ⭐ 성공적으로 올라간 파일의 진짜 주소를 '전역 메모장'에 영구 기록
-                globalUrlMapCache[urlInfo.originalName] = urlInfo.finalUrl;
+                
+                // ⭐ 성공 시 전역 캐시(지문)와 백엔드 지도(고유이름)에 동시 기록
+                const fingerprint = getFileFingerprint(item.file);
+                globalFingerprintCache[fingerprint] = urlInfo.finalUrl;
+                uniqueNameToUrlMap[item.uniqueName] = urlInfo.finalUrl;
             }
         });
         
-        await Promise.all(uploadPromises); // 병렬 처리로 초고속 업로드
+        await Promise.all(uploadPromises);
         console.log("✅ 2단계 완료: 새 파일들 클라우드 업로드 성공!");
     } else {
-        console.log("⏭️ 새로 추가된 이미지가 없어 S3 업로드를 건너뜁니다! (트래픽 방어 성공 🛡️)");
+        console.log("⏭️ 새로 추가된 데이터가 없어 파일 업로드를 건너뜁니다! (트래픽 방어 성공 🛡️)");
     }
-
 
     // ==============================================================================
     // 3. 정제된 최종 JSON 데이터 조립
     // ==============================================================================
     console.log("📄 3단계: 최종 데이터 백엔드 전송 준비...");
 
-    // URL 치환 헬퍼 함수
     const cleanUrl = (url) => {
         if (!url) return null;
-        if (blobToFileName[url]) return blobToFileName[url]; 
+        if (blobToUniqueName[url]) return blobToUniqueName[url]; 
         if (typeof url === 'string' && url.includes('undefined')) return null;
         return url; 
     };
 
     const getCleanNameOrUrl = (img) => {
-        if (img.file) return img.file.name; 
+        if (img.file) return generateUniqueName(img.file); 
         const url = img.preview || img;
         if (typeof url === 'string' && url.includes('undefined')) return null;
         return url;
@@ -162,7 +171,8 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
         globalUi: state.globalUi, 
         startMenu: {
             ...state.startMenu,
-            bgImage: state.startMenu?.bgImage?.file ? state.startMenu.bgImage.file.name : state.startMenu?.bgImage?.preview || null
+            bgImage: state.startMenu?.bgImage?.file ? generateUniqueName(state.startMenu.bgImage.file) : (state.startMenu?.bgImage?.preview || state.startMenu?.bgImage || null),
+            bgm: state.startMenu?.bgm?.file ? generateUniqueName(state.startMenu.bgm.file) : (state.startMenu?.bgm?.preview || state.startMenu?.bgm || null)
         },
         protagonist: {
             name: state.protagonist?.name || "",
@@ -175,18 +185,17 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
         events: eventsToSave,
         customFonts: state.customFonts?.map(f => ({
             name: f.name,
-            url: f.file ? f.file.name : f.url 
+            url: f.file ? generateUniqueName(f.file) : f.url 
         })) || []
     };
 
     // --- 최종 백엔드 전송 ---
-    // 기존의 FormData 방식(파일 첨부)을 버리고, 가벼운 JSON 전송 방식으로 변경
     const response = await axios.post(`${API_URL}/save`, {
         projectId,
         gameData: JSON.stringify(gameData),
         htmlContent: htmlString,
-        // ⭐ 핵심: 백엔드에게 '이번 세션에서 올라간 모든 파일의 진짜 URL 지도'를 넘겨줌
-        urlMap: globalUrlMapCache 
+        // ⭐ 제대로 매칭된 지도를 넘겨주어 백엔드가 https:// 로 변환하게 만듦
+        urlMap: uniqueNameToUrlMap 
     });
     
     console.log("🎉 저장 대성공!");

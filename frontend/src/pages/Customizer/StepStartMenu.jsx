@@ -11,10 +11,10 @@ const PRESET_BG = [
 export default function StepStartMenu() {
     const { startMenu, setStartMenu, customFonts } = useCustomizerStore();
     const fileInputRef = useRef(null);
-    const bgmInputRef = useRef(null); // 🌟 BGM용 Ref 추가
+    const bgmInputRef = useRef(null); 
     
     const [uploadedFileName, setUploadedFileName] = useState('');
-    const [uploadedBgmName, setUploadedBgmName] = useState(''); // 🌟 BGM 파일명 상태 추가
+    const [uploadedBgmName, setUploadedBgmName] = useState(''); 
 
     const title = startMenu.title || { text: '최애로운 생활', x: 50, y: 30, fontSize: 8, color: '#ffffff', font: 'Galmuri14', useOutline: true, outlineColor: '#000000' };
     const menu = startMenu.menu || { 
@@ -29,6 +29,16 @@ export default function StepStartMenu() {
         { name: 'Griun_PolSensibility-Rg', value: 'Griun_PolSensibility-Rg' },
         ...customFonts.map(f => ({ name: `📁 ${f.name}`, value: f.name }))
     ];
+
+    // ⭐ 클라우드 URL(문자열)과 방금 업로드한 파일(객체)을 모두 처리하는 똑똑한 함수
+    const getMediaUrl = (media) => {
+        if (!media) return null;
+        return typeof media === 'string' ? media : media.preview;
+    };
+
+    // 화면에 보여줄 실제 주소 계산
+    const currentBgUrl = getMediaUrl(startMenu.bgImage) || PRESET_BG[0].url;
+    const currentBgmUrl = getMediaUrl(startMenu.bgm);
 
     const getFontFamily = (selectedFont) => selectedFont || 'Galmuri14';
     const getTextShadow = (useOutline, outlineColor) => {
@@ -69,13 +79,13 @@ export default function StepStartMenu() {
         reader.readAsDataURL(file);
     };
 
-    // 🎵 BGM 업로드 핸들러 추가
+    // 🎵 BGM 업로드 핸들러
     const handleBgmUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        setUploadedBgmName(file.name); // 파일명 저장
+        setUploadedBgmName(file.name);
         const previewUrl = URL.createObjectURL(file);
-        setStartMenu({ bgm: { file: file, preview: previewUrl } }); // 스토어 저장
+        setStartMenu({ bgm: { file: file, preview: previewUrl } }); 
     };
 
     const handleCenterCheck = (isTitle, checked) => {
@@ -98,7 +108,7 @@ export default function StepStartMenu() {
                     <h5>📺 Start Menu Preview</h5>
                 </div>
                 <div className="monitor-screen">
-                    <img src={startMenu.bgImage?.preview || PRESET_BG[0].url} alt="bg" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={currentBgUrl} alt="bg" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     <div style={{ position: 'absolute', left: `${title.x}%`, top: `${title.y}%`, transform: 'translate(-50%, -50%)', fontFamily: getFontFamily(title.font), fontSize: `${title.fontSize}cqh`, color: title.color, textShadow: getTextShadow(title.useOutline, title.outlineColor), fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'center', zIndex: 10 }}>
                         {title.text || "타이틀을 입력하세요"}
                     </div>
@@ -121,12 +131,15 @@ export default function StepStartMenu() {
                             <label className="form-label">배경 이미지 선택</label>
                             <div className="bg-thumbnail-list">
                                 {PRESET_BG.map(bg => (
-                                    <img key={bg.name} src={bg.url} className={`bg-thumbnail ${startMenu.bgImage?.preview === bg.url ? 'active' : ''}`} onClick={() => { setStartMenu({ bgImage: { file: null, preview: bg.url } }); setUploadedFileName(''); }} />
+                                    <img key={bg.name} src={bg.url} className={`bg-thumbnail ${currentBgUrl === bg.url ? 'active' : ''}`} onClick={() => { setStartMenu({ bgImage: { file: null, preview: bg.url } }); setUploadedFileName(''); }} />
                                 ))}
                                 <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} style={{ display: 'none' }} />
                                 <button onClick={() => fileInputRef.current.click()} className="form-input" style={{ width: 'auto', cursor: 'pointer', background: '#f8f9fa' }}>+ 파일 업로드</button>
                             </div>
-                            {uploadedFileName && <div className="uploaded-file-name">📎 이미지: {uploadedFileName}</div>}
+                            {/* 불러온 파일 이름 추출 로직 강화 */}
+                            {(uploadedFileName || (typeof startMenu.bgImage === 'string' && startMenu.bgImage.length > 50)) && 
+                                <div className="uploaded-file-name">📎 이미지: {uploadedFileName || "클라우드 저장 이미지"}</div>
+                            }
                         </div>
 
                         <div className="form-group" style={{ borderLeft: '1px dashed #dee2e6', paddingLeft: '15px' }}>
@@ -134,14 +147,16 @@ export default function StepStartMenu() {
                             <input type="file" accept="audio/*" ref={bgmInputRef} onChange={handleBgmUpload} style={{ display: 'none' }} />
                             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                                 <button onClick={() => bgmInputRef.current.click()} className="form-input" style={{ width: 'auto', cursor: 'pointer', background: '#f8f9fa', fontWeight: 'bold' }}>🎵 오디오 선택</button>
-                                {startMenu.bgm?.preview && <audio src={startMenu.bgm.preview} controls style={{ height: '30px' }} />}
+                                {currentBgmUrl && <audio src={currentBgmUrl} controls style={{ height: '30px' }} />}
                             </div>
-                            {uploadedBgmName && <div className="uploaded-file-name" style={{ background: '#fff0f6', color: '#d6336c' }}>🎶 BGM: {uploadedBgmName}</div>}
+                            {(uploadedBgmName || (typeof startMenu.bgm === 'string' && startMenu.bgm.length > 30)) && 
+                                <div className="uploaded-file-name" style={{ background: '#fff0f6', color: '#d6336c' }}>🎶 BGM: {uploadedBgmName || "클라우드 저장 오디오"}</div>
+                            }
                         </div>
                     </div>
                 </div>
 
-                {/* 2. 타이틀 설정 (이전과 동일하지만 레이아웃 정돈) */}
+                {/* 2. 타이틀 설정 */}
                 <div className="control-card">
                     <div className="control-card-title">
                         <span>✨ 타이틀 (게임 제목) 설정</span>
@@ -160,7 +175,7 @@ export default function StepStartMenu() {
                     </div>
                 </div>
 
-                {/* 3. 메뉴 디자인 (이전과 동일) */}
+                {/* 3. 메뉴 디자인 */}
                 <div className="control-card">
                     <div className="control-card-title menu-color">
                         <span>🕹️ 메뉴 (버튼) 디자인</span>
