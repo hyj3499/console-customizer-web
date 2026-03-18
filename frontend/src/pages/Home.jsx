@@ -21,16 +21,20 @@ function DesktopIcon({ icon, label, onDoubleClick }) {
                 outline: 'none'
             }}
         >
-            <div style={{ fontSize: '32px', filter: isSelected ? 'brightness(0.5) sepia(1) hue-rotate(180deg) saturate(3)' : 'none' }}>
+            <div style={{ 
+                fontSize: '32px', 
+                // 선택되었을 때 아이콘이 너무 어두워지지 않도록 부드러운 효과로 변경
+                filter: isSelected ? 'brightness(0.8) contrast(1.2)' : 'none' 
+            }}>
                 {icon}
             </div>
             <div style={{ 
-                color: 'white', 
-                backgroundColor: isSelected ? '#000080' : 'transparent', 
+                color: isSelected ? '#ffffff' : '#5d4037', // 텍스트 색상 부드럽게
+                backgroundColor: isSelected ? 'var(--win95-title-active-blue-start)' : 'transparent', // 파스텔 선택 배경
                 padding: '2px 4px', 
                 fontSize: '12px', 
                 textAlign: 'center', 
-                border: isSelected ? '1px dotted white' : '1px dotted transparent',
+                border: isSelected ? '1px dotted #ffffff' : '1px dotted transparent',
                 fontFamily: "'DOSGothic', monospace",
                 lineHeight: '1.2'
             }}>
@@ -56,7 +60,7 @@ export default function Home() {
         <div style={{ 
             width: '100vw', 
             height: '100vh', 
-            backgroundColor: 'var(--win95-desktop-teal)', /* 청록색 바탕화면 */
+            backgroundColor: 'var(--win95-desktop-teal)', /* 파스텔 청록색 바탕화면 */
             position: 'relative', 
             overflow: 'hidden', 
             fontFamily: "'DOSGothic', monospace",
@@ -82,17 +86,20 @@ export default function Home() {
                 top: '45%', left: '50%', 
                 transform: 'translate(-50%, -50%)', 
                 width: '90%', maxWidth: '450px', 
-                boxShadow: '2px 2px 10px rgba(0,0,0,0.5)' 
+                boxShadow: '4px 4px 15px rgba(199, 139, 155, 0.4)' // 그림자도 약간 핑크빛으로 부드럽게
             }}>
-                <div className="win95-title-bar" style={{ display: 'flex', justifyContent: 'space-between', background: 'linear-gradient(to right, #000080, #1084d0)', padding: '4px 8px', color: 'white' }}>
-                    <span style={{ fontWeight: 'bold' }}>최애로운_생활.exe</span>
+                {/* 인라인 색상을 지우고 index.css의 win95-title-bar 클래스에 스타일을 맡깁니다 */}
+                <div className="win95-title-bar" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>최애로운_생활.exe</span>
                     <button className="win95-button" style={{ minWidth: 'auto', padding: '0 6px', fontWeight: 'bold' }}>X</button>
                 </div>
 
-                <div className="win95-window-inner" style={{ backgroundColor: '#c0c0c0', padding: '30px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                {/* backgroundColor를 CSS 변수로 변경 */}
+                <div className="win95-window-inner" style={{ backgroundColor: 'var(--win95-base-gray)', padding: '30px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    {/* 로고 이미지가 픽셀아트라면 pixelated 유지 */}
                     <img src="/images/logo.png" alt="로고" style={{ width: '200px', marginBottom: '20px', imageRendering: 'pixelated' }} />
-                    <h2 style={{ fontSize: '18px', color: '#000', marginBottom: '10px' }}>커스텀 비쥬얼 노벨 게임 제작하기</h2>
-                    <p style={{ fontSize: '13px', color: '#000', marginBottom: '30px', lineHeight: '1.5' }}>
+                    <h2 style={{ fontSize: '18px', color: '#5d4037', marginBottom: '10px' }}>커스텀 비쥬얼 노벨 게임 제작하기</h2>
+                    <p style={{ fontSize: '13px', color: '#5d4037', marginBottom: '30px', lineHeight: '1.5' }}>
                         바탕화면의 [최애로운_생활.exe]를 더블클릭 하거나,<br/>
                         아래 [게임 제작] 버튼을 눌러주십시오.
                     </p>
@@ -109,22 +116,26 @@ export default function Home() {
             {/* 🏁 하단 작업 표시줄 (Taskbar) */}
             <div style={{ 
                 position: 'fixed', bottom: 0, left: 0, width: '100%', height: '32px', 
-                backgroundColor: '#c0c0c0', 
-                borderTop: '2px solid #fff', borderBottom: '2px solid #000',
+                backgroundColor: 'var(--win95-base-gray)', 
+                borderTop: '2px solid var(--win95-highlight-gray)', 
+                borderBottom: '2px solid var(--win95-dark-shadow-black)',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
                 padding: '2px', zIndex: 1000
             }}>
                 <div style={{ display: 'flex', gap: '5px', height: '100%' }}>
                     {/* 시작 버튼 */}
                     <button className="win95-button" style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '0 8px', fontWeight: 'bold', height: '100%' }}>
-                        <span style={{ fontSize: '14px', color: '#000' }}>⊞ 시작</span>
+                        <span style={{ fontSize: '14px', color: '#5d4037' }}>⊞ 시작</span>
                     </button>
                     {/* 열려있는 프로그램 탭 */}
                     <div style={{ 
                         display: 'flex', alignItems: 'center', padding: '0 10px', 
-                        borderTop: '2px solid #000', borderLeft: '2px solid #000', 
-                        borderRight: '2px solid #fff', borderBottom: '2px solid #fff', 
-                        backgroundColor: '#dfdfdf', height: '100%', fontWeight: 'bold', color: '#000', fontSize: '12px' 
+                        borderTop: '2px solid var(--win95-dark-shadow-black)', 
+                        borderLeft: '2px solid var(--win95-dark-shadow-black)', 
+                        borderRight: '2px solid var(--win95-highlight-gray)', 
+                        borderBottom: '2px solid var(--win95-highlight-gray)', 
+                        backgroundColor: 'var(--win95-content-white)', 
+                        height: '100%', fontWeight: 'bold', color: '#5d4037', fontSize: '12px' 
                     }}>
                         최애로운_생활.exe
                     </div>
@@ -133,9 +144,11 @@ export default function Home() {
                 {/* 우측 시스템 트레이 (시계) */}
                 <div style={{ 
                     display: 'flex', alignItems: 'center', padding: '0 10px', 
-                    borderTop: '2px solid #808080', borderLeft: '2px solid #808080', 
-                    borderRight: '2px solid #fff', borderBottom: '2px solid #fff',
-                    backgroundColor: '#c0c0c0', height: '100%', fontSize: '12px', color: '#000', marginRight: '2px'
+                    borderTop: '2px solid var(--win95-light-shadow-gray)', 
+                    borderLeft: '2px solid var(--win95-light-shadow-gray)', 
+                    borderRight: '2px solid var(--win95-highlight-gray)', 
+                    borderBottom: '2px solid var(--win95-highlight-gray)',
+                    backgroundColor: 'var(--win95-base-gray)', height: '100%', fontSize: '12px', color: '#5d4037', marginRight: '2px'
                 }}>
                     🔊 {formattedTime}
                 </div>

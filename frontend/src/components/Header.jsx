@@ -18,16 +18,16 @@ export default function Header() {
         }
     };
 
-    // 🎨 윈도우 95 버튼 공통 스타일
+    // 🎨 윈도우 95 버튼 공통 스타일 (파스텔 테마 적용)
     const win95ButtonStyle = {
-        backgroundColor: '#c0c0c0',
-        borderTop: '2px solid #fff',
-        borderLeft: '2px solid #fff',
-        borderRight: '2px solid #808080',
-        borderBottom: '2px solid #808080',
+        backgroundColor: 'var(--win95-base-gray)', // 베이비 핑크 배경
+        borderTop: '2px solid var(--win95-highlight-gray)', // 흰색 하이라이트
+        borderLeft: '2px solid var(--win95-highlight-gray)',
+        borderRight: '2px solid var(--win95-dark-shadow-black)', // 파스텔 섀도우
+        borderBottom: '2px solid var(--win95-dark-shadow-black)',
         padding: '5px 15px',
         textDecoration: 'none',
-        color: '#000',
+        color: '#5d4037', // 다크 브라운 텍스트로 부드럽게
         fontSize: '13px',
         fontWeight: 'bold',
         fontFamily: "'DOSGothic', 'Courier New', monospace",
@@ -39,13 +39,13 @@ export default function Header() {
 
     return (
         <header className="win95-header" style={{ 
-            backgroundColor: '#c0c0c0',
+            backgroundColor: 'var(--win95-base-gray)', // 헤더 전체 배경을 파스텔톤으로
             display: 'flex', 
             justifyContent: 'space-between', 
             padding: '5px 10px', 
-            borderTop: '2px solid #fff',
-            borderLeft: '2px solid #fff',
-            borderBottom: '2px solid #000', 
+            borderTop: '2px solid var(--win95-highlight-gray)',
+            borderLeft: '2px solid var(--win95-highlight-gray)',
+            borderBottom: '2px solid var(--win95-dark-shadow-black)', 
             alignItems: 'center',
             userSelect: 'none',
             flexWrap: 'nowrap', // ⭐ 절대 줄바꿈 금지 (무조건 한 줄)
@@ -57,8 +57,12 @@ export default function Header() {
             <Link to="/" onClick={handleNavClick} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', gap: '5px', flexShrink: 0 }}>
                 <div style={{
                     padding: '1px',
-                    border: '1px inset #fff',
-                    backgroundColor: '#dfdfdf'
+                    // 로고 아이콘 주변의 오목한 테두리 (Inset Bevel) 파스텔 톤 적용
+                    borderTop: '1px solid var(--win95-dark-shadow-black)',
+                    borderLeft: '1px solid var(--win95-dark-shadow-black)',
+                    borderRight: '1px solid var(--win95-highlight-gray)',
+                    borderBottom: '1px solid var(--win95-highlight-gray)',
+                    backgroundColor: 'var(--win95-content-white)' // 입력창 같은 흰색 바탕
                 }}>
                     <img 
                         src="/images/logo.png" 
@@ -67,7 +71,8 @@ export default function Header() {
                     />
                 </div>
                 <span className="logo-text" style={{ 
-                    color: '#000', fontWeight: 'bold', fontSize: '13px', fontFamily: "'DOSGothic', monospace",
+                    color: '#5d4037', // 텍스트 색상 부드럽게 연동
+                    fontWeight: 'bold', fontSize: '13px', fontFamily: "'DOSGothic', monospace",
                     whiteSpace: 'nowrap' // 글자 짤림 방지
                 }}>
                     최애로운 생활
@@ -113,12 +118,19 @@ export default function Header() {
                     }
                 }
 
+                /* 버튼 눌렸을 때 효과 (파스텔 섀도우 적용) */
                 .win95-nav-btn:active {
-                    border-top: 2px solid #808080 !important;
-                    border-left: 2px solid #808080 !important;
-                    border-right: 2px solid #fff !important;
-                    border-bottom: 2px solid #fff !important;
-                    padding: 5px 2px 3px 4px !important; /* 눌림 효과 시 여백 유지 */
+                    border-top: 2px solid var(--win95-dark-shadow-black) !important;
+                    border-left: 2px solid var(--win95-dark-shadow-black) !important;
+                    border-right: 2px solid var(--win95-highlight-gray) !important;
+                    border-bottom: 2px solid var(--win95-highlight-gray) !important;
+                    padding: 6px 14px 4px 16px !important; /* 눌렸을 때 글자가 살짝 우하단으로 밀리는 디테일 (모바일 최적화 패딩과 충돌 방지를 위해 조절 필요할 수 있음) */
+                }
+                
+                @media screen and (max-width: 600px) {
+                    .win95-nav-btn:active {
+                        padding: 5px 2px 3px 4px !important; /* 모바일에서의 눌림 효과 패딩 */
+                    }
                 }
             `}</style>
         </header>
