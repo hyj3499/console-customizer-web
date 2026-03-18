@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // 🖥️ 바탕화면 아이콘 컴포넌트
-function DesktopIcon({ icon, label, onDoubleClick }) {
+// 🖥️ 바탕화면 아이콘 컴포넌트 (파일 상단)
+function DesktopIcon({ iconPath, label, onDoubleClick }) { // 👈 이름을 iconPath로 통일!
     const [isSelected, setIsSelected] = useState(false);
 
     return (
@@ -10,7 +11,7 @@ function DesktopIcon({ icon, label, onDoubleClick }) {
             onClick={() => setIsSelected(true)}
             onDoubleClick={onDoubleClick}
             onBlur={() => setIsSelected(false)}
-            tabIndex={0} // 포커스를 받을 수 있게 설정
+            tabIndex={0}
             style={{ 
                 display: 'flex', 
                 flexDirection: 'column', 
@@ -21,16 +22,21 @@ function DesktopIcon({ icon, label, onDoubleClick }) {
                 outline: 'none'
             }}
         >
+            <img 
+                src={iconPath} // 👈 여기서도 iconPath를 사용합니다
+                alt={label} 
+                style={{ 
+                    width: '32px', 
+                    height: '32px', 
+                    imageRendering: 'pixelated',
+                    filter: isSelected ? 'brightness(0.8) contrast(1.2)' : 'none' 
+                }}
+                // 이미지가 정말 안 나올 때 콘솔에 에러를 찍어줍니다
+                onError={(e) => console.error(`${label} 이미지 로드 실패:`, iconPath)}
+            />
             <div style={{ 
-                fontSize: '32px', 
-                // 선택되었을 때 아이콘이 너무 어두워지지 않도록 부드러운 효과로 변경
-                filter: isSelected ? 'brightness(0.8) contrast(1.2)' : 'none' 
-            }}>
-                {icon}
-            </div>
-            <div style={{ 
-                color: isSelected ? '#ffffff' : '#5d4037', // 텍스트 색상 부드럽게
-                backgroundColor: isSelected ? 'var(--win95-title-active-blue-start)' : 'transparent', // 파스텔 선택 배경
+                color: isSelected ? '#ffffff' : '#5d4037',
+                backgroundColor: isSelected ? 'var(--win95-title-active-blue-start)' : 'transparent',
                 padding: '2px 4px', 
                 fontSize: '12px', 
                 textAlign: 'center', 
@@ -43,7 +49,6 @@ function DesktopIcon({ icon, label, onDoubleClick }) {
         </div>
     );
 }
-
 export default function Home() {
     const navigate = useNavigate();
     const [time, setTime] = useState(new Date());
@@ -68,13 +73,13 @@ export default function Home() {
         }}>
             
             {/* 📁 좌측 바탕화면 바로가기 아이콘들 */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '25px', padding: '20px', position: 'absolute', top: 0, left: 0 }}>
-                <DesktopIcon icon="💻" label="내 컴퓨터" />
-                <DesktopIcon icon="🗑️" label="휴지통" />
-                <DesktopIcon icon="📁" label="새 폴더" />
-                {/* ⭐ 진짜로 넘어가는 게임 실행 아이콘 (더블클릭!) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '25px', padding: '20px', position: 'absolute', top: '10px', left: 0 }}>
+                {/* public/images 폴더에 해당 파일들이 있어야 합니다! */}
+                <DesktopIcon iconPath="/images/computer.png" label="내 컴퓨터" />
+                <DesktopIcon iconPath="/images/trashcan.png" label="휴지통" />
+                <DesktopIcon iconPath="/images/newfolder.png" label="새 폴더" />
                 <DesktopIcon 
-                    icon="🎮" 
+                    iconPath="/images/game.png" // 게임 아이콘 파일명에 맞게 수정하세요
                     label="최애로운_생활.exe" 
                     onDoubleClick={() => navigate('/customizer')} 
                 />
