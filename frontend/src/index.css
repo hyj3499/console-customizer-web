@@ -43,6 +43,9 @@
   --win95-accent-blue: #ff8eb3; /* 하이퍼링크 및 특정 아이콘 (핫 파스텔 핑크) */
   --win95-start-colored-flag: url('retro-pixel-start-flag.png'); 
 
+  --win95-accent-yellow: #fffacd; /* 파스텔 노랑 */
+  --win95-accent-yellow-dark: #ccbc8e; /* 부드러운 다크 옐로우 (그림자) *
+
   /* 폰트 설정 */
   --main-font: 'DOSGothic', 'Galmuri14', monospace;
   line-height: 1.5;
@@ -315,4 +318,20 @@ a:hover {
   border-right-color: var(--win95-dark-shadow-black);
   border-bottom-color: var(--win95-dark-shadow-black);
   box-shadow: inset 1px 1px var(--win95-highlight-gray), inset -1px -1px var(--win95-light-shadow-gray);
+}
+
+/* 🚨 파스텔 노랑 버튼 전용 클래스 정의 */
+.win95-button-yellow {
+  background-color: var(--win95-accent-yellow) !important;
+  border-right-color: var(--win95-accent-yellow-dark) !important;
+  border-bottom-color: var(--win95-accent-yellow-dark) !important;
+}
+
+/* 버튼 눌렀을 때의 효과 정의 */
+.win95-button-yellow:active {
+  border-top-color: var(--win95-accent-yellow-dark) !important;
+  border-left-color: var(--win95-accent-yellow-dark) !important;
+  border-right-color: var(--win95-highlight-gray) !important;
+  border-bottom-color: var(--win95-highlight-gray) !important;
+  padding: 5px 2px 3px 4px !important; /* 눌렸을 때 우하단 밀림 효과 */
 }

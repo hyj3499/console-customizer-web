@@ -19,9 +19,9 @@ function DesktopIcon({ iconPath, label, onDoubleClick }) {
                 width: '75px', 
                 height: '75px', 
                 cursor: 'pointer', 
-                gap: '4px',
+                gap: '2px',
                 outline: 'none',
-                paddingTop: '5px'
+                margin: '5px'
             }}
         >
             <img 
@@ -31,14 +31,15 @@ function DesktopIcon({ iconPath, label, onDoubleClick }) {
                     width: '32px', 
                     height: '32px', 
                     imageRendering: 'pixelated',
-                    filter: isSelected ? 'brightness(0.7) sepia(1) hue-rotate(-50deg) saturate(5)' : 'none' 
+                    // 선택 시 파스텔 핑크색 글로우 효과로 변경
+                    filter: isSelected ? 'drop-shadow(0 0 5px #ffb6c1) brightness(0.9) contrast(1.1)' : 'none' 
                 }}
                 onError={(e) => { e.target.style.display = 'none'; }}
             />
             <div style={{ 
                 color: isSelected ? '#ffffff' : '#5d4037',
                 backgroundColor: isSelected ? 'var(--win95-title-active-blue-start)' : 'transparent',
-                padding: '2px 4px', 
+                padding: '1px 3px', 
                 fontSize: '11px', 
                 textAlign: 'center', 
                 border: isSelected ? '1px dotted #ffffff' : '1px dotted transparent',
@@ -98,8 +99,78 @@ export default function Home() {
             userSelect: 'none'
         }}>
             
-            {/* 📁 실제 윈도우 스타일의 바탕화면 아이콘 그리드 */}
-            <div style={{ 
+            {/* ⭐ 모바일 최적화를 위한 CSS 스타일 블록 통합 */}
+            <style>{`
+                /* 📱 화면 너비가 768px 이하일 때 (모바일/태블릿) 적용되는 스타일 */
+                @media (max-width: 768px) {
+                    /* 📱 모바일 격자: 4열로 고정하고 가로로 채움 (짤림 방지) */
+                    .desktop-icons-container {
+                        display: grid !important;
+                        grid-template-columns: repeat(4, 1fr) !important;
+                        grid-auto-flow: row !important;
+                        grid-template-rows: none !important;
+                        height: auto !important; 
+                        max-height: calc(100vh - 40px) !important;
+                        overflow-y: auto !important; 
+                        padding: 10px !important;
+                        gap: 10px !important;
+                    }
+                    
+                    /* 💣 지뢰찾기 관련 요소 모두 숨김 */
+                    .minesweeper-window { display: none !important; }
+                    .taskbar-minesweeper-tab { display: none !important; }
+                    
+                    /* 📝 메모장 크기 줄여서 상단 배치 */
+                    .notepad-window {
+                        width: 90% !important;
+                        top: 5% !important;
+                        left: 50% !important;
+                        transform: translateX(-50%) !important;
+                    }
+                    .notepad-window .win95-window-inner {
+                        height: 120px !important; 
+                    }
+                    
+                    /* 🪟 메인 프로그램 크기 줄여서 메모장 아래 겹치게 배치 */
+                    .main-window {
+                        width: 92% !important;
+                        top: 55% !important;
+                        left: 50% !important;
+                        transform: translate(-50%, -50%) !important;
+                    }
+                    .main-window .win95-window-inner {
+                        padding: 15px !important; 
+                    }
+                    .main-window img.main-logo {
+                        width: 100px !important; 
+                        margin-bottom: 10px !important;
+                    }
+                    .main-window h2 {
+                        font-size: 15px !important; 
+                    }
+                    .main-window p {
+                        font-size: 11px !important; 
+                        margin-bottom: 15px !important;
+                    }
+
+                    /* ⏰ 하단 작업표시줄 시계 텍스트 짤림 방지 */
+                    .taskbar-clock {
+                        padding: 0 4px !important;
+                        font-size: 10px !important;
+                        min-width: 60px;
+                        justify-content: center;
+                    }
+                    .clock-icon {
+                        display: none; /* 공간 확보를 위해 스피커 아이콘 숨김 */
+                    }
+                    .taskbar-notepad-tab {
+                        display: none !important; /* 모바일 하단바 공간 확보를 위해 메모장 탭 숨김 */
+                    }
+                }
+            `}</style>
+
+            {/* 📁 바탕화면 아이콘 그리드 */}
+            <div className="desktop-icons-container" style={{ 
                 display: 'grid', 
                 gridTemplateRows: 'repeat(auto-fill, 75px)', 
                 gridAutoFlow: 'column', 
@@ -112,7 +183,6 @@ export default function Home() {
                 zIndex: 1
             }}>
                 {iconList.map((fileName) => {
-                    // ⭐ 경로를 /images/icons/ 폴더로 일괄 변경했습니다!
                     const fullPath = `/images/icons/${fileName}.png`;
                     const displayLabel = fileName.replace(/_/g, ' ');
 
@@ -131,13 +201,10 @@ export default function Home() {
                 })}
             </div>
 
-            {/* 📝 허전함을 채워줄 추가 창 1: README 메모장 */}
-            <div className="win95-window" style={{ 
-                position: 'absolute', 
-                top: '15%', left: '12%', 
-                width: '280px',
-                boxShadow: '4px 4px 15px rgba(199, 139, 155, 0.4)',
-                zIndex: 5 
+            {/* 📝 서브 창 1: README 메모장 */}
+            <div className="win95-window notepad-window" style={{ 
+                position: 'absolute', top: '15%', left: '12%', width: '280px',
+                boxShadow: '4px 4px 15px rgba(199, 139, 155, 0.4)', zIndex: 5 
             }}>
                 <div className="win95-title-bar" style={{ display: 'flex', justifyContent: 'space-between', background: 'var(--win95-title-inactive-gray)', color: 'var(--win95-dark-shadow-black)' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -165,26 +232,19 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* 💣 허전함을 채워줄 추가 창 2: 귀여운 지뢰찾기 */}
-            <div className="win95-window" style={{ 
-                position: 'absolute', 
-                top: '10%', right: '10%', // 우측 상단에 배치
-                width: '180px',
-                boxShadow: '4px 4px 15px rgba(199, 139, 155, 0.4)',
-                zIndex: 7 // 메모장보단 위, 메인창보단 아래
+            {/* 💣 서브 창 2: 귀여운 지뢰찾기 (모바일에서는 숨김) */}
+            <div className="win95-window minesweeper-window" style={{ 
+                position: 'absolute', top: '10%', right: '10%', width: '180px',
+                boxShadow: '4px 4px 15px rgba(199, 139, 155, 0.4)', zIndex: 7 
             }}>
                 <div className="win95-title-bar" style={{ display: 'flex', justifyContent: 'space-between', background: 'var(--win95-title-inactive-gray)', color: 'var(--win95-dark-shadow-black)' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        💣 지뢰찾기
-                    </span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>💣 지뢰찾기</span>
                     <button className="win95-button" style={{ minWidth: 'auto', padding: '0 6px', fontWeight: 'bold' }}>X</button>
                 </div>
                 <div style={{ display: 'flex', gap: '10px', padding: '2px 5px', backgroundColor: 'var(--win95-base-gray)', borderBottom: '1px solid var(--win95-light-shadow-gray)', fontSize: '12px', color: '#5d4037' }}>
-                    <span>Game</span>
-                    <span>Help</span>
+                    <span>Game</span><span>Help</span>
                 </div>
                 <div className="win95-window-inner" style={{ backgroundColor: 'var(--win95-base-gray)', padding: '6px', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
-                    {/* 상단 스코어 보드 */}
                     <div style={{ 
                         width: '100%', display: 'flex', justifyContent: 'space-between', padding: '4px',
                         borderTop: '2px solid var(--win95-dark-shadow-black)', borderLeft: '2px solid var(--win95-dark-shadow-black)',
@@ -194,16 +254,14 @@ export default function Home() {
                         <button className="win95-button" style={{ minWidth: '26px', padding: '2px', fontSize: '16px' }}>😊</button>
                         <div style={{ color: '#ff8eb3', fontFamily: 'monospace', fontSize: '18px', backgroundColor: '#000', padding: '0 4px', letterSpacing: '2px' }}>000</div>
                     </div>
-                    {/* 격자 (8x8) */}
                     <div style={{ 
                         display: 'grid', gridTemplateColumns: 'repeat(8, 16px)', gridAutoRows: '16px',
                         borderTop: '2px solid var(--win95-dark-shadow-black)', borderLeft: '2px solid var(--win95-dark-shadow-black)',
                         borderBottom: '2px solid var(--win95-highlight-gray)', borderRight: '2px solid var(--win95-highlight-gray)'
                     }}>
                         {Array.from({ length: 64 }).map((_, i) => {
-                            // 리얼함을 위해 몇 개만 눌린 것처럼 연출
                             const isOpened = i === 27 || i === 28 || i === 36;
-                            const isMine = i === 12; // 깃발
+                            const isMine = i === 12;
                             const content = i === 27 ? '1' : i === 28 ? '2' : isMine ? '🚩' : '';
                             const color = content === '1' ? 'var(--win95-accent-blue)' : content === '2' ? 'green' : '';
 
@@ -217,23 +275,17 @@ export default function Home() {
                                     borderBottom: isOpened ? 'none' : '2px solid var(--win95-dark-shadow-black)',
                                     borderRight: isOpened ? 'none' : '2px solid var(--win95-dark-shadow-black)',
                                     cursor: 'pointer'
-                                }}>
-                                    {content}
-                                </div>
+                                }}>{content}</div>
                             );
                         })}
                     </div>
                 </div>
             </div>
 
-            {/* 🪟 메인 프로그램: 최애로운_생활.exe (최상단) */}
-            <div className="win95-window" style={{ 
-                position: 'absolute', 
-                top: '55%', left: '50%', 
-                transform: 'translate(-50%, -50%)', 
-                width: '90%', maxWidth: '450px', 
-                boxShadow: '6px 6px 20px rgba(199, 139, 155, 0.5)',
-                zIndex: 10 
+            {/* 🪟 메인 프로그램 */}
+            <div className="win95-window main-window" style={{ 
+                position: 'absolute', top: '55%', left: '50%', transform: 'translate(-50%, -50%)', 
+                width: '90%', maxWidth: '450px', boxShadow: '6px 6px 20px rgba(199, 139, 155, 0.5)', zIndex: 10 
             }}>
                 <div className="win95-title-bar" style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -244,15 +296,15 @@ export default function Home() {
                 </div>
 
                 <div className="win95-window-inner" style={{ backgroundColor: 'var(--win95-base-gray)', padding: '30px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    {/* 로고 이미지는 icons 폴더가 아니라면 기존 경로 유지 (수정 필요 시 변경하세요) */}
-                    <img src="/images/logo.png" alt="로고" style={{ width: '150px', marginBottom: '20px', imageRendering: 'pixelated' }} />
+                    <img className="main-logo" src="/images/logo.png" alt="로고" style={{ width: '150px', marginBottom: '20px', imageRendering: 'pixelated' }} />
                     <h2 style={{ fontSize: '18px', color: '#5d4037', marginBottom: '10px' }}>커스텀 비쥬얼 노벨 게임 제작하기</h2>
                     <p style={{ fontSize: '13px', color: '#5d4037', marginBottom: '30px', lineHeight: '1.5' }}>
                         바탕화면의 아이콘을 더블클릭 하거나,<br/>
                         아래 [게임 제작] 버튼을 눌러주십시오.
                     </p>
+                    {/* 🎨 게임 제작 버튼: 파스텔 노랑색 적용 */}
                     <button 
-                        className="win95-button" 
+                        className="win95-button win95-button-yellow" 
                         onClick={() => navigate('/customizer')} 
                         style={{ padding: '8px 25px', fontSize: '14px', fontWeight: 'bold' }}
                     >
@@ -261,7 +313,7 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* 🏁 하단 작업 표시줄 (Taskbar) */}
+            {/* 🏁 하단 작업 표시줄 */}
             <div style={{ 
                 position: 'fixed', bottom: 0, left: 0, width: '100%', height: '32px', 
                 backgroundColor: 'var(--win95-base-gray)', 
@@ -275,7 +327,7 @@ export default function Home() {
                         <span style={{ fontSize: '14px', color: '#5d4037' }}>⊞ 시작</span>
                     </button>
                     
-                    {/* 활성화된 창 탭 */}
+                    {/* 활성화된 메인 프로그램 탭 */}
                     <div style={{ 
                         display: 'flex', alignItems: 'center', padding: '0 10px', whiteSpace: 'nowrap',
                         borderTop: '2px solid var(--win95-dark-shadow-black)', borderLeft: '2px solid var(--win95-dark-shadow-black)', 
@@ -285,8 +337,8 @@ export default function Home() {
                         최애로운_생활.exe
                     </div>
                     
-                    {/* 비활성화된 메모장 탭 */}
-                    <div style={{ 
+                    {/* 비활성 탭 1 (모바일에서는 숨김) */}
+                    <div className="taskbar-notepad-tab" style={{ 
                         display: 'flex', alignItems: 'center', padding: '0 10px', whiteSpace: 'nowrap',
                         borderTop: '2px solid var(--win95-highlight-gray)', borderLeft: '2px solid var(--win95-highlight-gray)', 
                         borderRight: '2px solid var(--win95-dark-shadow-black)', borderBottom: '2px solid var(--win95-dark-shadow-black)', 
@@ -295,8 +347,8 @@ export default function Home() {
                         README.txt
                     </div>
 
-                    {/* 비활성화된 지뢰찾기 탭 */}
-                    <div style={{ 
+                    {/* 비활성 탭 2 (지뢰찾기) */}
+                    <div className="taskbar-minesweeper-tab" style={{ 
                         display: 'flex', alignItems: 'center', padding: '0 10px', whiteSpace: 'nowrap',
                         borderTop: '2px solid var(--win95-highlight-gray)', borderLeft: '2px solid var(--win95-highlight-gray)', 
                         borderRight: '2px solid var(--win95-dark-shadow-black)', borderBottom: '2px solid var(--win95-dark-shadow-black)', 
@@ -306,13 +358,15 @@ export default function Home() {
                     </div>
                 </div>
 
-                <div style={{ 
-                    display: 'flex', alignItems: 'center', padding: '0 10px', 
+                {/* ⏰ 시계 영역 (모바일 최적화 클래스 적용) */}
+                <div className="taskbar-clock" style={{ 
+                    display: 'flex', alignItems: 'center', padding: '0 10px', whiteSpace: 'nowrap',
                     borderTop: '2px solid var(--win95-light-shadow-gray)', borderLeft: '2px solid var(--win95-light-shadow-gray)', 
                     borderRight: '2px solid var(--win95-highlight-gray)', borderBottom: '2px solid var(--win95-highlight-gray)',
                     backgroundColor: 'var(--win95-base-gray)', height: '100%', fontSize: '12px', color: '#5d4037', marginRight: '2px'
                 }}>
-                    🔊 {formattedTime}
+                    <span className="clock-icon" style={{ marginRight: '4px' }}>🔊</span>
+                    {formattedTime}
                 </div>
             </div>
         </div>
