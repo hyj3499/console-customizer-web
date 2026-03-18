@@ -1,5 +1,13 @@
 // api/renpyScreensConverter.js
 
+const getFileName = (path) => {
+    if (!path) return "";
+    let pathStr = typeof path === 'object' ? (path.preview || path.url) : path;
+    if (!pathStr) return "";
+    let fileName = pathStr.split('/').pop().split('?')[0];
+    try { return decodeURIComponent(fileName); } catch (e) { return fileName; }
+};
+
 const rgbaToHex = (colorStr) => {
     if (!colorStr) return "#ffffff"; 
     if (colorStr.startsWith("#")) {
@@ -30,7 +38,6 @@ const safeFont = (fontName) => {
     return fontName;
 };
 
-// ⭐ CSS 박스 모델을 렌파이 Composite로 번역하는 핵심 함수
 const getBgStr = (frameType, bgColorVal, borderColorVal, useBorder, isNamebox) => {
     const w = isNamebox ? 180 : 1100;
     const h = isNamebox ? 50 : 250;
@@ -49,9 +56,7 @@ const getBgStr = (frameType, bgColorVal, borderColorVal, useBorder, isNamebox) =
     }
 
     if (frameType === 'gothic') {
-        const line1 = 1; 
-        const gap = 2;   
-        const line2 = 1; 
+        const line1 = 1; const gap = 2; const line2 = 1; 
         const totalBw = line1 + gap + line2; 
         const innerW = w - (totalBw * 2);
         const innerH = h - (totalBw * 2);
@@ -100,9 +105,7 @@ export const generateScreensRpy = (data) => {
         }
         const bgColorHex = rgbaToHex(pStyle.portraitColor);
         const bdColorHex = rgbaToHex(pStyle.portraitBorderColor || '#dddddd');
-        const bw = 3;
-        const size = 250;
-        const inner = size - (bw * 2);
+        const bw = 3; const size = 250; const inner = size - (bw * 2);
         
         return `Composite((${size}, ${size}), 
             (0, 0), Transform(Solid("${bdColorHex}"), xysize=(${size}, ${bw})), 
@@ -114,23 +117,43 @@ export const generateScreensRpy = (data) => {
 
     const calBgStr = ui.calendarFrame === 'retro'
         ? `Transform("images/retro_calendar_${getColorId(ui.calendarColor)}.png", xysize=(150, 150))`
-        : `Solid("${rgbaToHex(ui.calendarColor)}")`;
+        : `Transform(Solid("${rgbaToHex(ui.calendarColor)}"), xysize=(150, 150))`;
 
     const calText = rgbaToHex(ui.calendarTextColor);
     const calLine = rgbaToHex(ui.calendarTextOutlineColor);
-    const startBgUrl = start.bgImage || "background/bg_title.png";
-    const menuX = (start.menuPos?.x || 50) / 100;
-    const menuY = (start.menuPos?.y || 70) / 100;
-    const titleSize = start.textStyle?.fontSize || 40;
+    
+    const isBottomMode = ui.layoutMode === 'bottom';
+    const dialog_y = isBottomMode ? 830 : 780;
+    const portrait_y = isBottomMode ? 830 : 780;
+    const namebox_y = isBottomMode ? 780 : 720;
 
-    const portraitImageCode = pStyle.portraitStyle === 'retro' 
-        ? `AlphaMask(Transform(getattr(store, "current_p_image", ""), xysize=(face_size, face_size), fit="cover"), Transform("images/retro_frame_mask.png", xysize=(face_size, face_size)))`
-        : `Transform(getattr(store, "current_p_image", ""), xysize=(face_size, face_size), fit="cover")`;
+    const t = start.title || {};
+    const m = start.menu || {};
+    const startBgUrl = start.bgImage ? getFileName(start.bgImage) : "bg_title.png";
+
+    const tSize = Math.round((t.fontSize !== undefined ? t.fontSize : 8) * 10.8);
+    const mSize = Math.round((m.fontSize !== undefined ? m.fontSize : 4) * 10.8);
+    
+    const tX = (t.x !== undefined ? t.x : 50) / 100.0;
+    const tY = (t.y !== undefined ? t.y : 30) / 100.0;
+    const mX = (m.x !== undefined ? m.x : 50) / 100.0;
+    const mY = (m.y !== undefined ? m.y : 75) / 100.0;
+
+    const mPaddingRaw = m.padding !== undefined ? m.padding : 20;
+    const mPadding = Math.round((mPaddingRaw / 10) * 19.2);
+
+    const mSpacing = 22; 
+
+    const aHex = Math.round((m.bgOpacity !== undefined ? m.bgOpacity : 0.5) * 255).toString(16).padStart(2, '0');
+    const solidColor = rgbaToHex(m.bgColor || '#000000').slice(0, 7) + aHex;
+    
+    let mBgCode = `Solid("${solidColor}")`;
+    if (m.useBorder) {
+        const bdColor = rgbaToHex(m.borderColor || '#ffffff');
+        mBgCode = `Frame(Composite((10, 10), (0,0), Transform(Solid("${bdColor}"), xysize=(10,2)), (0,8), Transform(Solid("${bdColor}"), xysize=(10,2)), (0,2), Transform(Solid("${bdColor}"), xysize=(2,6)), (8,2), Transform(Solid("${bdColor}"), xysize=(2,6)), (2,2), Transform(Solid("${solidColor}"), xysize=(6, 6))), 2, 2)`;
+    }
 
     let rpy = `
-################################################################################
-## 커스텀 스크린 오버라이드
-################################################################################
 init offset = 1
 
 style default:
@@ -163,17 +186,31 @@ style say_dialogue:
     line_spacing 5
     adjust_spacing False
 
-# ⭐ 인게임 시스템 메뉴용 스타일 정의
 style ig_sysmenu_text is text:
     font "${mainFont}"
     size 18
     color "#ffffff"
-    outlines [(1, "#00000080", 0, 0)] # 그림자 효과 (opacity 0.5)
+    outlines [(1, "#00000080", 0, 0)]
     hover_color "#ffd43b"
 
 style ig_sysmenu_button is button:
     background None
     padding (10, 5)
+
+style start_menu_frame is frame:
+    background ${mBgCode}
+    padding (${mPadding}, ${mPadding}, ${mPadding}, ${mPadding})
+
+style start_menu_button is button:
+    background None
+    padding (0, 0) 
+
+style start_menu_button_text is text:
+    font "${safeFont(m.font)}"
+    size ${mSize}
+    color "${rgbaToHex(m.color)}"
+    ${m.useOutline ? `outlines [(2, "${rgbaToHex(m.outlineColor)}", 0, 0)]` : ""}
+    hover_color "#ffd43b"
 
 ################################################################################
 ## 🎨 캐릭터별 전용 스타일 동적 생성
@@ -196,55 +233,39 @@ style char_${char.id}_namebox is say_namebox:
         });
     }
 
+    const portraitImageCode = pStyle.portraitStyle === 'retro' 
+        ? `AlphaMask(Transform(getattr(store, "current_p_image", ""), xysize=(face_size, face_size), fit="cover"), Transform("images/retro_frame_mask.png", xysize=(face_size, face_size)))`
+        : `Transform(getattr(store, "current_p_image", ""), xysize=(face_size, face_size), fit="cover")`;
+
     rpy += `
 ################################################################################
 ## 인게임 스크린 (Say)
 ################################################################################
 screen say(who, what):
     $ ui_x = 250          
-    $ ui_y = 780          
     $ face_size = 250      
     $ gap = 30             
     $ tb_w = 1100          
     $ tb_h = 250           
     $ namebox_w = 180      
     $ namebox_h = 50       
-    $ namebox_gap = 10     
     $ cal_size = 150       
-    $ top_y = 50           
     $ box_x = ui_x + face_size + gap 
 
-    # 📅 달력 UI
     if "${ui.calendarFrame}" != "none":
         hbox:
-            xpos ui_x
-            ypos top_y
-            spacing 25
+            xpos ui_x ypos 50 spacing 25
             fixed:
                 xysize (cal_size, cal_size)
                 add ${calBgStr}
-                text "[current_day]":
-                    align (0.5, 0.7)  
-                    size 65            
-                    color "${calText}"
-                    ${ui.calendarTextUseOutline ? `outlines [(2, "${calLine}")]` : ""}
+                text "[current_day]" align (0.5, 0.7) size 65 color "${calText}" ${ui.calendarTextUseOutline ? `outlines [(2, "${calLine}", 0, 0)]` : ""}
             vbox:
-                yalign 0.5
-                spacing 15
-                text "[current_month]":
-                    size 38
-                    color "${calText}"
-                    ${ui.calendarTextUseOutline ? `outlines [(2, "${calLine}")]` : ""}
-                text "[current_time]":
-                    size 38
-                    color "${calText}"
-                    ${ui.calendarTextUseOutline ? `outlines [(2, "${calLine}")]` : ""}
+                yalign 0.5 spacing 15
+                text "[current_month]" size 38 color "${calText}" ${ui.calendarTextUseOutline ? `outlines [(2, "${calLine}", 0, 0)]` : ""}
+                text "[current_time]" size 38 color "${calText}" ${ui.calendarTextUseOutline ? `outlines [(2, "${calLine}", 0, 0)]` : ""}
 
-    # 🔧 시스템 메뉴 (우측 상단, translateX(-50%) 효과를 위한 align 설정)
     hbox:
-        align (0.7, 0.05) # left 70%, bottom 95cqh(top 5%) 와 유사한 위치
-        spacing 15
-        
+        align (0.7, 0.05) spacing 15
         textbutton "되감기" action Rollback() text_style "ig_sysmenu_text" style "ig_sysmenu_button"
         textbutton "대사록" action ShowMenu('history') text_style "ig_sysmenu_text" style "ig_sysmenu_button"
         textbutton "자동진행" action Preference("auto-forward", "toggle") text_style "ig_sysmenu_text" style "ig_sysmenu_button"
@@ -252,48 +273,46 @@ screen say(who, what):
         textbutton "불러오기" action ShowMenu('load') text_style "ig_sysmenu_text" style "ig_sysmenu_button"
         textbutton "설정" action ShowMenu('preferences') text_style "ig_sysmenu_text" style "ig_sysmenu_button"
 
-
-    # 👤 주인공 얼굴
     if getattr(store, "current_p_image", "") != "":
         fixed:
-            xpos ui_x
-            ypos ui_y
-            xysize (face_size, face_size)
+            xpos ui_x ypos ${portrait_y} xysize (face_size, face_size)
             add ${getPortraitBgStr()}
             add ${portraitImageCode} align(0.5, 0.5)
 
-    # 💬 대화창
     window:
         id "window"
-        xpos box_x          
-        ypos ui_y          
-        xsize tb_w         
-        ysize tb_h         
-        
+        xpos box_x ypos ${dialog_y} xsize tb_w ysize tb_h
         text what id "what":
-            xpos 30       
-            ypos 30       
-            xsize (tb_w - 70) 
+            xpos 30 ypos 30 xsize (tb_w - 70)
 
-    # 🏷️ 네임박스
     if who is not None:
         window:
             id "namebox"
-            xpos box_x          
-            ypos ui_y - namebox_h - namebox_gap 
-            xysize (namebox_w, namebox_h)   
+            xpos box_x ypos ${namebox_y} xysize (namebox_w, namebox_h)
             text who id "who" align (0.5, 0.5)
 
+################################################################################
+## 시작 메뉴 (Main Menu)
+################################################################################
 screen main_menu():
     tag menu
-    add "${startBgUrl}" xysize (1920, 1080) fit "cover"
-    vbox:
-        align (${menuX}, ${menuY})
-        spacing 20
-        textbutton "PLAY" action Start() text_size ${titleSize}
-        textbutton "LOAD" action ShowMenu("load") text_size ${titleSize}
-        textbutton "SETTING" action ShowMenu("preferences") text_size ${titleSize}
-        textbutton "EXIT" action Quit(confirm=not main_menu) text_size ${titleSize}
+    add "${startBgUrl}" xysize (1920, 1080)
+    
+    # ⭐ 픽스: align 대신 pos와 anchor를 분리하여 웹의 translate(-50%, -50%)를 완벽히 구현
+    text "${t.text || "최애로운 생활"}":
+        font "${safeFont(t.font)}" size ${tSize} color "${rgbaToHex(t.color)}" ${t.useOutline ? `outlines [(2, "${rgbaToHex(t.outlineColor)}", 0, 0)]` : ""}
+        pos (${tX}, ${tY}) anchor (0.5, 0.5) text_align 0.5
+        
+    frame:
+        style "start_menu_frame" 
+        pos (${mX}, ${mY}) anchor (0.5, 0.5)
+        
+        vbox:
+            spacing ${mSpacing} align (0.5, 0.5)
+            textbutton "NEW GAME" action Start() style "start_menu_button" text_style "start_menu_button_text" xalign 0.5
+            textbutton "LOAD" action ShowMenu("load") style "start_menu_button" text_style "start_menu_button_text" xalign 0.5
+            textbutton "SETTING" action ShowMenu("preferences") style "start_menu_button" text_style "start_menu_button_text" xalign 0.5
+            textbutton "EXIT" action Quit(confirm=not main_menu) style "start_menu_button" text_style "start_menu_button_text" xalign 0.5
 `;
     return rpy;
 };

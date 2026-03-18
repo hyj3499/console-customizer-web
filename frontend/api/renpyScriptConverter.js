@@ -1,27 +1,28 @@
-/**
- * 렌파이 스크립트 변환기 (사운드 매핑 수정본)
- * 주요 기능: typingSound 값에 맞는 ogg 파일 루프 재생, 캐릭터별 개별 스타일 적용
- */
+// api/renpyScriptConverter.js
 
 const getFileName = (path) => {
     if (!path) return "";
-    return path.split('/').pop();
+    // 문자열인지 객체인지 판단하여 안전하게 파일명 추출
+    let pathStr = typeof path === 'object' ? (path.preview || path.url) : path;
+    if (!pathStr) return "";
+    return pathStr.split('/').pop().split('?')[0];
 };
 
 const rgbaToHex = (colorStr) => {
-    if (!colorStr) return "#ffffff"; 
-    if (colorStr.startsWith("#")) return colorStr;
+if (!colorStr) return "#ffffff"; 
+    if (colorStr.startsWith("#")) return colorStr.length === 7 ? colorStr + "ff" : colorStr;
     const match = colorStr.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
     if (!match) return "#ffffff";
     const r = parseInt(match[1], 10).toString(16).padStart(2, '0');
     const g = parseInt(match[2], 10).toString(16).padStart(2, '0');
     const b = parseInt(match[3], 10).toString(16).padStart(2, '0');
-    return `#${r}${g}${b}`;
+    
+    // ⭐ 투명도(Alpha) 값 계산 복구
+    const alpha = match[4] !== undefined ? parseFloat(match[4]) : 1.0;
+    const a = Math.round(alpha * 255).toString(16).padStart(2, '0');
+    return `#${r}${g}${b}${a}`;
 };
-
-// ⭐ 캐릭터 정의 생성 (지정된 typingSound 파일 매칭)
 const buildCharacterDef = (varName, charName, fontStyle, isProtagonist = false) => {
-    // typingSound가 'type2'이면 'audio/type2.ogg'를 사용하도록 설정
     const soundFile = fontStyle?.typingSound ? `audio/${fontStyle.typingSound}.ogg` : "audio/type1.ogg";
     const stylePrefix = isProtagonist ? 'p' : varName; 
     
@@ -39,24 +40,31 @@ const buildCharacterDef = (varName, charName, fontStyle, isProtagonist = false) 
 };
 
 export const generateScriptRpy = (data) => {
+    const isBottomMode = data.globalUi?.layoutMode === 'bottom';
+
     let script = `################################################################################\n`;
-    script += `## 1. 타이핑 오디오 로직 (음질 최적화 루프 방식)\n`;
+    script += `## 1. 전역 설정 및 오디오 로직\n`;
     script += `################################################################################\n`;
     
+    // ⭐ 메인 메뉴 BGM 적용 로직
+    const bgmPath = data.startMenu?.bgm;
+    if (bgmPath && (typeof bgmPath === 'string' || bgmPath.preview)) {
+        const bgmName = getFileName(bgmPath);
+        if (bgmName) {
+            script += `define config.main_menu_music = "audio/${bgmName}"\n\n`;
+        }
+    }
+
     script += `init python:\n`;
     script += `    def type_sound_callback(event, sound=None, interact=True, **kwargs):\n`;
     script += `        if not interact: return\n`;
-    
     script += `        if event == "show":\n`;
-    script += `            # renpy.music.play를 'sound' 채널에서 실행하면 \n`;
-    script += `            # sound.play보다 훨씬 부드럽고 끊김 없는 무한 루프가 가능합니다.\n`;
     script += `            renpy.music.play(sound, channel="sound", loop=True)\n`;
-    
     script += `        elif event == "slow_done" or event == "end":\n`;
-    script += `            # 소리가 갑자기 툭 끊기는 것을 방지하기 위해 0.1초 페이드아웃을 줍니다.\n`;
     script += `            renpy.music.stop(channel="sound", fadeout=0.1)\n\n`;
+    
     script += `################################################################################\n`;
-    script += `## 2. 전역 변수 및 캐릭터 선언\n`;
+    script += `## 2. 캐릭터 및 화면 변수 선언\n`;
     script += `################################################################################\n\n`;
 
     script += `default current_month = ""\n`;
@@ -64,11 +72,9 @@ export const generateScriptRpy = (data) => {
     script += `default current_time = ""\n`;
     script += `default current_p_image = ""\n\n`;
 
-    // 주인공 선언
     const pName = data.protagonist?.name || '주인공';
     script += buildCharacterDef("p", pName, data.pFontStyle, true);
 
-    // 추가 캐릭터 선언
     if (data.characters) {
         data.characters.forEach(char => {
             if (char.name) {
@@ -99,20 +105,36 @@ export const generateScriptRpy = (data) => {
             event.scenarios.forEach(sc => {
                 script += `\n    # 시나리오 타입: [${sc.type}]\n`;
                 
+                if (sc.dateOverride) {
+                    script += `    $ current_month = "${sc.dateOverride.month || ''}"\n`;
+                    script += `    $ current_day = "${sc.dateOverride.day || ''}"\n`;
+                    script += `    $ current_time = "${sc.dateOverride.time || ''}"\n`;
+                }
+
                 if (sc.bgImage) {
                     script += `    scene expression "${getFileName(sc.bgImage)}" with dissolve\n`;
                 }
                 
                 if (sc.protagonistImage) {
                     script += `    $ current_p_image = "${getFileName(sc.protagonistImage)}"\n`;
+                } else if (sc.protagonistImage === null && sc.speaker !== '나레이션' && sc.type !== 'cg_image') {
+                    script += `    $ current_p_image = ""\n`;
                 }
                 
                 if (sc.heroineImage) {
                     const fileName = getFileName(sc.heroineImage);
+                    const standY = isBottomMode ? "76.85" : "100.0"; 
+                    const standSize = isBottomMode ? "0.72" : "0.95"; 
+                    
                     script += `    show expression "${fileName}" as h_sprite:\n`;
                     script += `        xalign 0.5\n`;
-                    script += `        yalign 1.0\n`;
-                    script += `        ysize int(config.screen_height * 0.95)\n`;
+                    if (isBottomMode) {
+                        script += `        ypos ${standY} / 100.0\n`;
+                        script += `        yanchor 1.0\n`;
+                    } else {
+                        script += `        yalign 1.0\n`;
+                    }
+                    script += `        ysize int(config.screen_height * ${standSize})\n`;
                     script += `        fit "contain"\n`;
                 }
 

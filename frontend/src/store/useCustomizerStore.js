@@ -2,9 +2,9 @@ import { create } from 'zustand';
 
 const useCustomizerStore = create((set) => ({
 
-    // ⭐ 1. 새 프로젝트 (모든 상태를 초기 기본값으로 완벽하게 덮어쓰기)
+    // ⭐ 1. 새 프로젝트 (초기화)
     resetStore: () => set({
-        isEditing: false, // ⭐ 초기화 시 편집 상태 해제
+        isEditing: false,
         color: '',
         protagonist: { name: '', images: [] },
         pFontStyle: { 
@@ -17,7 +17,8 @@ const useCustomizerStore = create((set) => ({
         globalUi: { 
             calendarFrame: 'retro', calendarColor: 'rgba(255,182,193,0.8)', calendarTextColor: '#5C4033',
             calendarTextUseOutline: true, calendarTextOutlineColor: '#ffffff', systemFont: 'Galmuri14', 
-            cursor: 'default', saveLoadStyle: 'modern' , layoutMode: 'classic' // 🌟 추가: 기본값은 클래식(띄움형)
+            cursor: 'default', saveLoadStyle: 'modern', 
+            layoutMode: 'classic' // 🌟 레이아웃 모드 초기값
         },
         customBackgrounds: [],
         customFonts: [],
@@ -31,16 +32,42 @@ const useCustomizerStore = create((set) => ({
             }
         ],
         events: [{ 
-            id: 1, title: '이벤트 1', bgm: null, baseDate: {month: 'DATE: 1月', day: '01日', time: 'TIME: 12:00' },
+            id: 1, title: '이벤트 1', bgm: null, 
+            /* 📅 수정된 날짜 형식 (윗줄 전체 텍스트를 month에 담음) */
+            baseDate: { month: 'DATE: 1月 01日', day: '01日', time: 'TIME: 12:00' },
             scenarios: [{ type: 'dialog', branch: 'main', speaker: 'PROTAGONIST', protagonistImage: null, heroineImage: null, text: '', bgImage: null, bgType: 'bg_school', dateOverride: null }] 
         }],
         activeEventId: 1,
         showPreview: false,
         previewScenario: null,
-        startMenu: {
-            bgImage: null, menuPos: { x: 50, y: 70 },
-            boxStyle: { frame: 'simple', color: 'rgba(0,0,0,0.5)', padding: 20, borderRadius: 8 },
-            textStyle: { fontSize: 40, color: '#ffffff' }
+startMenu: {
+            bgImage: null,
+            bgm: null, // 🌟 스타트 메뉴 BGM ( {file, preview} 구조 )
+
+            // 타이틀 설정 상세 데이터
+            title: { 
+                text: '최애로운 생활', 
+                x: 50, y: 30, 
+                fontSize: 8, 
+                color: '#ffffff', 
+                font: 'Galmuri14', 
+                useOutline: true, 
+                outlineColor: '#000000' 
+            },
+            // 메뉴 버튼 설정 상세 데이터
+            menu: { 
+                x: 50, y: 75, 
+                fontSize: 4, 
+                color: '#ffffff', 
+                font: 'Galmuri14', 
+                useOutline: true, 
+                outlineColor: '#000000', 
+                bgColor: '#000000', 
+                bgOpacity: 0.5, 
+                padding: 20, 
+                useBorder: false, 
+                borderColor: '#ffffff' 
+            }
         }
     }),
 
@@ -48,21 +75,18 @@ const useCustomizerStore = create((set) => ({
     loadProjectData: (loadedData) => set((state) => ({
         ...state,         
         ...loadedData,    
-        isEditing: true, // ⭐ 데이터를 불러오면 즉시 편집 모드로 간주
+        isEditing: true,
         activeEventId: loadedData.events?.[0]?.id || 1, 
         showPreview: false,
         previewScenario: null
     })),
     
-    // --- ⭐ 전역 편집 상태 관리 ---
-    isEditing: false, // ⭐ 현재 에디터 작업 중인지 여부 (Step 2~5)
+    isEditing: false,
     setIsEditing: (bool) => set({ isEditing: bool }),
 
-    // --- 1단계 상태 ---
     color: '',
     setColor: (color) => set({ color }),
 
-    // --- 2단계 상태 ---
     protagonist: { name: '', images: [] },
     setProtagonist: (protagonist) => set({ protagonist }),
     
@@ -75,10 +99,12 @@ const useCustomizerStore = create((set) => ({
     },
     setPFontStyle: (style) => set((state) => ({ pFontStyle: { ...state.pFontStyle, ...style } })),
 
+    // 🎮 기본 전역 UI 상태 (layoutMode 포함 필수)
     globalUi: { 
         calendarFrame: 'retro', calendarColor: 'rgba(255,182,193,0.8)', calendarTextColor: '#5C4033',
         calendarTextUseOutline: true, calendarTextOutlineColor: '#ffffff', systemFont: 'Galmuri14', 
-        cursor: 'default', saveLoadStyle: 'modern' , layoutMode: 'classic' // 🌟 추가
+        cursor: 'default', saveLoadStyle: 'modern', 
+        layoutMode: 'classic' // 🌟 추가
     },
     setGlobalUi: (ui) => set((state) => ({ globalUi: { ...state.globalUi, ...ui } })),
 
@@ -102,10 +128,12 @@ const useCustomizerStore = create((set) => ({
         return { customFonts: [...state.customFonts, { name: fontName, url, file }] };
     }), 
 
-    // --- 3단계: 무한 이벤트 에디터 상태 ---
+    // 🎭 이벤트 초기값 (처음 앱 켤 때용)
     events: [
         { 
-            id: 1, title: '이벤트 1', bgm: null, baseDate: { month: 'DATE: 1月', day: '01日', time: 'TIME: 12:00' }, 
+            id: 1, title: '이벤트 1', bgm: null, 
+            /* 📅 수정된 날짜 형식 */
+            baseDate: { month: 'DATE: 1月 01日', day: '01日', time: 'TIME: 12:00' }, 
             scenarios: [{ type: 'dialog', branch: 'main', speaker: '', protagonistImage: null, heroineImage: null, text: '', bgImage: null, bgType: 'bg_school', dateOverride: null }] 
         }
     ],
@@ -120,15 +148,34 @@ const useCustomizerStore = create((set) => ({
     previewScenario: null,
     setPreviewScenario: (scenario) => set({ previewScenario: scenario }),
 
-    // --- 4단계: 시작 메뉴 ---
-    startMenu: {
-        bgImage: null, menuPos: { x: 50, y: 70 },
-        boxStyle: { frame: 'simple', color: 'rgba(0,0,0,0.5)', padding: 20, borderRadius: 8 },
-        textStyle: { fontSize: 40, color: '#ffffff' }
-    },
+startMenu: {
+            bgImage: null,
+            bgm: null, // 🌟 스타트 메뉴 BGM ( {file, preview} 구조 )
+            title: { 
+                text: '최애로운 생활', 
+                x: 50, y: 30, 
+                fontSize: 8, 
+                color: '#ffffff', 
+                font: 'Galmuri14', 
+                useOutline: true, 
+                outlineColor: '#000000' 
+            },
+            menu: { 
+                x: 50, y: 75, 
+                fontSize: 4, 
+                color: '#ffffff', 
+                font: 'Galmuri14', 
+                useOutline: true, 
+                outlineColor: '#000000', 
+                bgColor: '#000000', 
+                bgOpacity: 0.5, 
+                padding: 20, 
+                useBorder: false, 
+                borderColor: '#ffffff' 
+            }
+        },
     setStartMenu: (data) => set((state) => ({ 
         startMenu: { ...state.startMenu, ...data } 
     }))
 }));
-
 export default useCustomizerStore;

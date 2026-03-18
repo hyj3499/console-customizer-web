@@ -1,3 +1,5 @@
+/* src/pages/Customizer/StepEventEditor.css */
+
 /* =========================================================
    0. 스티키 킬러 방지 (전역 및 컨테이너)
    ========================================================= */
@@ -48,17 +50,14 @@ div:has(> .editor-container) {
 }
 .win95-preview-title h5 { margin: 0; color: white; font-size: 14px; font-weight: bold; }
 .win95-close-btn {
-    background: #fa5252; /* 배경을 예쁜 빨간색으로 변경 */
-    color: #fff; /* X 글씨를 하얀색으로 변경 */
+    background: #fa5252;
+    color: #fff;
     font-size: 12px; cursor: pointer; font-weight: bold;
     padding: 1px 6px; font-family: 'DOSGothic', sans-serif;
     border-top: 2px solid #fff; border-left: 2px solid #fff; border-right: 2px solid #000; border-bottom: 2px solid #000;
 }
+.win95-close-btn:hover { background: #e03131; }
 
-/* (선택사항) 마우스 올렸을 때 살짝 더 진해지게 하는 효과 */
-.win95-close-btn:hover {
-    background: #e03131; 
-}
 .win95-preview-monitor {
     position: relative; width: 100%; aspect-ratio: 16/9; background-color: #000;
     overflow: hidden; container-type: size;
@@ -67,13 +66,36 @@ div:has(> .editor-container) {
 }
 
 /* =========================================================
+   🌟 레이아웃 토글 (클래식 vs 바닥 밀착) 적용을 위한 CSS 추가
+   ========================================================= */
+/* 미리보기 모니터 공통 뼈대 설정 */
+.win95-preview-monitor .ig-portrait-area { position: absolute; left: 13.02%; width: 13.02%; height: 23.15%; z-index: 10; overflow: visible; }
+.win95-preview-monitor .ig-dialogbox { position: absolute; left: 27.6%; width: 57.3%; height: 23.15%; padding: 3cqh 4cqw; box-sizing: border-box; z-index: 11; background-size: 100% 100%; }
+.win95-preview-monitor .ig-namebox { 
+    position: absolute; left: 27.6%; height: 5.4cqh; 
+    width: fit-content !important; min-width: 7cqw !important; padding: 0 1cqw !important;
+    display: flex; align-items: center; justify-content: center; box-sizing: border-box; white-space: nowrap; z-index: 12; background-size: 100% 100%; 
+}
+.win95-preview-monitor .ig-standing { position: absolute; left: 50%; transform: translateX(-50%); object-fit: contain; z-index: 5; pointer-events: none; }
+
+/* 🌟 [모드 A] 기본 띄움형 (layout-classic) */
+.win95-preview-monitor.layout-classic .ig-portrait-area { top: 72.22%; bottom: auto; }
+.win95-preview-monitor.layout-classic .ig-dialogbox { top: 72.22%; bottom: auto; }
+.win95-preview-monitor.layout-classic .ig-namebox { top: 66.8%; bottom: auto; }
+.win95-preview-monitor.layout-classic .ig-standing { bottom: 0; top: auto; height: 95cqh; }
+
+/* 🌟 [모드 B] 바닥 밀착형 (layout-bottom) */
+.win95-preview-monitor.layout-bottom .ig-portrait-area { top: auto !important; bottom: 0; }
+.win95-preview-monitor.layout-bottom .ig-dialogbox { top: auto !important; bottom: 0; }
+.win95-preview-monitor.layout-bottom .ig-namebox { top: auto !important; bottom: 23.15%; }
+.win95-preview-monitor.layout-bottom .ig-standing { top: auto !important; bottom: 23.15%; height: 72cqh; }
+
+/* =========================================================
    3. 이벤트 탭 네비게이션
    ========================================================= */
 .event-tabs-wrap { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; border-bottom: 2px solid #eee; }
 .event-tab { position: relative; display: flex; }
-.event-tab-btn {
-    padding: 10px 30px 10px 20px; border-radius: 8px 8px 0 0; border: none; cursor: pointer; white-space: nowrap; font-weight: bold;
-}
+.event-tab-btn { padding: 10px 30px 10px 20px; border-radius: 8px 8px 0 0; border: none; cursor: pointer; white-space: nowrap; font-weight: bold; }
 .event-tab-btn.active { background-color: #1971c2; color: white; }
 .event-tab-btn.inactive { background-color: #e9ecef; color: #495057; }
 .event-tab-del { position: absolute; right: 5px; top: 10px; background: none; border: none; cursor: pointer; font-weight: bold; }
@@ -89,27 +111,17 @@ div:has(> .editor-container) {
 .scenario-list { display: flex; flex-direction: column; gap: 15px; }
 .scenario-card { padding: 15px; background-color: #fff; border-radius: 8px; display: flex; gap: 15px; border: 1px solid #ced4da; transition: all 0.2s; }
 
-/* ⭐ [개선] 엔딩 전용 카드 스타일 (시네마틱 느낌) */
+/* 엔딩 전용 카드 스타일 */
 .scenario-card.type-ending {
-    background-color: #1a1b1e !important; /* 깊은 차콜색 */
-    border: 3px double #ffd43b !important; /* 금색 겹선으로 중요도 표시 */
+    background-color: #1a1b1e !important; 
+    border: 3px double #ffd43b !important; 
     flex-direction: column !important;
     align-items: center !important;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     padding: 20px !important;
 }
-
-.scenario-card.type-ending input {
-    background-color: #2b2c31 !important;
-    border: 1px solid #ffd43b !important;
-    color: #ffd43b !important;
-    letter-spacing: 1px;
-}
-
-.scenario-card.type-ending p {
-    color: #adb5bd !important;
-    font-style: italic;
-}
+.scenario-card.type-ending input { background-color: #2b2c31 !important; border: 1px solid #ffd43b !important; color: #ffd43b !important; letter-spacing: 1px; }
+.scenario-card.type-ending p { color: #adb5bd !important; font-style: italic; }
 
 .scenario-card.branch-option1 { margin-left: 20px; }
 .scenario-card.branch-option2 { margin-left: 40px; }
@@ -133,7 +145,6 @@ div:has(> .editor-container) {
 .face-img.active-p { border-color: #1971c2; }
 .face-img.active-h { border-color: #d6336c; }
 
-/* ⭐ [개선] 컨트롤러 버튼 및 엔딩 추가 버튼 */
 .controller-group { display: flex; gap: 10px; margin-top: 20px; }
 .btn-large { flex: 1; padding: 12px; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-align: center; font-family: 'DOSGothic'; transition: transform 0.1s; }
 .btn-large:active { transform: scale(0.98); }
@@ -145,76 +156,29 @@ div:has(> .editor-container) {
 .bg-indigo { background-color: #5c7cfa; box-shadow: 0 4px 0 #3b5bdb; }
 .bg-gray { background-color: #adb5bd; box-shadow: 0 4px 0 #868e96; }
 
-/* ⭐ [개선] 엔딩 추가 버튼 (게임의 피날레 느낌) */
-.btn-ending {
-    flex: 1;
-    padding: 12px;
-    background-color: #000 !important;
-    color: #ffd43b !important;
-    border: 2px solid #ffd43b !important;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    font-family: 'DOSGothic';
-    text-shadow: 0 0 5px rgba(255, 212, 59, 0.5);
-    box-shadow: 0 4px 0 #5c4d15;
-}
+.btn-ending { flex: 1; padding: 12px; background-color: #000 !important; color: #ffd43b !important; border: 2px solid #ffd43b !important; border-radius: 8px; font-weight: bold; cursor: pointer; font-family: 'DOSGothic'; text-shadow: 0 0 5px rgba(255, 212, 59, 0.5); box-shadow: 0 4px 0 #5c4d15; }
 
 /* =========================================================
-   5. 인게임 미리보기 좌표
-   ========================================================= */
-.ig-calendar-group { position: absolute; left: 13.02%; top: 4.63%; display: flex; align-items: center; gap: 1.3cqw; z-index: 11; }
-.ig-calendar-box { width: 7.81cqw; height: 7.81cqw; display: flex; align-items: center; justify-content: center; background-size: 100% 100%; }
-.ig-calendar-box span { font-size: 5cqh; }
-.ig-calendar-text span { font-size: 3cqh; }
-
-.ig-namebox { 
-    position: absolute; left: 27.6%; top: 66.66%; z-index: 11; 
-    width: fit-content; min-width: 150px; height: 4.63%; 
-    padding: 10px 30px; display: flex; align-items: center; justify-content: center; 
-    white-space: nowrap; box-sizing: border-box; background-size: 100% 100%;
-}
-.ig-dialogbox { position: absolute; left: 27.6%; top: 72.22%; width: 57.3%; height: 23.15%; padding: 3cqh 4cqw; box-sizing: border-box; z-index: 11; background-size: 100% 100%; }
-
-/* =========================================================
-   6. 모바일 세로 화면(Portrait) 정밀 보정
+   6. 모바일 세로 화면 정밀 보정
    ========================================================= */
 @media screen and (max-width: 768px) and (orientation: portrait) {
     .sticky-win95-preview { top: 50px !important; }
-
     .config-panel { flex-direction: column !important; gap: 15px !important; padding: 15px !important; }
     .config-panel > div { width: 100% !important; border-left: none !important; padding-left: 0 !important; }
 
     .scenario-card { flex-direction: column !important; padding: 10px !important; }
-    .scenario-sidebar {
-        width: 100% !important; border-right: none !important; border-bottom: 1px dashed #dee2e6 !important;
-        flex-direction: row !important; justify-content: space-between !important; align-items: center !important;
-        padding-right: 0 !important; padding-bottom: 8px !important;
-    }
+    .scenario-sidebar { width: 100% !important; border-right: none !important; border-bottom: 1px dashed #dee2e6 !important; flex-direction: row !important; justify-content: space-between !important; align-items: center !important; padding-right: 0 !important; padding-bottom: 8px !important; }
     
-    .scenario-sidebar div:has(> button) {
-        display: flex !important;
-        flex-direction: row !important;
-        gap: 5px !important;
-        margin-top: 0 !important;
-    }
+    .scenario-sidebar div:has(> button) { display: flex !important; flex-direction: row !important; gap: 5px !important; margin-top: 0 !important; }
     .scenario-sidebar button { width: auto !important; padding: 4px 8px !important; font-size: 11px !important; }
 
     .scenario-main { width: 100% !important; }
-
-    /* 배경 선택 1줄화 */
-    .scenario-main > div:has(select[value^="bg_"]),
-    .scenario-main > div:has(label:contains("배경")),
-    .scenario-main > div:has(select:not([style*="width: 120px"])) {
-        flex-direction: row !important; flex-wrap: nowrap !important; align-items: center !important; gap: 5px !important;
-    }
+    .scenario-main > div:has(select[value^="bg_"]), .scenario-main > div:has(label:contains("배경")), .scenario-main > div:has(select:not([style*="width: 120px"])) { flex-direction: row !important; flex-wrap: nowrap !important; align-items: center !important; gap: 5px !important; }
     .scenario-main label { font-size: 11px !important; white-space: nowrap !important; }
     .scenario-main select.input-base { flex: 1 !important; min-width: 0 !important; font-size: 11px !important; }
 
-    /* 화자 & 대사창 세로 유지 */
     .scenario-main > div:has(select[style*="width: 120px"]) { flex-direction: column !important; gap: 8px !important; }
-    .scenario-main select[style*="width: 120px"], 
-    .scenario-main input[placeholder*="대사를"] { width: 100% !important; }
+    .scenario-main select[style*="width: 120px"], .scenario-main input[placeholder*="대사를"] { width: 100% !important; }
 
     .event-tabs-wrap { flex-wrap: wrap !important; }
     .event-tab-btn { flex: 1 1 auto !important; font-size: 12px !important; padding: 8px 15px !important; }
@@ -223,6 +187,22 @@ div:has(> .editor-container) {
     .face-panel { width: 100% !important; }
     .controller-group { flex-direction: column !important; }
     .btn-large, .btn-ending { width: 100% !important; box-shadow: none !important; }
+
+    /* 모바일 미리보기 보정 */
+    .win95-preview-monitor .ig-namebox { height: 6cqh !important; min-width: 20cqw !important; padding: 0 2cqw !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+    .win95-preview-monitor .ig-namebox span { font-size: 3cqh !important; line-height: 1 !important; display: block !important; transform: translateY(-0.2cqh); }
+    .win95-preview-monitor .ig-dialogbox { padding: 2.5cqh 4cqw !important; }
+
+    .win95-preview-monitor.layout-classic .ig-namebox { top: 66.2% !important; bottom: auto !important; }
+    .win95-preview-monitor.layout-classic .ig-portrait-area, .win95-preview-monitor.layout-classic .ig-dialogbox { top: 72.22% !important; bottom: auto !important; }
+    .win95-preview-monitor.layout-classic .ig-standing { bottom: 0 !important; height: 95cqh !important; }
+
+    .win95-preview-monitor.layout-bottom .ig-namebox { top: auto !important; bottom: 23.15% !important; }
+    .win95-preview-monitor.layout-bottom .ig-portrait-area, .win95-preview-monitor.layout-bottom .ig-dialogbox { top: auto !important; bottom: 0 !important; }
+    .win95-preview-monitor.layout-bottom .ig-standing { bottom: 23.15% !important; height: 65cqh !important; }
+
+    .win95-preview-monitor .ig-system-menu { left: 70% !important; width: 90% !important; justify-content: center !important; gap: 2.5cqw !important; }
+    .win95-preview-monitor .ig-system-menu span { font-size: 2cqh !important; letter-spacing: -0.5px !important; }
 }
 
 @media screen and (max-width: 600px) {
