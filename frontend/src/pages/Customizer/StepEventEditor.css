@@ -88,13 +88,15 @@ div:has(> .editor-container) {
 /* 🌟 [모드 A] 기본 띄움형 (layout-classic) */
 .win95-preview-monitor.layout-classic .ig-portrait-area { top: 72.22%; bottom: auto; }
 .win95-preview-monitor.layout-classic .ig-dialogbox { top: 72.22%; bottom: auto; }
-.win95-preview-monitor.layout-classic .ig-namebox { top: 66.8%; bottom: auto; }
+/* ⭐ 수정: 66.8% -> 66.3% (0.5% 위로 띄움) */
+.win95-preview-monitor.layout-classic .ig-namebox { top: 66.3%; bottom: auto; } 
 .win95-preview-monitor.layout-classic .ig-standing { bottom: 0; top: auto; height: 95cqh; }
 
 /* 🌟 [모드 B] 바닥 밀착형 (layout-bottom) */
 .win95-preview-monitor.layout-bottom .ig-portrait-area { top: auto !important; bottom: 0; }
 .win95-preview-monitor.layout-bottom .ig-dialogbox { top: auto !important; bottom: 0; }
-.win95-preview-monitor.layout-bottom .ig-namebox { top: auto !important; bottom: 23.15%; }
+/* ⭐ 수정: 23.15% -> 23.65% (0.5% 위로 띄움) */
+.win95-preview-monitor.layout-bottom .ig-namebox { top: auto !important; bottom: 23.65%; }
 .win95-preview-monitor.layout-bottom .ig-standing { top: auto !important; bottom: 23.15%; height: 72cqh; }
 
 /* =========================================================

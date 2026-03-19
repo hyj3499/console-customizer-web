@@ -97,6 +97,7 @@ export const generateScreensRpy = (data) => {
     const start = data.startMenu || {};
 
     const mainFont = safeFont(pStyle.font || ui.systemFont);
+    const sysFont = safeFont(ui.systemFont || "Galmuri14"); // ⭐ 메뉴 및 선택지용 전역 폰트
     const mainColor = rgbaToHex(pStyle.color);
     
     const getPortraitBgStr = () => {
@@ -104,6 +105,12 @@ export const generateScreensRpy = (data) => {
             return `Transform("images/retro_frame_${getColorId(pStyle.portraitColor)}.png", xysize=(250, 250))`;
         }
         const bgColorHex = rgbaToHex(pStyle.portraitColor);
+        
+        // ⭐ 수정: 테두리를 사용하지 않음으로 설정했을 때 테두리 없이 렌더링
+        if (pStyle.usePortraitBorder === false) {
+            return `Transform(Solid("${bgColorHex}"), xysize=(250, 250))`;
+        }
+
         const bdColorHex = rgbaToHex(pStyle.portraitBorderColor || '#dddddd');
         const bw = 3; const size = 250; const inner = size - (bw * 2);
         
@@ -125,7 +132,7 @@ export const generateScreensRpy = (data) => {
     const isBottomMode = ui.layoutMode === 'bottom';
     const dialog_y = isBottomMode ? 830 : 780;
     const portrait_y = isBottomMode ? 830 : 780;
-    const namebox_y = isBottomMode ? 780 : 720;
+    const namebox_y = isBottomMode ? 775 : 725;
 
     const t = start.title || {};
     const m = start.menu || {};
@@ -156,10 +163,23 @@ export const generateScreensRpy = (data) => {
     let rpy = `
 init offset = 1
 
+# ⭐ 메뉴, 설정, 선택지에 globalUi의 systemFont를 일괄 적용하는 스타일 정의
 style default:
-    font "${mainFont}"
+    font "${sysFont}"
     size 30
-    color "${mainColor}"
+
+style gui_text is default:
+    font "${sysFont}"
+
+style button_text is default:
+    font "${sysFont}"
+
+style choice_button_text is button_text:
+    font "${sysFont}"
+    size 35
+    outlines [(2, "#000000", 0, 0)]
+    idle_color "#cccccc"
+    hover_color "#ffffff"
 
 style say_window is window:
     background None
@@ -187,7 +207,7 @@ style say_dialogue:
     adjust_spacing False
 
 style ig_sysmenu_text is text:
-    font "${mainFont}"
+    font "${sysFont}"
     size 18
     color "#ffffff"
     outlines [(1, "#00000080", 0, 0)]
@@ -258,11 +278,11 @@ screen say(who, what):
             fixed:
                 xysize (cal_size, cal_size)
                 add ${calBgStr}
-                text "[current_day]" align (0.5, 0.7) size 65 color "${calText}" ${ui.calendarTextUseOutline ? `outlines [(2, "${calLine}", 0, 0)]` : ""}
+                text "[current_day]" align (0.5, 0.7) size 65 color "${calText}" font "${sysFont}" ${ui.calendarTextUseOutline ? `outlines [(2, "${calLine}", 0, 0)]` : ""}
             vbox:
                 yalign 0.5 spacing 15
-                text "[current_month]" size 38 color "${calText}" ${ui.calendarTextUseOutline ? `outlines [(2, "${calLine}", 0, 0)]` : ""}
-                text "[current_time]" size 38 color "${calText}" ${ui.calendarTextUseOutline ? `outlines [(2, "${calLine}", 0, 0)]` : ""}
+                text "[current_month]" size 38 color "${calText}" font "${sysFont}" ${ui.calendarTextUseOutline ? `outlines [(2, "${calLine}", 0, 0)]` : ""}
+                text "[current_time]" size 38 color "${calText}" font "${sysFont}" ${ui.calendarTextUseOutline ? `outlines [(2, "${calLine}", 0, 0)]` : ""}
 
     hbox:
         align (0.7, 0.05) spacing 15
@@ -298,7 +318,6 @@ screen main_menu():
     tag menu
     add "${startBgUrl}" xysize (1920, 1080)
     
-    # ⭐ 픽스: align 대신 pos와 anchor를 분리하여 웹의 translate(-50%, -50%)를 완벽히 구현
     text "${t.text || "최애로운 생활"}":
         font "${safeFont(t.font)}" size ${tSize} color "${rgbaToHex(t.color)}" ${t.useOutline ? `outlines [(2, "${rgbaToHex(t.outlineColor)}", 0, 0)]` : ""}
         pos (${tX}, ${tY}) anchor (0.5, 0.5) text_align 0.5

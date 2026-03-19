@@ -70,17 +70,33 @@
 .ig-standing { position: absolute; left: 50%; transform: translateX(-50%); object-fit: contain; z-index: 5; pointer-events: none; }
 
 /* 🌟 [모드 A] 기본 띄움형 (layout-classic) */
+.win95-preview-monitor.layout-classic .ig-portrait-area,
 .layout-classic .ig-portrait-area { top: 72.22%; bottom: auto; }
+
+.win95-preview-monitor.layout-classic .ig-dialogbox,
 .layout-classic .ig-dialogbox { top: 72.22%; bottom: auto; }
-.layout-classic .ig-namebox { top: 66.8%; bottom: auto; }
+
+/* ⭐ 딱 붙어있던 66.8%에서 0.5%만 위로 띄움 */
+.win95-preview-monitor.layout-classic .ig-namebox,
+.layout-classic .ig-namebox { top: 66.3% !important; bottom: auto !important; }
+
+.win95-preview-monitor.layout-classic .ig-standing,
 .layout-classic .ig-standing { bottom: 0; top: auto; height: 95cqh; }
 
-/* 🌟 [모드 B] 바닥 밀착형 (layout-bottom) */
-.layout-bottom .ig-portrait-area { top: auto !important; bottom: 0; }
-.layout-bottom .ig-dialogbox { top: auto !important; bottom: 0; }
-.layout-bottom .ig-namebox { top: auto !important; bottom: 23.15%; }
-.layout-bottom .ig-standing { top: auto !important; bottom: 23.15%; height: 72cqh; }
 
+/* 🌟 [모드 B] 바닥 밀착형 (layout-bottom) */
+.win95-preview-monitor.layout-bottom .ig-portrait-area,
+.layout-bottom .ig-portrait-area { top: auto !important; bottom: 0; }
+
+.win95-preview-monitor.layout-bottom .ig-dialogbox,
+.layout-bottom .ig-dialogbox { top: auto !important; bottom: 0; }
+
+/* ⭐ 딱 붙어있던 23.15%에서 0.5%만 위로 띄움 */
+.win95-preview-monitor.layout-bottom .ig-namebox,
+.layout-bottom .ig-namebox { top: auto !important; bottom: 23.65% !important; }
+
+.win95-preview-monitor.layout-bottom .ig-standing,
+.layout-bottom .ig-standing { top: auto !important; bottom: 23.15%; height: 72cqh; }
 /* =========================================================
    4. 설정 폼 공통 UI
    ========================================================= */

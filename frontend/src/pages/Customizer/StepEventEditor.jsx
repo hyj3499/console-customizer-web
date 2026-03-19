@@ -19,8 +19,8 @@ const getColorId = (rgbaValue) => {
 };
 
 const PRESET_BACKGROUNDS = [
-    { id: 'bg_school', name: '🏫 교실', url: '/images/bg_school.png' },
-    { id: 'bg_sea',    name: '🌊 바다', url: '/images/bg_school.png' },
+    { id: 'bg_black', name: '검은 배경', url: '/images/bg_black.png' },
+    { id: 'bg_school',    name: '교실', url: '/images/bg_school.png' },
     { id: 'bg_city',   name: '🌆 밤거리', url: '/images/bg_city.jpg' },
     { id: 'bg_park',   name: '🌳 공원', url: '/images/bg_park.jpg' },
     { id: 'bg_room',   name: '🛏️ 내 방', url: '/images/bg_room.jpg' }
@@ -60,7 +60,6 @@ export default function StepEventEditor() {
         customBackgrounds, addCustomBackground 
     } = useCustomizerStore();
 
-    // ⭐ 레이아웃 모드 기본값 설정 추가 (달력은 그대로 유지)
     const currentGlobalUi = globalUi || { calendarFrame: 'retro', calendarColor: 'rgba(255,182,193,0.8)', calendarTextColor: '#5C4033', calendarTextUseOutline: true, calendarTextOutlineColor: '#ffffff', systemFont: 'Pretendard', layoutMode: 'bottom' };
 
     const [currentBranch, setCurrentBranch] = useState('main'); 
@@ -127,13 +126,12 @@ export default function StepEventEditor() {
         updateActiveEvent({ baseDate: { ...activeEvent.baseDate, [field]: value } });
     };
 
-const addNewEvent = () => {
+    const addNewEvent = () => {
         const newId = events.length > 0 ? Math.max(...events.map(e => e.id)) + 1 : 1;
         const newTitle = `이벤트 ${events.length + 1}`; 
         
         setEvents([...events, { 
             id: newId, title: newTitle, bgm: null, 
-            /* ⭐ 수정: month 필드 하나가 윗줄 전체를 담당하도록 변경 */
             baseDate: { month: 'DATE: 1月 01日', day: '01日', time: 'TIME: 12:00' },
             scenarios: [{ type: 'dialog', branch: 'main', speaker: defaultSpeaker, protagonistImage: null, heroineImage: null, text: '', bgImage: null, bgType: 'bg_school', dateOverride: null }] 
         }]);
@@ -335,14 +333,17 @@ const addNewEvent = () => {
         return speakerId; 
     };
 
+    // 현재 말하는 사람의 스타일 (폰트, 대화창 테마 용도)
     const activeStyle = previewScenario ? getActiveSpeakerStyle(previewScenario.speaker) : pFontStyle;
-
     const renderFontFamily = activeStyle?.font || currentGlobalUi?.systemFont || 'sans-serif';
 
     const dAsset = (UI_ASSETS.dialog[activeStyle.dialogFrame] || UI_ASSETS.dialog.simple)(activeStyle.dialogColor, activeStyle.dialogBorderColor);
     const nAsset = (UI_ASSETS.namebox[activeStyle.nameFrame] || UI_ASSETS.namebox.simple)(activeStyle.nameColor, activeStyle.nameBorderColor);
-    const pAsset = (UI_ASSETS.portrait[pFontStyle.portraitStyle] || UI_ASSETS.portrait.square)(pFontStyle.portraitColor, pFontStyle.portraitBorderColor);
     const cAsset = (UI_ASSETS.calendar[currentGlobalUi.calendarFrame] || UI_ASSETS.calendar.retro)(currentGlobalUi.calendarColor); 
+
+    // ⭐ 버그 1 해결: 초상화 프레임은 무조건 주인공(pFontStyle)의 값을 참조하도록 고정
+    const pAsset = (UI_ASSETS.portrait[pFontStyle.portraitStyle] || UI_ASSETS.portrait.square)(pFontStyle.portraitColor, pFontStyle.portraitBorderColor);
+    const finalPortraitBorder = pFontStyle?.usePortraitBorder === false ? 'none' : (pAsset ? pAsset.border : 'none');
 
     const getCalendarTextShadow = () => {
         if (!currentGlobalUi.calendarTextUseOutline) return 'none';
@@ -352,7 +353,7 @@ const addNewEvent = () => {
 
     const finalDialogBorder = activeStyle?.useDialogBorder === false ? 'none' : dAsset.border;
     const finalNameBorder = activeStyle?.useNameBorder === false ? 'none' : nAsset.border;
-    const finalPortraitBorder = pFontStyle?.usePortraitBorder === false ? 'none' : (pAsset ? pAsset.border : 'none');
+    
     const previewDate = previewScenario ? getEffectiveDateForIndex(previewScenario.index) : activeEvent.baseDate;
     const isNarration = previewScenario?.speaker === '나레이션';
 
@@ -365,7 +366,6 @@ const addNewEvent = () => {
         }
     }, [scenarios, showPreview]);
 
-    // ⭐ 레이아웃 클래스 결정
     const layoutClass = currentGlobalUi.layoutMode === 'bottom' ? 'layout-bottom' : 'layout-classic';
 
     return (
@@ -388,7 +388,6 @@ const addNewEvent = () => {
                         <button className="win95-close-btn" onClick={() => { setShowPreview(false); setPreviewScenario(null); }}>X</button>
                     </div>
                     
-                    {/* ⭐ 레이아웃 클래스 적용된 미리보기 모니터 */}
                     <div className={`win95-preview-monitor ${layoutClass}`}>
                         {previewScenario.type === 'ending' ? (
                             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' }}>
@@ -401,57 +400,51 @@ const addNewEvent = () => {
                                 {previewScenario.bgImage && <img src={previewScenario.bgImage} alt="bg" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
                                 {previewScenario.heroineImage && <img src={previewScenario.heroineImage} alt="standing" className="ig-standing" />}
 
-                                {/* 달력 영역 (유지) */}
-{/* 달력 영역 (CSS 클래스 매칭 및 비율 적용) */}
-{/* 📅 달력 영역 (StepSettings와 동일한 구조) */}
-{!previewScenario.isCg && (
-    <div className="ig-calendar-group">
-        {currentGlobalUi.calendarFrame !== 'none' && (
-            <div className="ig-calendar-box" style={{ 
-                backgroundColor: cAsset.type === 'image' ? 'transparent' : (currentGlobalUi.calendarColor || 'rgba(255,182,193,0.8)'),
-                backgroundImage: cAsset.type === 'image' ? `url(${cAsset.src})` : 'none',
-                border: cAsset.type === 'css' ? cAsset.border : 'none', 
-                borderRadius: cAsset.type === 'css' ? cAsset.borderRadius : '0' 
-            }}>
-                <span className="ig-calendar-day-text" style={{ 
-                    fontFamily: currentGlobalUi.systemFont || 'sans-serif', 
-                    color: currentGlobalUi.calendarTextColor || '#5C4033', 
-                    textShadow: getCalendarTextShadow() 
-                }}>
-                    {previewDate.day}
-                </span>
-            </div>
-        )}
-        
-        <div className="ig-calendar-text">
-            <span style={{ 
-                fontFamily: currentGlobalUi.systemFont || 'sans-serif', 
-                fontWeight: 'bold', 
-                color: currentGlobalUi.calendarTextColor, 
-                textShadow: getCalendarTextShadow() 
-            }}>
-                {previewDate.month}
-            </span>
-            <span style={{ 
-                fontFamily: currentGlobalUi.systemFont || 'sans-serif', 
-                fontWeight: 'bold', 
-                color: currentGlobalUi.calendarTextColor, 
-                textShadow: getCalendarTextShadow() 
-            }}>
-                {previewDate.time}
-            </span>
-        </div>
-    </div>
-)}
+                                {!previewScenario.isCg && (
+                                    <div className="ig-calendar-group">
+                                        {currentGlobalUi.calendarFrame !== 'none' && (
+                                            <div className="ig-calendar-box" style={{ 
+                                                backgroundColor: cAsset.type === 'image' ? 'transparent' : (currentGlobalUi.calendarColor || 'rgba(255,182,193,0.8)'),
+                                                backgroundImage: cAsset.type === 'image' ? `url(${cAsset.src})` : 'none',
+                                                border: cAsset.type === 'css' ? cAsset.border : 'none', 
+                                                borderRadius: cAsset.type === 'css' ? cAsset.borderRadius : '0' 
+                                            }}>
+                                                <span className="ig-calendar-day-text" style={{ 
+                                                    fontFamily: currentGlobalUi.systemFont || 'sans-serif', 
+                                                    color: currentGlobalUi.calendarTextColor || '#5C4033', 
+                                                    textShadow: getCalendarTextShadow() 
+                                                }}>
+                                                    {previewDate.day}
+                                                </span>
+                                            </div>
+                                        )}
+                                        
+                                        <div className="ig-calendar-text">
+                                            <span style={{ fontFamily: currentGlobalUi.systemFont || 'sans-serif', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: getCalendarTextShadow() }}>
+                                                {previewDate.month}
+                                            </span>
+                                            <span style={{ fontFamily: currentGlobalUi.systemFont || 'sans-serif', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: getCalendarTextShadow() }}>
+                                                {previewDate.time}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
                                 
+                                {/* ⭐ 버그 2 해결: 주인공 사진 영역 마스크 설정 교정 */}
                                 {previewScenario.protagonistImage && (
                                     <div className="ig-portrait-area">
                                         {pAsset.type === 'image' && <img src={pAsset.src} alt="Frame" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'fill', pointerEvents: 'none', zIndex: 3 }} />}
                                         <div style={{
-                                            position: 'absolute', width: '100%', height: '100%', zIndex: 2, backgroundColor: pAsset.type === 'image' ? 'transparent' : (activeStyle.portraitColor || 'rgba(255,182,193,0.8)'),
-                                            WebkitMaskImage: pAsset.type === 'image' ? `url(${pAsset.mask})` : 'none', maskImage: pAsset.type === 'image' ? `url(${pAsset.mask})` : 'none',
-                                            WebkitMaskSize: '100% 100%', maskSize: '100% 100%', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
-                                            borderRadius: pAsset.type === 'css' ? pAsset.borderRadius : '0%', border: pAsset.type === 'css' ? pAsset.border : 'none', boxSizing: 'border-box', overflow: 'hidden'
+                                            position: 'absolute', width: '100%', height: '100%', zIndex: 2, 
+                                            backgroundColor: pAsset.type === 'image' ? 'transparent' : (pFontStyle.portraitColor || 'rgba(255,182,193,0.8)'),
+                                            // 💡 따옴표(" ")를 추가하여 파일 경로 인식 오류 차단
+                                            WebkitMaskImage: pAsset.type === 'image' ? `url("${pAsset.mask}")` : 'none', 
+                                            maskImage: pAsset.type === 'image' ? `url("${pAsset.mask}")` : 'none',
+                                            WebkitMaskSize: '100% 100%', maskSize: '100% 100%', 
+                                            WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
+                                            borderRadius: pAsset.type === 'css' ? pAsset.borderRadius : '0%', 
+                                            border: pAsset.type === 'css' ? finalPortraitBorder : 'none', 
+                                            boxSizing: 'border-box', overflow: 'hidden'
                                         }}>
                                             <img src={previewScenario.protagonistImage} alt="주인공" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                         </div>
@@ -479,28 +472,14 @@ const addNewEvent = () => {
                                     </p>
                                 </div>
                                 
-                                {/* 시스템 퀵 메뉴 */}
                                 <div className="ig-system-menu" style={{
-                                    position: 'absolute',
-                                    bottom: '95cqh', 
-                                    left: '70%', 
-                                    transform: 'translateX(-50%)',
-                                    display: 'flex',
-                                    gap: '15px',
-                                    zIndex: 100,
-                                    backgroundColor: 'transparent',
-                                    width: 'auto',
-                                    whiteSpace: 'nowrap'
+                                    position: 'absolute', bottom: '95cqh', left: '70%', transform: 'translateX(-50%)',
+                                    display: 'flex', gap: '15px', zIndex: 100, backgroundColor: 'transparent', width: 'auto', whiteSpace: 'nowrap'
                                 }}>
                                     {['되감기', '대사록', '자동진행', '저장하기', '불러오기', '설정'].map((menu) => (
                                         <span key={menu} style={{
-                                            fontFamily: currentGlobalUi.systemFont || 'sans-serif',
-                                            fontSize: '1.7cqh',
-                                            color: '#ffffff',
-                                            cursor: 'pointer',
-                                            fontWeight: 'normal',
-                                            textShadow: '1px 1px 3px rgba(0,0,0,1), 0px 0px 5px rgba(0,0,0,0.5)',
-                                            opacity: 0.9
+                                            fontFamily: currentGlobalUi.systemFont || 'sans-serif', fontSize: '1.7cqh', color: '#ffffff',
+                                            cursor: 'pointer', fontWeight: 'normal', textShadow: '1px 1px 3px rgba(0,0,0,1), 0px 0px 5px rgba(0,0,0,0.5)', opacity: 0.9
                                         }}>
                                             {menu}
                                         </span>
@@ -509,11 +488,11 @@ const addNewEvent = () => {
                             </>
                         )}
                     </div>
-                    
                 </div>
             )}
 
-                <div className="event-tabs-wrap">
+            {/* (...아래 이벤트 탭 및 시나리오 리스트 등 렌더링 코드는 기존과 완벽히 동일하므로 생략 없이 사용 가능합니다) */}
+            <div className="event-tabs-wrap">
                 {events.map(ev => (
                     <div key={ev.id} className="event-tab">
                         <button onClick={() => { 
@@ -521,7 +500,6 @@ const addNewEvent = () => {
                                 setPreviewScenario(null); 
                                 setIsCgMode(false);
                                 
-                                // ⭐ [버그 픽스] 엔딩이 없더라도 2번 루트 대사가 존재하면 2번 작성 모드로 똑똑하게 진입
                                 const hasChoice = ev.scenarios.some(s => s.type === 'choice');
                                 if (hasChoice) {
                                     const hasOpt2 = ev.scenarios.some(s => s.branch === 'option2');
@@ -544,35 +522,34 @@ const addNewEvent = () => {
             </div>
 
             <div className="editor-main-area">
-                
-            <div className="config-panel">
-                <div style={{ flex: 1 }}>
-                    <h4 className="config-title">🎵 {activeEvent.title} BGM 설정</h4>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <input type="file" accept="audio/*" onChange={handleEventBgmUpload} />
-                        {activeEvent.bgm && <audio src={activeEvent.bgm} controls style={{ height: '30px' }} />}
+                <div className="config-panel">
+                    <div style={{ flex: 1 }}>
+                        <h4 className="config-title">🎵 {activeEvent.title} BGM 설정</h4>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                            <input type="file" accept="audio/*" onChange={handleEventBgmUpload} />
+                            {activeEvent.bgm && <audio src={activeEvent.bgm} controls style={{ height: '30px' }} />}
+                        </div>
+                    </div>
+                    
+                    <div style={{ flex: 1, borderLeft: '1px dashed #dee2e6', paddingLeft: '20px' }}>
+                        <h4 className="config-title">📅 이벤트 시작 일시 (기본값)</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#495057' }}>윗줄에 표시될 텍스트</span>
+                                <input type="text" className="input-base" placeholder="DATE: 1月 01日" value={activeEvent.baseDate.month} onChange={(e) => handleBaseDateChange('month', e.target.value)} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#495057' }}>아래에 표시될 텍스트</span>
+                                <input type="text" className="input-base" placeholder="TIME: 12:00" value={activeEvent.baseDate.time} onChange={(e) => handleBaseDateChange('time', e.target.value)} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#495057' }}>달력안에 들어갈 텍스트</span>
+                                <input type="text" className="input-base" placeholder="01日" value={activeEvent.baseDate.day} onChange={(e) => handleBaseDateChange('day', e.target.value)} />
+                            </div>
+                        </div>
                     </div>
                 </div>
-                
-                <div style={{ flex: 1, borderLeft: '1px dashed #dee2e6', paddingLeft: '20px' }}>
-                    <h4 className="config-title">📅 이벤트 시작 일시 (기본값)</h4>
-                    {/* 날짜 입력 세로 레이아웃 시작 */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#495057' }}>윗줄에 표시될 텍스트</span>
-                            <input type="text" className="input-base" placeholder="DATE: 1月 01日" value={activeEvent.baseDate.month} onChange={(e) => handleBaseDateChange('month', e.target.value)} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#495057' }}>아래에 표시될 텍스트</span>
-                            <input type="text" className="input-base" placeholder="TIME: 12:00" value={activeEvent.baseDate.time} onChange={(e) => handleBaseDateChange('time', e.target.value)} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#495057' }}>달력안에 들어갈 텍스트</span>
-                            <input type="text" className="input-base" placeholder="01日" value={activeEvent.baseDate.day} onChange={(e) => handleBaseDateChange('day', e.target.value)} />
-                        </div>
-                    </div> {/* <-- 세로 레이아웃 끝 */}
-                </div> {/* <-- 날짜 영역 끝 */}
-            </div> {/* <-- 전체 컨피그 패널 끝 */}
+
                 <div className="scenario-list">
                     {scenarios.map((scenario, index) => {
                         const isSelected = previewScenario?.index === index;
@@ -612,33 +589,17 @@ const addNewEvent = () => {
                         }
 
                         return (
-<div key={index} onClick={() => { if(showPreview) setPreviewScenario({ ...scenario, index }); }} className={cardClasses}>
-                                {/* 좌측 사이드바: 날짜 표시 및 수정 버튼 */}
+                            <div key={index} onClick={() => { if(showPreview) setPreviewScenario({ ...scenario, index }); }} className={cardClasses}>
                                 <div className="scenario-sidebar">
-                                    {/* ⭐ 수정: 사이드바 텍스트에도 day 삭제 */}
                                     <div style={{ fontSize: '10px', color: '#868e96', fontWeight: 'bold', marginBottom: '5px' }}>{effectiveDate.month}</div>
                                     <div style={{ fontSize: '14px', color: '#495057', fontWeight: 'bold' }}>{effectiveDate.time}</div>
-                                    
                                     <div style={{ marginTop: '10px', width: '100%' }}>
-                                        <button 
-                                            onClick={(e) => toggleDateEditMode(e, index, scenario, effectiveDate)} 
-                                            style={{ 
-                                                width: '100%', padding: '4px 0', fontSize: '10px', 
-                                                backgroundColor: editingDateIndex === index ? '#2b8a3e' : '#f1f3f5', 
-                                                color: editingDateIndex === index ? '#fff' : '#000',
-                                                border: '1px solid #ced4da', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold'
-                                            }}
-                                        >
+                                        <button onClick={(e) => toggleDateEditMode(e, index, scenario, effectiveDate)} style={{ width: '100%', padding: '4px 0', fontSize: '10px', backgroundColor: editingDateIndex === index ? '#2b8a3e' : '#f1f3f5', color: editingDateIndex === index ? '#fff' : '#000', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
                                             {editingDateIndex === index ? '수정 완료' : '시간 변경'}
                                         </button>
-
                                         {scenario.dateOverride && editingDateIndex !== index && (
-                                             <button onClick={(e) => clearDateOverride(e, index)} style={{ width: '100%', marginTop: '5px', padding: '2px 0', fontSize: '10px', backgroundColor: '#fa5252', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                                                초기화
-                                             </button>
+                                             <button onClick={(e) => clearDateOverride(e, index)} style={{ width: '100%', marginTop: '5px', padding: '2px 0', fontSize: '10px', backgroundColor: '#fa5252', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>초기화</button>
                                         )}
-                                        
-                                        {/* ⭐ 수정: 각 컷별 수정 인풋도 플레이스홀더를 변경하여 직관성 확보 */}
                                         {editingDateIndex === index && scenario.dateOverride && (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '5px' }}>
                                                 <input type="text" placeholder="윗줄 텍스트" title="윗줄에 표시될 텍스트" value={scenario.dateOverride.month} onChange={(e) => handleDateOverrideChange(index, 'month', e.target.value)} className="input-base" style={{ fontSize: '10px', padding: '4px' }} onClick={(e) => e.stopPropagation()} />
@@ -649,55 +610,40 @@ const addNewEvent = () => {
                                     </div>
                                 </div>
 
-                                {/* 우측 메인 영역 */}
                                 <div className="scenario-main">
-<div className="scenario-header" style={{ paddingBottom: '10px', borderBottom: '1px solid #f1f3f5', marginBottom: '15px' }}>
+                                    <div className="scenario-header" style={{ paddingBottom: '10px', borderBottom: '1px solid #f1f3f5', marginBottom: '15px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                             {scenario.type === 'choice' ? (
-                                                <span style={{ backgroundColor: '#1971c2', color: 'white', padding: '4px 12px', borderRadius: '15px', fontWeight: '900', fontSize: '14px', letterSpacing: '1px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                                                    🔀 분기 설정
-                                                </span>
+                                                <span style={{ backgroundColor: '#1971c2', color: 'white', padding: '4px 12px', borderRadius: '15px', fontWeight: '900', fontSize: '14px', letterSpacing: '1px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>🔀 분기 설정</span>
                                             ) : (
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <span style={{ 
-                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', 
-                                                        width: '28px', height: '28px', backgroundColor: '#343a40', color: 'white', 
-                                                        borderRadius: '50%', fontWeight: 'bold', fontSize: '14px', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' 
-                                                    }}>
-                                                        {index + 1}
-                                                    </span>
+                                                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', backgroundColor: '#343a40', color: 'white', borderRadius: '50%', fontWeight: 'bold', fontSize: '14px', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{index + 1}</span>
                                                     <span style={{ fontWeight: 'bold', color: '#495057', fontSize: '15px' }}>번째 컷</span>
                                                 </div>
                                             )}
-
                                             <div style={{ display: 'flex', gap: '6px' }}>
                                                 {scenario.branch === 'option1' && <span className="badge opt1" style={{ fontSize: '12px', padding: '3px 8px' }}>루트 A (선택지 1)</span>}
                                                 {scenario.branch === 'option2' && <span className="badge opt2" style={{ fontSize: '12px', padding: '3px 8px' }}>루트 B (선택지 2)</span>}
                                                 {scenario.isCg && <span className="badge cg" style={{ fontSize: '12px', padding: '3px 8px' }}>🖼️ CG 모드</span>}
                                             </div>
                                         </div>
-
                                         {!isFirstMainDialog && (
                                             <button onClick={(e) => { e.stopPropagation(); removeScenarioInput(index); }} 
-                                                    style={{ backgroundColor: '#ffe3e3', color: '#e03131', border: '1px solid #ffc9c9', padding: '4px 10px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', transition: '0.2s' }}
-                                                    onMouseOver={(e) => e.target.style.backgroundColor = '#ffc9c9'}
-                                                    onMouseOut={(e) => e.target.style.backgroundColor = '#ffe3e3'}>
+                                                style={{ backgroundColor: '#ffe3e3', color: '#e03131', border: '1px solid #ffc9c9', padding: '4px 10px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', transition: '0.2s' }}
+                                                onMouseOver={(e) => e.target.style.backgroundColor = '#ffc9c9'}
+                                                onMouseOut={(e) => e.target.style.backgroundColor = '#ffe3e3'}>
                                                 🗑️ 컷 삭제
                                             </button>
                                         )}
                                     </div>
+
                                     {scenario.type === 'choice' ? (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                            
-                                            {/* ⭐ [추가됨] 예쁜 파란색 안내 박스 */}
                                             <div style={{ padding: '12px', backgroundColor: '#e7f5ff', borderLeft: '4px solid #1971c2', borderRadius: '4px', fontSize: '13px', color: '#1864ab', lineHeight: '1.5' }}>
                                                 <strong>💡 화면에 표시될 두 가지 선택지를 입력해 주세요.</strong><br/>
                                                 각 선택지에 따라 스토리가 A/B 루트로 나뉩니다.<br/>
-                                                <span style={{ color: '#495057', fontSize: '12px' }}>
-                                                    (※ 루트 마지막에 🎬엔딩을 넣지 않으면, 어느 쪽을 고르든 자연스럽게 다음 이벤트로 넘어갑니다.)
-                                                </span>
+                                                <span style={{ color: '#495057', fontSize: '12px' }}>(※ 루트 마지막에 🎬엔딩을 넣지 않으면, 어느 쪽을 고르든 자연스럽게 다음 이벤트로 넘어갑니다.)</span>
                                             </div>
-
                                             <input type="text" placeholder="선택지 1 텍스트" value={scenario.option1 || ''} onChange={(e) => handleScenarioChange(index, 'option1', e.target.value)} className="input-base" />
                                             <input type="text" placeholder="선택지 2 텍스트" value={scenario.option2 || ''} onChange={(e) => handleScenarioChange(index, 'option2', e.target.value)} className="input-base" />
                                         </div>
@@ -728,7 +674,6 @@ const addNewEvent = () => {
                                                     {scenario.bgImage && scenario.bgType !== 'custom_new' && <span style={{ fontSize: '12px', color: 'green' }}>✓ 적용됨</span>}
                                                 </div>
                                             )}
-                                            
                                             <div style={{ display: 'flex', gap: '10px' }}>
                                                 <select value={scenario.speaker} onChange={(e) => handleScenarioChange(index, 'speaker', e.target.value)} className="input-base" style={{ width: '120px' }}>
                                                     <option value="PROTAGONIST">{displayProtagonistName}</option>
@@ -752,7 +697,6 @@ const addNewEvent = () => {
                                                             ))}
                                                         </div>
                                                     </div>
-                                                    
                                                     <div className="face-panel">
                                                         <span style={{ fontSize: '12px', fontWeight: 'bold' }}>🎭 상대방 표정</span>
                                                         <div className="face-list">
@@ -767,7 +711,6 @@ const addNewEvent = () => {
                                                     </div>
                                                 </div>
                                             )}
-                                            
                                             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
                                                 <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario); }} style={{ width: '100%', padding: '5px', backgroundColor: '#f1f3f5', border: '1px dashed #adb5bd', borderRadius: '4px', cursor: 'pointer', color: '#868e96' }}>+ 이 컷 아래에 대사 추가</button>
                                             </div>
@@ -779,24 +722,19 @@ const addNewEvent = () => {
                     })}
                 </div>
 
-<div className="controller-group">
+                <div className="controller-group">
                     {!hasEndingInCurrentBranch ? (
                         <>
-                            {/* ⭐ [수정됨] !hasChoiceNode를 추가하여, 선택지가 있으면 메인 대사 추가를 강제 차단합니다. */}
                             {currentBranch === 'main' && !hasChoiceNode && <button onClick={addScenarioInput} className="btn-large bg-blue">+ 일반 대사 추가</button>}
                             {currentBranch === 'option1' && <button onClick={addScenarioInput} className="btn-large bg-green">+ 선택지 1번 루트 대사 추가</button>}
                             {currentBranch === 'option2' && <button onClick={addScenarioInput} className="btn-large bg-orange">+ 선택지 2번 루트 대사 추가</button>}
-                            
-                            {/* ⭐ [수정됨] 선택지가 생성된 이후 메인 루트에서는 CG 추가/선택지 추가 버튼도 뜨지 않게 차단 */}
                             {!isCgMode && (currentBranch !== 'main' || !hasChoiceNode) && (
                                 <label className="btn-large bg-purple">
                                     🖼️ 이벤트 CG 추가 <input type="file" accept="image/*" onChange={handleCgUpload} style={{ display: 'none' }} />
                                 </label>
                             )}
                             {isCgMode && <button onClick={() => setIsCgMode(false)} className="btn-large bg-indigo">⏹️ CG 대화 종료</button>}
-                            
                             {currentBranch === 'main' && !isCgMode && !hasChoiceNode && <button onClick={addChoiceInput} className="btn-large bg-gray">+ 선택지 분기 추가</button>}
-
                             {!isCgMode && (currentBranch !== 'main' || !hasChoiceNode) && (
                                 <button onClick={addEndingInput} className="btn-ending">🎬 엔딩 추가</button>
                             )}
