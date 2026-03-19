@@ -28,13 +28,13 @@ const PRESET_BACKGROUNDS = [
 
 const UI_ASSETS = {
     dialog: {
-        simple: (bg, border='#dddddd') => ({ type: 'css', border: `2px solid ${border}`, borderRadius: '4px' }),
+        simple: (bg, border='#dddddd') => ({ type: 'css', border: `2px solid ${border}`, borderRadius: '0px' }),
         gothic: (bg, border='#a9a9a9') => ({ type: 'css', border: `4px double ${border}`, borderRadius: '0px' }),
         cute:   (bg, border='#ffb3c6') => ({ type: 'css', border: `3px dashed ${border}`, borderRadius: '15px' }),
         retro:  (bg) => ({ type: 'image', src: `/images/retro_dialog_${getColorId(bg)}.png` }) 
     },
     namebox: {
-        simple: (bg, border='#dddddd') => ({ type: 'css', border: `2px solid ${border}`, borderRadius: '4px' }),
+        simple: (bg, border='#dddddd') => ({ type: 'css', border: `2px solid ${border}`, borderRadius: '0px' }),
         gothic: (bg, border='#a9a9a9') => ({ type: 'css', border: `3px double ${border}`, borderRadius: '0px' }),
         cute:   (bg, border='#ffb3c6') => ({ type: 'css', border: `2px dashed ${border}`, borderRadius: '15px' }),
         retro:  (bg) => ({ type: 'image', src: `/images/retro_namebox_${getColorId(bg)}.png` })
@@ -402,30 +402,47 @@ const addNewEvent = () => {
                                 {previewScenario.heroineImage && <img src={previewScenario.heroineImage} alt="standing" className="ig-standing" />}
 
                                 {/* 달력 영역 (유지) */}
-                                {!previewScenario.isCg && (
-                                    <div className="ig-calendar-group">
-                                        {currentGlobalUi.calendarFrame !== 'none' && (
-                                            <div className="ig-calendar-box" style={{ 
-                                                backgroundColor: cAsset.type === 'image' ? 'transparent' : (currentGlobalUi.calendarColor || 'rgba(255,255,255,0.8)'),
-                                                backgroundImage: cAsset.type === 'image' ? `url(${cAsset.src})` : 'none',
-                                                border: cAsset.type === 'css' ? cAsset.border : 'none', 
-                                                borderRadius: cAsset.type === 'css' ? cAsset.borderRadius : '0' 
-                                            }}>
-                                                <span style={{ fontFamily: currentGlobalUi.systemFont || 'sans-serif', color: '#5C4033', fontWeight: 'bold', textShadow: getCalendarTextShadow(), marginTop: '10px' }}>{previewDate.day}</span>
-                                            </div>
-                                        )}
-                                        
-                                        <div className="ig-calendar-text">
-                                            {/* ⭐ 수정: previewDate.day를 삭제하고 month 하나만 출력 */}
-                                            <span style={{ fontFamily: currentGlobalUi.systemFont || 'sans-serif', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: getCalendarTextShadow() }}>
-                                                {previewDate.month}
-                                            </span>
-                                            <span style={{ fontFamily: currentGlobalUi.systemFont || 'sans-serif', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: getCalendarTextShadow() }}>
-                                                {previewDate.time}
-                                            </span>
-                                        </div>
-                                    </div>
-                                )}
+{/* 달력 영역 (CSS 클래스 매칭 및 비율 적용) */}
+{/* 📅 달력 영역 (StepSettings와 동일한 구조) */}
+{!previewScenario.isCg && (
+    <div className="ig-calendar-group">
+        {currentGlobalUi.calendarFrame !== 'none' && (
+            <div className="ig-calendar-box" style={{ 
+                backgroundColor: cAsset.type === 'image' ? 'transparent' : (currentGlobalUi.calendarColor || 'rgba(255,182,193,0.8)'),
+                backgroundImage: cAsset.type === 'image' ? `url(${cAsset.src})` : 'none',
+                border: cAsset.type === 'css' ? cAsset.border : 'none', 
+                borderRadius: cAsset.type === 'css' ? cAsset.borderRadius : '0' 
+            }}>
+                <span className="ig-calendar-day-text" style={{ 
+                    fontFamily: currentGlobalUi.systemFont || 'sans-serif', 
+                    color: currentGlobalUi.calendarTextColor || '#5C4033', 
+                    textShadow: getCalendarTextShadow() 
+                }}>
+                    {previewDate.day}
+                </span>
+            </div>
+        )}
+        
+        <div className="ig-calendar-text">
+            <span style={{ 
+                fontFamily: currentGlobalUi.systemFont || 'sans-serif', 
+                fontWeight: 'bold', 
+                color: currentGlobalUi.calendarTextColor, 
+                textShadow: getCalendarTextShadow() 
+            }}>
+                {previewDate.month}
+            </span>
+            <span style={{ 
+                fontFamily: currentGlobalUi.systemFont || 'sans-serif', 
+                fontWeight: 'bold', 
+                color: currentGlobalUi.calendarTextColor, 
+                textShadow: getCalendarTextShadow() 
+            }}>
+                {previewDate.time}
+            </span>
+        </div>
+    </div>
+)}
                                 
                                 {previewScenario.protagonistImage && (
                                     <div className="ig-portrait-area">
@@ -448,7 +465,7 @@ const addNewEvent = () => {
                                         border: nAsset.type === 'css' ? finalNameBorder : 'none', 
                                         borderRadius: nAsset.type === 'css' ? nAsset.borderRadius : '0'
                                     }}>
-                                        <span style={{ fontFamily: renderFontFamily, color: activeStyle.color || '#fff', textShadow: activeStyle.useOutline ? `-1px -1px 0 ${activeStyle.outline}, 1px -1px 0 ${activeStyle.outline}, -1px 1px 0 ${activeStyle.outline}, 1px 1px 0 ${activeStyle.outline}` : 'none', fontSize: '2.5cqh', fontWeight: 'bold' }}>
+                                        <span style={{ fontFamily: renderFontFamily, color: activeStyle.color || '#fff', textShadow: activeStyle.useOutline ? `-1px -1px 0 ${activeStyle.outline}, 1px -1px 0 ${activeStyle.outline}, -1px 1px 0 ${activeStyle.outline}, 1px 1px 0 ${activeStyle.outline}` : 'none', fontSize: '3cqh'}}>
                                             {getSpeakerName(previewScenario.speaker)}
                                         </span>
                                     </div>

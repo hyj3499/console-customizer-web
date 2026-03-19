@@ -40,6 +40,8 @@ div:has(> .editor-container) {
     border-right: 2px solid #000; border-bottom: 2px solid #000;
     box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
     width: 100%;
+    /* ⭐ 핵심: 패딩 때문에 상자가 커지는 것을 방지하여 Settings와 동일한 너비 유지 */
+    box-sizing: border-box; 
     margin-bottom: 20px;
 }
 
@@ -66,9 +68,14 @@ div:has(> .editor-container) {
 }
 
 /* =========================================================
-   🌟 레이아웃 토글 (클래식 vs 바닥 밀착) 적용을 위한 CSS 추가
+   🌟 인게임 화면 내 절대좌표 위치 (StepSettings와 100% 동일)
    ========================================================= */
-/* 미리보기 모니터 공통 뼈대 설정 */
+.win95-preview-monitor .ig-calendar-group { position: absolute; left: 13.02%; top: 4.63%; display: flex; align-items: center; gap: 1.3cqw; z-index: 11; }
+.win95-preview-monitor .ig-calendar-box { width: 7.81cqw; height: 7.81cqw; display: flex; align-items: center; justify-content: center; background-size: 100% 100%; }
+.win95-preview-monitor .ig-calendar-text { display: flex; flex-direction: column; gap: 0.8cqh; text-align: left; }
+.win95-preview-monitor .ig-calendar-text span { font-size: 3cqh; font-weight: bold; white-space: nowrap; }
+.win95-preview-monitor .ig-calendar-day-text { font-size: 5cqh; font-weight: bold; margin-top: 10px; line-height: 1; }
+
 .win95-preview-monitor .ig-portrait-area { position: absolute; left: 13.02%; width: 13.02%; height: 23.15%; z-index: 10; overflow: visible; }
 .win95-preview-monitor .ig-dialogbox { position: absolute; left: 27.6%; width: 57.3%; height: 23.15%; padding: 3cqh 4cqw; box-sizing: border-box; z-index: 11; background-size: 100% 100%; }
 .win95-preview-monitor .ig-namebox { 
@@ -188,8 +195,15 @@ div:has(> .editor-container) {
     .controller-group { flex-direction: column !important; }
     .btn-large, .btn-ending { width: 100% !important; box-shadow: none !important; }
 
-    /* 모바일 미리보기 보정 */
-    .win95-preview-monitor .ig-namebox { height: 6cqh !important; min-width: 20cqw !important; padding: 0 2cqw !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+    /* ⭐ 미리보기 모바일 보정 (StepSettings와 100% 일치) */
+    .win95-preview-monitor { aspect-ratio: 16 / 9 !important; height: auto !important; }
+
+    .win95-preview-monitor .ig-namebox { 
+        height: 6cqh !important; 
+        min-width: 20cqw !important; 
+        padding: 0 2cqw !important;
+        display: flex !important; align-items: center !important; justify-content: center !important;
+    }
     .win95-preview-monitor .ig-namebox span { font-size: 3cqh !important; line-height: 1 !important; display: block !important; transform: translateY(-0.2cqh); }
     .win95-preview-monitor .ig-dialogbox { padding: 2.5cqh 4cqw !important; }
 
