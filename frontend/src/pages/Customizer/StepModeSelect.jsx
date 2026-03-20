@@ -9,7 +9,7 @@ const GAME_MODES = [
     {
         id: 'scenario',
         title: '시나리오 모드 📖',
-        description: '선택지 없이 준비된 탄탄한 스토리를 감상하는 비주얼 노벨 방식입니다.',
+        description: '선택지에 따라 다양한 엔딩이 있는 탄탄한 스토리를 감상하는 비주얼 노벨 방식입니다.',
     },
 ];
 

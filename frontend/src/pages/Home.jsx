@@ -222,7 +222,7 @@ export default function Home() {
                     <div className="win95-window-inner" style={{ padding: 0, height: '180px' }}>
                         <textarea 
                             readOnly 
-                            defaultValue={`환영합니다!\n\n이곳은 파스텔 톤으로 꾸며진\n귀여운 레트로 데스크톱입니다.\n\n수많은 아이콘들을 둘러보시고,\n중앙의 [최애로운_생활.exe]를 실행하여\n나만의 비주얼 노벨을 만들어보세요!\n\n♡ ٩(❛ᴗ❛)۶ ♡`}
+                            defaultValue={`중앙의 [최애로운_생활.exe]를 실행하여\n나만의 비주얼 노벨을 만들어보세요!\n\n♡ ٩(❛ᴗ❛)۶ ♡`}
                             style={{ width: '100%', height: '100%', resize: 'none', border: 'none', outline: 'none', padding: '10px', fontFamily: "'DOSGothic', monospace", fontSize: '13px', color: '#5d4037', backgroundColor: 'var(--win95-content-white)', lineHeight: '1.5' }}
                         />
                     </div>
