@@ -430,14 +430,15 @@ export default function StepEventEditor() {
                                     </div>
                                 )}
                                 
-                                {/* ⭐ 버그 2 해결: 주인공 사진 영역 마스크 설정 교정 */}
-                                {previewScenario.protagonistImage && (
+{previewScenario.protagonistImage && (
                                     <div className="ig-portrait-area">
-                                        {pAsset.type === 'image' && <img src={pAsset.src} alt="Frame" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'fill', pointerEvents: 'none', zIndex: 3 }} />}
+                                        {/* 🚨 수정: zIndex를 3에서 1로 내려서 배경(프레임)으로 깔리게 만듦 */}
+                                        {pAsset.type === 'image' && <img src={pAsset.src} alt="Frame" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'fill', pointerEvents: 'none', zIndex: 1 }} />}
+                                        
                                         <div style={{
-                                            position: 'absolute', width: '100%', height: '100%', zIndex: 2, 
+                                            position: 'absolute', width: '100%', height: '100%', 
+                                            zIndex: 2, /* 🌟 주인공 사진이 프레임 위(zIndex 1)에 올라가도록 유지 */
                                             backgroundColor: pAsset.type === 'image' ? 'transparent' : (pFontStyle.portraitColor || 'rgba(255,182,193,0.8)'),
-                                            // 💡 따옴표(" ")를 추가하여 파일 경로 인식 오류 차단
                                             WebkitMaskImage: pAsset.type === 'image' ? `url("${pAsset.mask}")` : 'none', 
                                             maskImage: pAsset.type === 'image' ? `url("${pAsset.mask}")` : 'none',
                                             WebkitMaskSize: '100% 100%', maskSize: '100% 100%', 

@@ -9,18 +9,42 @@ import useCustomizerStore from '../store/useCustomizerStore';
 const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:8000/api/projects' : '/api/projects';
 
 // ⭐ [트래픽 방어] 지문(Fingerprint) 기반 전역 캐시
-// { "파일수정시간_용량": "최종 클라우드 URL" }
+// { "프로젝트ID_파일명_용량_수정시간": "최종 클라우드 URL" }
 const globalFingerprintCache = {}; 
 
-// 파일 내용 기반 지문 생성
-const getFileFingerprint = (file) => {
-    return `${file.lastModified.toString(36)}_${file.size.toString(36)}`;
+// ⭐ 픽스 1: 파일 내용 기반 지문 생성 (projectId를 추가하여 프로젝트 간 충돌 방지)
+const getFileFingerprint = (file, projectId) => {
+    if (!file) return "no_file_" + Date.now();
+    
+    // 파일명, 크기, 수정시간을 조합해 지문 생성 (속성이 없어도 터지지 않게 방어)
+    const name = file.name || "unknown";
+    const size = file.size || 0;
+    const lastModified = file.lastModified || 0;
+    
+    return `${projectId}_${name}_${size}_${lastModified}`.replace(/\s+/g, '_');
 };
 
-// 고유 파일명 생성 (지문 + 원래이름)
-const generateUniqueName = (file) => {
-    const safeName = file.name.replace(/\s+/g, '_');
-    return `${getFileFingerprint(file)}_${safeName}`;
+// ⭐ 픽스 2: 고유 파일명 생성 (.mp3 확장자 보존 및 예외 처리)
+const generateUniqueName = (input) => {
+    let name = "";
+
+    // 1. Duck Typing 검사: instanceof File이 실패해도 name 속성이 있으면 무조건 추출!
+    if (input && typeof input.name === 'string') {
+        name = input.name;
+    } 
+    // 2. 입력값이 문자열인 경우 그대로 사용
+    else if (typeof input === 'string') {
+        name = input;
+    }
+    // 3. 둘 다 아니거나 비어있는 경우 기본값 부여 (에러 방지)
+    else {
+        console.warn("⚠️ 유효하지 않은 파일 데이터:", input);
+        name = "unnamed_file_" + Date.now();
+    }
+
+    // 공백을 언더바로 바꾸고, 영문/숫자/점(.)/밑줄(_)/하이픈(-) 외의 특수문자만 제거
+    // 💡 점(.)을 살려두었으므로 .png, .mp3 등의 확장자가 안전하게 보존됩니다.
+    return name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
 };
 
 export const saveProjectToServer = async (id, pw) => {
@@ -95,7 +119,9 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
 
     // 업로드할 파일과 스킵할 파일 분류
     finalFiles.forEach(item => {
-        const fingerprint = getFileFingerprint(item.file);
+        // ⭐ 지문에 projectId를 함께 전달!
+        const fingerprint = getFileFingerprint(item.file, projectId); 
+        
         if (globalFingerprintCache[fingerprint]) {
             // 이전에 업로드했던 똑같은 내용의 파일이라면, 지도에 이전 URL만 슥 적어둠
             uniqueNameToUrlMap[item.uniqueName] = globalFingerprintCache[fingerprint];
@@ -120,8 +146,8 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
                     headers: { 'Content-Type': item.file.type }
                 });
                 
-                // ⭐ 성공 시 전역 캐시(지문)와 백엔드 지도(고유이름)에 동시 기록
-                const fingerprint = getFileFingerprint(item.file);
+                // ⭐ 성공 시 전역 캐시(지문)와 백엔드 지도(고유이름)에 동시 기록 (projectId 포함)
+                const fingerprint = getFileFingerprint(item.file, projectId);
                 globalFingerprintCache[fingerprint] = urlInfo.finalUrl;
                 uniqueNameToUrlMap[item.uniqueName] = urlInfo.finalUrl;
             }

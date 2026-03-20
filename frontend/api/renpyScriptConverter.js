@@ -28,26 +28,39 @@ const rgbaToHex = (colorStr) => {
     return `#${r}${g}${b}${a}`;
 };
 
+// ⭐ 수정: charName이 없으면(null) 네임박스를 끄고 나레이션 모드로 생성하도록 개선
 const buildCharacterDef = (varName, charName, fontStyle, isProtagonist = false) => {
     const soundFile = fontStyle?.typingSound ? `audio/${fontStyle.typingSound}.ogg` : "audio/type1.ogg";
     const stylePrefix = isProtagonist ? 'p' : varName; 
     
-    let charArgs = `callback=lambda event, **kwargs: type_sound_callback(event, sound='${soundFile}', **kwargs), window_style="${stylePrefix}_window", namebox_style="${stylePrefix}_namebox"`;
+    let charArgs = `callback=lambda event, **kwargs: type_sound_callback(event, sound='${soundFile}', **kwargs), window_style="${stylePrefix}_window"`;
+    
+    if (charName) {
+        charArgs += `, namebox_style="${stylePrefix}_namebox"`;
+    }
     
     const textColor = fontStyle?.color ? rgbaToHex(fontStyle.color) : "#ffffff";
-    charArgs += `, what_color="${textColor}", who_color="${textColor}"`;
+    charArgs += `, what_color="${textColor}"`;
+    
+    if (charName) {
+        charArgs += `, who_color="${textColor}"`;
+    }
     
     if (fontStyle?.useOutline) {
         const outlineColor = fontStyle.outline ? rgbaToHex(fontStyle.outline) : "#000000";
-        charArgs += `, what_outlines=[(2, "${outlineColor}", 0, 0)], who_outlines=[(2, "${outlineColor}", 0, 0)]`;
+        charArgs += `, what_outlines=[(2, "${outlineColor}", 0, 0)]`;
+        if (charName) {
+            charArgs += `, who_outlines=[(2, "${outlineColor}", 0, 0)]`;
+        }
     }
 
-    return `define ${varName} = Character("${charName}", ${charArgs})\n`;
+    const nameArg = charName ? `"${charName}"` : "None";
+    return `define ${varName} = Character(${nameArg}, ${charArgs})\n`;
 };
 
 export const generateScriptRpy = (data) => {
     const isBottomMode = data.globalUi?.layoutMode === 'bottom';
-    const sysFontName = safeFont(data.globalUi?.systemFont || "Galmuri14"); // ⭐ 엔딩에 쓰일 폰트 추출
+    const sysFontName = safeFont(data.globalUi?.systemFont || "Galmuri14");
 
     let script = `################################################################################\n`;
     script += `## 1. 전역 설정 및 오디오 로직\n`;
@@ -76,10 +89,15 @@ export const generateScriptRpy = (data) => {
     script += `default current_month = ""\n`;
     script += `default current_day = ""\n`;
     script += `default current_time = ""\n`;
-    script += `default current_p_image = ""\n\n`;
+    script += `default current_p_image = ""\n`;
+    // ⭐ 추가: 달력 표시 여부를 결정하는 전역 플래그
+    script += `default show_calendar = True\n\n`;
 
     const pName = data.protagonist?.name || '주인공';
+    // 1. 주인공 생성
     script += buildCharacterDef("p", pName, data.pFontStyle, true);
+    // ⭐ 추가: 2. 나레이션 전용 객체 생성 (이름은 없고 주인공 스타일만 빌려옴)
+    script += buildCharacterDef("narration", null, data.pFontStyle, true);
 
     if (data.characters) {
         data.characters.forEach(char => {
@@ -113,10 +131,19 @@ export const generateScriptRpy = (data) => {
                 let out = `label ${labelName}:\n`;
                 let s = { ...stateIn }; 
 
-                if (labelName === `event_${event.id}` && event.baseDate) {
-                    out += `    $ current_month = "${event.baseDate.month || ''}"\n`;
-                    out += `    $ current_day = "${event.baseDate.day || ''}"\n`;
-                    out += `    $ current_time = "${event.baseDate.time || ''}"\n`;
+                if (labelName === `event_${event.id}`) {
+                    if (event.bgm) {
+                        const eventBgmName = getFileName(event.bgm);
+                        if (eventBgmName) {
+                            out += `    play music "audio/${eventBgmName}" fadein 1.0\n`;
+                        }
+                    }
+
+                    if (event.baseDate) {
+                        out += `    $ current_month = "${event.baseDate.month || ''}"\n`;
+                        out += `    $ current_day = "${event.baseDate.day || ''}"\n`;
+                        out += `    $ current_time = "${event.baseDate.time || ''}"\n`;
+                    }
                 }
 
                 scenarioList.forEach((sc, sIdx) => {
@@ -128,13 +155,12 @@ export const generateScriptRpy = (data) => {
                         out += `    $ current_time = "${sc.dateOverride.time || ''}"\n`;
                     }
 
-                    // ⭐ 수정 3. 엔딩 텍스트를 시스템 폰트와 함께 한가운데에 고정 (truecenter)
                     if (sc.type === 'ending') {
                         out += `    window hide\n`;
                         out += `    scene black with dissolve\n`;
                         out += `    show text "{font=${sysFontName}}{size=50}${sc.text || ''}{/size}{/font}" at truecenter\n`;
                         out += `    with dissolve\n`;
-                        out += `    pause\n`; // 플레이어가 클릭할 때까지 대기
+                        out += `    pause\n`; 
                         out += `    return\n`; 
                         return;
                     }
@@ -142,6 +168,7 @@ export const generateScriptRpy = (data) => {
                     if (sc.type === 'choice') {
                         const opt1Text = sc.option1 || "선택지 1";
                         const opt2Text = sc.option2 || "선택지 2";
+                        // ⭐ 렌파이 기본 menu 명령어는 화면 정중앙에 버튼들을 출력합니다.
                         out += `    menu:\n`;
                         out += `        "${opt1Text}":\n`;
                         out += `            jump event_${event.id}_opt1\n`;
@@ -150,26 +177,47 @@ export const generateScriptRpy = (data) => {
                         return;
                     }
 
-                    // ⭐ 수정 2. CG 일러스트 화면 꽉 차게 변경 (1920x1080 비율 커버)
-if (sc.type === 'cg_image') {
+                    // ⭐ 수정: CG 이미지 출력부
+                    if (sc.type === 'cg_image') {
                         const cgName = getFileName(sc.src);
+                        let transitionNeeded = false;
+                        let transType = (sIdx === 0) ? "Dissolve(1.5)" : "dissolve";
+
                         if (cgName && s.bg !== cgName) {
-                            // align=(0.5, 0.5)를 추가하여 웹의 object-fit: cover처럼 중앙 정렬 자르기 구현
-                            out += `    scene expression Transform("${cgName}", xysize=(1920, 1080), fit="cover", align=(0.5, 0.5)) with dissolve\n`;
+                            out += `    scene expression Transform("${cgName}", xysize=(1920, 1080), fit="cover", align=(0.5, 0.5))\n`;
                             s.bg = cgName;
+                            transitionNeeded = true;
                         }
-                        out += `    hide h_sprite\n`;
+                        if (s.h !== "") {
+                            out += `    hide h_sprite\n`;
+                            s.h = "";
+                            transitionNeeded = true;
+                        }
+                        
+                        // ⭐ 추가: 달력 숨김 플래그 ON
+                        out += `    $ show_calendar = False\n`;
+
+                        if (transitionNeeded || sIdx === 0) {
+                            out += `    with ${transType}\n`;
+                        }
+
+                        // ⭐ 추가: 이미지를 보여준 상태에서 클릭 대기 (대사창 뜨기 전 딜레이)
+                        out += `    pause\n`;
+
                         out += `    $ current_p_image = ""\n`;
-                        s.h = ""; s.p = "";
+                        s.p = "";
                         return;
                     }
 
                     if (sc.type === 'dialog') {
-                        // ⭐ [수정] 일반 배경 출력 로직도 동일하게 처리
+                        let transitionNeeded = false;
+                        let transType = (sIdx === 0) ? "Dissolve(1.5)" : "dissolve";
+
                         const bgName = getFileName(sc.bgImage);
                         if (bgName && bgName !== s.bg) {
-                            out += `    scene expression Transform("${bgName}", xysize=(1920, 1080), fit="cover", align=(0.5, 0.5)) with dissolve\n`;
+                            out += `    scene expression Transform("${bgName}", xysize=(1920, 1080), fit="cover", align=(0.5, 0.5))\n`;
                             s.bg = bgName;
+                            transitionNeeded = true;
                         }
 
                         const hName = sc.heroineImage === null ? "" : getFileName(sc.heroineImage);
@@ -191,6 +239,18 @@ if (sc.type === 'cg_image') {
                                 out += `        fit "contain"\n`;
                             }
                             s.h = hName;
+                            transitionNeeded = true;
+                        }
+
+                        // ⭐ 달력 제어: CG 연출이면 달력을 끄고, 일반 대화면 달력을 켭니다.
+                        if (sc.isCg) {
+                            out += `    $ show_calendar = False\n`;
+                        } else {
+                            out += `    $ show_calendar = True\n`;
+                        }
+
+                        if (transitionNeeded || sIdx === 0) {
+                            out += `    with ${transType}\n`;
                         }
 
                         const pName = sc.protagonistImage === null ? "" : getFileName(sc.protagonistImage);
@@ -203,7 +263,8 @@ if (sc.type === 'cg_image') {
                         if (sc.speaker === 'PROTAGONIST') {
                             speaker = 'p';
                         } else if (sc.speaker === '나레이션') {
-                            speaker = '""';
+                            // ⭐ 수정: 위에서 선언한 나레이션 전용 화자로 지정
+                            speaker = 'narration';
                         } else {
                             const c = data.characters.find(char => char.name === sc.speaker);
                             speaker = c ? `char_${c.id}` : `"${sc.speaker}"`;
@@ -217,7 +278,11 @@ if (sc.type === 'cg_image') {
                 const lastSc = scenarioList[scenarioList.length - 1];
                 if (lastSc && lastSc.type !== 'ending' && lastSc.type !== 'choice') {
                     if (nextEventLabel) {
-                        out += `    jump ${nextEventLabel}\n\n`;
+                        out += `    window hide\n`;                  
+                        out += `    scene black\n`;                 
+                        out += `    with Dissolve(1.5)\n`;          
+                        out += `    pause 0.5\n`;                     
+                        out += `    jump ${nextEventLabel}\n\n`;      
                     } else {
                         out += `    return\n\n`;
                     }
