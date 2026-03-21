@@ -57,8 +57,8 @@ const UI_ASSETS = {
     retro: (bg) => ({ name: '도트', type: 'image', src: `/images/retro_frame_${getColorId(bg)}.png`, mask: '/images/retro_frame_mask.png' })
   },
   calendar: {
-    simple: (bg, border = '#dddddd') => ({ name: '심플형', type: 'css', border: `2px solid ${border}`, borderRadius: '0px' }),
-    retro: (bg) => ({ name: '도트 달력', type: 'image', src: `/images/retro_calendar_${getColorId(bg)}.png` }),
+    //simple: (bg, border = '#dddddd') => ({ name: '심플형', type: 'css', border: `2px solid ${border}`, borderRadius: '0px' }),
+    //retro: (bg) => ({ name: '도트 달력', type: 'image', src: `/images/retro_calendar_${getColorId(bg)}.png` }),
     none: () => ({ name: '🚫 표시 안 함', type: 'none' }),
   },
 };
@@ -390,8 +390,8 @@ const InGamePreview = ({ previewBg, standingImg, currentGlobalUi, textShadowStr,
           </div>
         )}
         <div className="ig-calendar-text">
-          <span style={{ fontFamily: currentGlobalUi.systemFont, fontSize: '3cqh', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: textShadowStr }}>2月 12日</span>
-          <span style={{ fontFamily: currentGlobalUi.systemFont, fontSize: '3cqh', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: textShadowStr }}>AM 02:30</span>
+          <span style={{ fontFamily: currentGlobalUi.systemFont, fontSize: '2.5cqh',  color: currentGlobalUi.calendarTextColor, textShadow: textShadowStr }}>2020.03.06 | 02:30 AM</span>
+          <span style={{ fontFamily: currentGlobalUi.systemFont, fontSize: '2.5cqh',  color: currentGlobalUi.calendarTextColor, textShadow: textShadowStr }}>EPISODE 1 |  평범한 하루</span>
         </div>
       </div>
 
@@ -484,7 +484,7 @@ export default function StepSettings() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 🌟 레이아웃 모드 초기값 (지정 안되어 있으면 기본적으로 bottom으로 설정)
-  const currentGlobalUi = globalUi || { calendarFrame: 'retro', layoutMode: 'bottom' };
+  const currentGlobalUi = globalUi || { calendarFrame: 'none', layoutMode: 'bottom' };
   const safeSetGlobalUi = setGlobalUi || (() => {});
 
   const uniqueCustomFonts = Array.from(new Map(customFonts.map((f) => [f.name, f])).values());
@@ -556,7 +556,7 @@ export default function StepSettings() {
   const dAsset = (UI_ASSETS.dialog[activeStyle.dialogFrame] || UI_ASSETS.dialog.simple)(activeStyle.dialogColor, activeStyle.dialogBorderColor);
   const nAsset = (UI_ASSETS.namebox[activeStyle.nameFrame] || UI_ASSETS.namebox.simple)(activeStyle.nameColor, activeStyle.nameBorderColor);
   const pAsset = isP ? (UI_ASSETS.portrait[activeStyle.portraitStyle] || UI_ASSETS.portrait.square)(activeStyle.portraitColor, activeStyle.portraitBorderColor) : null;
-  const cAsset = (UI_ASSETS.calendar[currentGlobalUi.calendarFrame] || UI_ASSETS.calendar.retro)(currentGlobalUi.calendarColor);
+  const cAsset = (UI_ASSETS.calendar[currentGlobalUi.calendarFrame] || UI_ASSETS.calendar.none)(currentGlobalUi.calendarColor);
   const renderFontFamily = activeStyle.font || currentGlobalUi.systemFont || 'sans-serif';
   const textShadowStr = currentGlobalUi.calendarTextUseOutline ? `-1px -1px 0 ${currentGlobalUi.calendarTextOutlineColor}, 1px -1px 0 ${currentGlobalUi.calendarTextOutlineColor}, -1px 1px 0 ${currentGlobalUi.calendarTextOutlineColor}, 1px 1px 0 ${currentGlobalUi.calendarTextOutlineColor}` : 'none';
 
@@ -634,7 +634,7 @@ export default function StepSettings() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
               <MiniPreview type="calendar" frameKey={currentGlobalUi.calendarFrame} color={currentGlobalUi.calendarColor} />
               <div style={{ flex: 1 }}>
-                <label className="input-label">📅 달력 틀 테마</label>
+                <label className="input-label">📅 달력 틀 테마 (현재 준비 중)</label>
                 <select className="theme-select" value={currentGlobalUi.calendarFrame} onChange={(e) => safeSetGlobalUi({ calendarFrame: e.target.value })}>
                   {Object.keys(UI_ASSETS.calendar).map((key) => ( <option key={key} value={key}>{UI_ASSETS.calendar[key]().name}</option> ))}
                 </select>
@@ -644,7 +644,14 @@ export default function StepSettings() {
         </div>
         <div className="global-ui-divider">
           <div className="global-ui-col">
-            <SmartColorPicker label="🎨 달력 틀 색상" rgba={currentGlobalUi.calendarColor} isImageTheme={UI_ASSETS.calendar[currentGlobalUi.calendarFrame || 'simple']().type === 'image'} onChange={(val) => safeSetGlobalUi({ calendarColor: val })} />
+            {currentGlobalUi.calendarFrame !== 'none' && (
+              <SmartColorPicker 
+                label="🎨 달력 틀 색상" 
+                rgba={currentGlobalUi.calendarColor} 
+                isImageTheme={UI_ASSETS.calendar[currentGlobalUi.calendarFrame || 'none']().type === 'image'} 
+                onChange={(val) => safeSetGlobalUi({ calendarColor: val })} 
+              />
+            )}
           </div>
           <div className="global-ui-col">
             <label className="input-label">📝 날짜/시간 글자 스타일</label>

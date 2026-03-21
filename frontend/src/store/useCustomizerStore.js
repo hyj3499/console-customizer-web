@@ -33,10 +33,10 @@ const getInitialState = () => ({
 
     // 🎮 전역 UI 설정
     globalUi: { 
-        calendarFrame: 'retro', 
+        calendarFrame: 'none', 
         calendarColor: 'rgba(255,182,193,0.8)', 
-        calendarTextColor: '#000000', 
-        calendarTextUseOutline: true, 
+        calendarTextColor: '#ffffff', 
+        calendarTextUseOutline: false, 
         calendarTextOutlineColor: '#ffffff', 
         systemFont: 'Galmuri14', 
         cursor: 'default', 
@@ -75,9 +75,9 @@ const getInitialState = () => ({
             title: '이벤트 1', 
             bgm: null, 
             baseDate: { 
-                month: 'DATE: 02月 20日', 
-                day: '01日', 
-                time: 'TIME: AM 12:00' 
+                month: '2020.03.06 | 02:30 AM', 
+                day: '0', 
+                time: 'EPISODE 1 |  평범한 하루' 
             }, 
             scenarios: [
                 { 
@@ -88,7 +88,7 @@ const getInitialState = () => ({
                     heroineImage: null, 
                     text: '', 
                     bgImage: null, 
-                    bgType: 'bg_school', 
+                    bgType: 'bg_black', 
                     dateOverride: null, 
                     src: null 
                 }

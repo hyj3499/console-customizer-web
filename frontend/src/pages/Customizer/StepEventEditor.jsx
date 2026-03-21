@@ -116,8 +116,9 @@ const UI_ASSETS = {
         reborn:  (bg) => ({ type: 'image', src: `/images/reborn_frame_${getColorId(bg)}.png` , mask: '/images/retro_frame_mask.png' }) 
     },
     calendar: {
-        simple: (bg, border='#dddddd') => ({ name: '심플형', type: 'css', border: `2px solid ${border}`, borderRadius: '4px' }),
-        retro:  (bg) => ({ name: '🕹️ 레트로 (이미지)', type: 'image', src: `/images/retro_calendar_${getColorId(bg)}.png` }) 
+        //simple: (bg, border='#dddddd') => ({ name: '심플형', type: 'css', border: `2px solid ${border}`, borderRadius: '4px' }),
+        //retro:  (bg) => ({ name: '🕹️ 레트로 (이미지)', type: 'image', src: `/images/retro_calendar_${getColorId(bg)}.png` })
+        none: () => ({ type: 'none' })
     }
 };
 
@@ -129,7 +130,7 @@ export default function StepEventEditor() {
         customBackgrounds, addCustomBackground 
     } = useCustomizerStore();
 
-    const currentGlobalUi = globalUi || { calendarFrame: 'retro', calendarColor: 'rgba(255,182,193,0.8)', calendarTextColor: '#5C4033', calendarTextUseOutline: true, calendarTextOutlineColor: '#ffffff', systemFont: 'Pretendard', layoutMode: 'bottom' };
+    const currentGlobalUi = globalUi || { calendarFrame: 'none', calendarColor: 'rgba(255,182,193,0.8)', calendarTextColor: '#5C4033', calendarTextUseOutline: true, calendarTextOutlineColor: '#ffffff', systemFont: 'Pretendard', layoutMode: 'bottom' };
 
     const [currentBranch, setCurrentBranch] = useState('main'); 
     const [isCgMode, setIsCgMode] = useState(false);
@@ -408,7 +409,7 @@ export default function StepEventEditor() {
 
     const dAsset = (UI_ASSETS.dialog[activeStyle.dialogFrame] || UI_ASSETS.dialog.simple)(activeStyle.dialogColor, activeStyle.dialogBorderColor);
     const nAsset = (UI_ASSETS.namebox[activeStyle.nameFrame] || UI_ASSETS.namebox.simple)(activeStyle.nameColor, activeStyle.nameBorderColor);
-    const cAsset = (UI_ASSETS.calendar[currentGlobalUi.calendarFrame] || UI_ASSETS.calendar.retro)(currentGlobalUi.calendarColor); 
+    const cAsset = (UI_ASSETS.calendar[currentGlobalUi.calendarFrame] || UI_ASSETS.calendar.none)(currentGlobalUi.calendarColor); 
 
     // ⭐ 버그 1 해결: 초상화 프레임은 무조건 주인공(pFontStyle)의 값을 참조하도록 고정
     const pAsset = (UI_ASSETS.portrait[pFontStyle.portraitStyle] || UI_ASSETS.portrait.square)(pFontStyle.portraitColor, pFontStyle.portraitBorderColor);
@@ -489,10 +490,10 @@ export default function StepEventEditor() {
                                         )}
                                         
                                         <div className="ig-calendar-text">
-                                            <span style={{ fontFamily: currentGlobalUi.systemFont || 'sans-serif', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: getCalendarTextShadow() }}>
+                                            <span style={{ fontFamily: currentGlobalUi.systemFont || 'sans-serif', color: currentGlobalUi.calendarTextColor, textShadow: getCalendarTextShadow() }}>
                                                 {previewDate.month}
                                             </span>
-                                            <span style={{ fontFamily: currentGlobalUi.systemFont || 'sans-serif', fontWeight: 'bold', color: currentGlobalUi.calendarTextColor, textShadow: getCalendarTextShadow() }}>
+                                            <span style={{ fontFamily: currentGlobalUi.systemFont || 'sans-serif', color: currentGlobalUi.calendarTextColor, textShadow: getCalendarTextShadow() }}>
                                                 {previewDate.time}
                                             </span>
                                         </div>
@@ -612,10 +613,10 @@ export default function StepEventEditor() {
                                 <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#495057' }}>아래에 표시될 텍스트</span>
                                 <input type="text" className="input-base" placeholder="TIME: 12:00" value={activeEvent.baseDate.time} onChange={(e) => handleBaseDateChange('time', e.target.value)} />
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            {/*<div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#495057' }}>달력안에 들어갈 텍스트</span>
                                 <input type="text" className="input-base" placeholder="01日" value={activeEvent.baseDate.day} onChange={(e) => handleBaseDateChange('day', e.target.value)} />
-                            </div>
+                            </div>*/}
                         </div>
                     </div>
                 </div>
@@ -674,7 +675,7 @@ export default function StepEventEditor() {
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '5px' }}>
                                                 <input type="text" placeholder="윗줄 텍스트" title="윗줄에 표시될 텍스트" value={scenario.dateOverride.month} onChange={(e) => handleDateOverrideChange(index, 'month', e.target.value)} className="input-base" style={{ fontSize: '10px', padding: '4px' }} onClick={(e) => e.stopPropagation()} />
                                                 <input type="text" placeholder="아랫줄 텍스트" title="아래에 표시될 텍스트" value={scenario.dateOverride.time} onChange={(e) => handleDateOverrideChange(index, 'time', e.target.value)} className="input-base" style={{ fontSize: '10px', padding: '4px' }} onClick={(e) => e.stopPropagation()} />
-                                                <input type="text" placeholder="달력 내부 텍스트" title="달력안에 들어갈 텍스트" value={scenario.dateOverride.day} onChange={(e) => handleDateOverrideChange(index, 'day', e.target.value)} className="input-base" style={{ fontSize: '10px', padding: '4px' }} onClick={(e) => e.stopPropagation()} />
+                                                {/*<input type="text" placeholder="달력 내부 텍스트" title="달력안에 들어갈 텍스트" value={scenario.dateOverride.day} onChange={(e) => handleDateOverrideChange(index, 'day', e.target.value)} className="input-base" style={{ fontSize: '10px', padding: '4px' }} onClick={(e) => e.stopPropagation()} />*/}
                                             </div>
                                         )}
                                     </div>

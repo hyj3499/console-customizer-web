@@ -73,7 +73,7 @@ div:has(> .editor-container) {
 .win95-preview-monitor .ig-calendar-group { position: absolute; left: 13.02%; top: 4.63%; display: flex; align-items: center; gap: 1.3cqw; z-index: 11; }
 .win95-preview-monitor .ig-calendar-box { width: 7.81cqw; height: 7.81cqw; display: flex; align-items: center; justify-content: center; background-size: 100% 100%; }
 .win95-preview-monitor .ig-calendar-text { display: flex; flex-direction: column; gap: 0.8cqh; text-align: left; }
-.win95-preview-monitor .ig-calendar-text span { font-size: 3cqh; font-weight: bold; white-space: nowrap; }
+.win95-preview-monitor .ig-calendar-text span { font-size: 2.5cqh; white-space: nowrap; }
 .win95-preview-monitor .ig-calendar-day-text { font-size: 5cqh; font-weight: bold; margin-top: 10px; line-height: 1; }
 
 .win95-preview-monitor .ig-portrait-area { position: absolute; left: 13.02%; width: 13.02%; height: 23.15%; z-index: 10; overflow: visible; }
