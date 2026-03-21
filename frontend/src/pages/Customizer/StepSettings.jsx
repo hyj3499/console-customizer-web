@@ -30,10 +30,8 @@ const getImgUrl = (imgData) => {
 
 const PREVIEW_BACKGROUNDS = [
   { name: '기본 (투명/격자)', value: 'default' },
-  { name: '교실 (낮)', value: '/images/bg_school.png' },
-  { name: '교실 (밤)', value: 'https://via.placeholder.com/1920x1080/2c3e50/ffffff?text=Classroom+(Night)' },
-  { name: '바다', value: 'https://via.placeholder.com/1920x1080/87cefa/000000?text=Sea' },
-  { name: '숲', value: 'https://via.placeholder.com/1920x1080/228b22/ffffff?text=Forest' },
+  {name: '검은 배경', value: '/images/bg_black.png'},
+  { name: '흰색 배경', value: '/images/bg_white.png' }
 ];
 
 const SOUND_EFFECTS = [
