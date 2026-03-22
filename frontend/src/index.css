@@ -274,7 +274,7 @@ a:hover {
 }
 
 /* 비활성 창 타이틀바 */
-.win95-window:not(.win95-window-active) . {
+.win95-window:not(.win95-window-active) .win95-title-bar {
   background: var(--win95-title-inactive-gray);
   color: var(--win95-dark-shadow-black);
 }
