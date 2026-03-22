@@ -6,6 +6,8 @@
 import { useState, useEffect, useRef } from 'react';
 import useCustomizerStore from '../../store/useCustomizerStore';
 import './StepSettings.css';
+import { SHARED_FONT } from '../../assets/assets';
+
 
 // ==============================================================================
 // 1. 상수 및 데이터 유틸리티 모음
@@ -500,16 +502,11 @@ export default function StepSettings() {
   const safeSetNarrationStyle = setNarrationFontStyle || (() => {});
 
   const uniqueCustomFonts = Array.from(new Map(customFonts.map((f) => [f.name, f])).values());
-  const fontOptions = [
-    { name: 'Galmuri14', value: 'Galmuri14' },
-    { name: 'Galmuri7', value: 'Galmuri11' },
-    { name: 'Galmuri9', value: 'Galmuri9' },
-    { name: 'Galmuri7', value: 'Galmuri7' },
-    { name: 'DOSGothic', value: 'DOSGothic' },
-    { name: 'Pretendard', value: 'Pretendard' },
-    { name: '둥근모꼴', value: 'DungGeunMo' },
+
+      const fontOptions = [
+              ...SHARED_FONT, // assets.js에서 정의한 기본 폰트 목록 전체를 가져옴
     ...uniqueCustomFonts.map((f) => ({ name: `📁 ${f.name}`, value: f.name })),
-  ];
+          ];
 
   const addCharacter = () => {
     if (characters.length >= 10) return alert('최대 10명까지만 추가할 수 있습니다!');

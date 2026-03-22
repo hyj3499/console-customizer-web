@@ -1,5 +1,15 @@
 // src/assets/assets.js
 
+export const SHARED_FONT = [
+    { name: '갈무리14', value: 'Galmuri14' },
+    { name: '갈무리11', value: 'Galmuri11' },
+    { name: '갈무리9', value: 'Galmuri9' },
+    { name: '갈무리7', value: 'Galmuri7' },
+    { name: '도스고딕', value: 'DOSGothic' },
+    { name: 'Pretendard', value: 'Pretendard' },
+    { name: '둥근모꼴', value: 'DungGeunMo' }
+  ];
+
 export const SHARED_BACKGROUNDS = [
     { id: 'bg_black', name: '검은색 배경', url: '/images/bg_black.png' },
     { id: 'bg_white', name: '흰색 배경', url: '/images/bg_white.png' },

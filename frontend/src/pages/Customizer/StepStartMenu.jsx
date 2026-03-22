@@ -3,6 +3,8 @@ import { useState, useRef } from 'react';
 import useCustomizerStore from '../../store/useCustomizerStore';
 import './StepStartMenu.css';
 import { SHARED_BACKGROUNDS } from '../../assets/assets';
+import { SHARED_FONT } from '../../assets/assets';
+
 
 const PRESET_BG = SHARED_BACKGROUNDS;
 
@@ -21,12 +23,9 @@ export default function StepStartMenu() {
     };
 
     const fontOptions = [
-        { name: 'Galmuri14', value: 'Galmuri14' },
-        { name: 'Pretendard', value: 'Pretendard' },
-        { name: '둥근모꼴', value: 'DungGeunMo' },
-        { name: 'Griun_PolSensibility-Rg', value: 'Griun_PolSensibility-Rg' },
-        ...customFonts.map(f => ({ name: `📁 ${f.name}`, value: f.name }))
-    ];
+            ...SHARED_FONT, // assets.js에서 정의한 기본 폰트 목록 전체를 가져옴
+            ...customFonts.map(f => ({ name: `📁 ${f.name}`, value: f.name })) // 사용자가 업로드한 폰트들
+        ];
 
     const getFontFamily = (selectedFont) => selectedFont || 'Galmuri14';
     const getTextShadow = (useOutline, outlineColor) => {

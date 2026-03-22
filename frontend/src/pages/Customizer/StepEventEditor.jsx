@@ -1,6 +1,7 @@
 // src/pages/Customizer/StepEventEditor.jsx
 import { useState, useRef, useEffect } from 'react';
 import { SHARED_BACKGROUNDS } from '../../assets/assets';
+
 import useCustomizerStore from '../../store/useCustomizerStore';
 import './StepEventEditor.css';
 
@@ -567,13 +568,13 @@ const getActiveSpeakerStyle = (speakerId) => {
                                 <div key={index} onClick={() => { if(showPreview) setPreviewScenario({ ...scenario, index }); }} className={cardClasses}>
                                     <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span style={{ fontWeight: 'bold', color: '#ffd43b' }}>🎬 엔딩 연출</span>
+                                            <span style={{ fontWeight: 'bold', color: '#ffd43b' }}>🎬 엔딩</span>
                                             {scenario.branch === 'option1' && <span className="badge opt1">선택지 1번</span>}
                                             {scenario.branch === 'option2' && <span className="badge opt2">선택지 2번</span>}
                                         </div>
                                         <button onClick={(e) => { e.stopPropagation(); removeScenarioInput(index); }} className="btn-text-del">삭제</button>
                                     </div>
-                                    <input type="text" placeholder="EX 엔딩2: 슬픈 개구리" value={scenario.text} onChange={(e) => handleScenarioChange(index, 'text', e.target.value)} 
+                                    <input type="text" placeholder="예시) BAD END: 마지막 잎새" value={scenario.text} onChange={(e) => handleScenarioChange(index, 'text', e.target.value)} 
                                         style={{ width: '80%', padding: '12px', borderRadius: '6px', border: '1px solid #495057', backgroundColor: '#343a40', color: '#fff', textAlign: 'center', fontSize: '16px', fontWeight: 'bold' }} 
                                     />
                                     <p style={{ fontSize: '12px', color: '#868e96', marginTop: '10px' }}>이 대사가 출력된 후 게임이 종료됩니다.</p>
