@@ -30,7 +30,7 @@ export default function Header() {
         color: '#5d4037', // 다크 브라운 텍스트로 부드럽게
         fontSize: '13px',
         fontWeight: 'bold',
-        fontFamily: "'DOSGothic', 'Courier New', monospace",
+        fontFamily: "'Galmuri14', 'Courier New', monospace",
         display: 'inline-block',
         outline: 'none',
         cursor: 'pointer',
@@ -72,7 +72,7 @@ export default function Header() {
                 </div>
                 <span className="logo-text" style={{ 
                     color: '#5d4037', // 텍스트 색상 부드럽게 연동
-                    fontWeight: 'bold', fontSize: '13px', fontFamily: "'DOSGothic', monospace",
+                    fontWeight: 'bold', fontSize: '13px', fontFamily: "'Galmuri14', monospace",
                     whiteSpace: 'nowrap' // 글자 짤림 방지
                 }}>
                     최애로운 생활

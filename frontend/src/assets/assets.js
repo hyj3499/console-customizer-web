@@ -1,11 +1,8 @@
 // src/assets/assets.js
 
 export const SHARED_BACKGROUNDS = [
-    { id: 'bg_black', name: '검은 배경', url: '/images/bg_black.png' },
-    { id: 'bg_school', name: '🏫 교실', url: '/images/bg_school.png' },
-    { id: 'bg_city', name: '🌆 밤거리', url: '/images/bg_city.jpg' },
-    { id: 'bg_park', name: '🌳 공원', url: '/images/bg_park.jpg' },
-    { id: 'bg_room', name: '🛏️ 내 방', url: '/images/bg_room.jpg' },
+    { id: 'bg_black', name: '검은색 배경', url: '/images/bg_black.png' },
+    { id: 'bg_white', name: '흰색 배경', url: '/images/bg_white.png' },
     { id: 'bg_day_1', name: '하늘 (낮)', url: '/images/backgrounds/Day 1.png' },
     { id: 'bg_evening_1', name: '하늘 (저녁)', url: '/images/backgrounds/Evening 1.png' },
     { id: 'bg_night_1_1', name: '하늘 (밤)', url: '/images/backgrounds/Night 1-1.png' },

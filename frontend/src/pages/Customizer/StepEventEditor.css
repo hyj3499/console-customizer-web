@@ -48,14 +48,14 @@ div:has(> .editor-container) {
 .win95-preview-title {
     display: flex; justify-content: space-between; align-items: center;
     background: linear-gradient(to right, #000080, #1084d0);
-    padding: 4px 8px; margin-bottom: 10px; font-family: 'DOSGothic', sans-serif;
+    padding: 4px 8px; margin-bottom: 10px; font-family: 'Galmuri14', sans-serif;
 }
 .win95-preview-title h5 { margin: 0; color: white; font-size: 14px; font-weight: bold; }
 .win95-close-btn {
     background: #fa5252;
     color: #fff;
     font-size: 12px; cursor: pointer; font-weight: bold;
-    padding: 1px 6px; font-family: 'DOSGothic', sans-serif;
+    padding: 1px 6px; font-family: 'Galmuri14', sans-serif;
     border-top: 2px solid #fff; border-left: 2px solid #fff; border-right: 2px solid #000; border-bottom: 2px solid #000;
 }
 .win95-close-btn:hover { background: #e03131; }
@@ -155,7 +155,7 @@ div:has(> .editor-container) {
 .face-img.active-h { border-color: #d6336c; }
 
 .controller-group { display: flex; gap: 10px; margin-top: 20px; }
-.btn-large { flex: 1; padding: 12px; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-align: center; font-family: 'DOSGothic'; transition: transform 0.1s; }
+.btn-large { flex: 1; padding: 12px; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-align: center; font-family: 'Galmuri14'; transition: transform 0.1s; }
 .btn-large:active { transform: scale(0.98); }
 
 .bg-blue { background-color: #339af0; box-shadow: 0 4px 0 #1c7ed6; }
@@ -165,7 +165,7 @@ div:has(> .editor-container) {
 .bg-indigo { background-color: #5c7cfa; box-shadow: 0 4px 0 #3b5bdb; }
 .bg-gray { background-color: #adb5bd; box-shadow: 0 4px 0 #868e96; }
 
-.btn-ending { flex: 1; padding: 12px; background-color: #000 !important; color: #ffd43b !important; border: 2px solid #ffd43b !important; border-radius: 8px; font-weight: bold; cursor: pointer; font-family: 'DOSGothic'; text-shadow: 0 0 5px rgba(255, 212, 59, 0.5); box-shadow: 0 4px 0 #5c4d15; }
+.btn-ending { flex: 1; padding: 12px; background-color: #000 !important; color: #ffd43b !important; border: 2px solid #ffd43b !important; border-radius: 8px; font-weight: bold; cursor: pointer; font-family: 'Galmuri14'; text-shadow: 0 0 5px rgba(255, 212, 59, 0.5); box-shadow: 0 4px 0 #5c4d15; }
 
 /* =========================================================
    6. 모바일 세로 화면 정밀 보정

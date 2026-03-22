@@ -193,7 +193,8 @@ const CharacterForm = ({ charData, isProtagonist, onUpdate, onImageUpload, onRem
 let globalPreviewInterval = null;
 let globalActiveAudio = null;
 
-const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOptions, showPortrait }) => {
+// 🌟 1. ThemeSettingsBlock 수정 (showNamebox 속성 추가 및 네임칸 조건부 렌더링)
+const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOptions, showPortrait, showNamebox = true }) => {
   const stopSound = () => {
     if (globalPreviewInterval) { clearInterval(globalPreviewInterval); globalPreviewInterval = null; }
     if (globalActiveAudio) { globalActiveAudio.pause(); globalActiveAudio.currentTime = 0; globalActiveAudio = null; }
@@ -281,19 +282,21 @@ const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOption
         </div>
         <SmartColorPicker label="🎨 대화창 색상" rgba={fontStyle.dialogColor} borderColor={fontStyle.dialogBorderColor} isImageTheme={UI_ASSETS.dialog[fontStyle.dialogFrame || 'simple']().type === 'image'} onChange={(val) => onUpdate({ dialogColor: val })} onBorderChange={(val) => onUpdate({ dialogBorderColor: val })} useBorder={fontStyle.useDialogBorder !== false} onUseBorderChange={(val) => onUpdate({ useDialogBorder: val })} />
       </div>
-      {/* 네임칸 테마 영역 */}
-      <div className="theme-divider">
-        <div className="theme-select-group">
-          <MiniPreview type="namebox" frameKey={fontStyle.nameFrame} color={fontStyle.nameColor} borderColor={fontStyle.useNameBorder !== false ? fontStyle.nameBorderColor : 'transparent'} />
-          <div style={{ flex: 1 }}>
-            <label className="input-label">🏷️ 네임칸 테마</label>
-            <select className="theme-select" value={fontStyle.nameFrame || 'simple'} onChange={(e) => onUpdate({ nameFrame: e.target.value })}>
-              {Object.keys(UI_ASSETS.namebox).map((key) => <option key={key} value={key}>{UI_ASSETS.namebox[key]().name}</option>)}
-            </select>
+      {/* ⭐ 네임칸 테마 영역 (나레이션일 경우 showNamebox가 false가 되어 숨김 처리됨) */}
+      {showNamebox && (
+        <div className="theme-divider">
+          <div className="theme-select-group">
+            <MiniPreview type="namebox" frameKey={fontStyle.nameFrame} color={fontStyle.nameColor} borderColor={fontStyle.useNameBorder !== false ? fontStyle.nameBorderColor : 'transparent'} />
+            <div style={{ flex: 1 }}>
+              <label className="input-label">🏷️ 네임칸 테마</label>
+              <select className="theme-select" value={fontStyle.nameFrame || 'simple'} onChange={(e) => onUpdate({ nameFrame: e.target.value })}>
+                {Object.keys(UI_ASSETS.namebox).map((key) => <option key={key} value={key}>{UI_ASSETS.namebox[key]().name}</option>)}
+              </select>
+            </div>
           </div>
+          <SmartColorPicker label="🎨 네임칸 색상" rgba={fontStyle.nameColor} borderColor={fontStyle.nameBorderColor} isImageTheme={UI_ASSETS.namebox[fontStyle.nameFrame || 'simple']().type === 'image'} onChange={(val) => onUpdate({ nameColor: val })} onBorderChange={(val) => onUpdate({ nameBorderColor: val })} useBorder={fontStyle.useNameBorder !== false} onUseBorderChange={(val) => onUpdate({ useNameBorder: val })} />
         </div>
-        <SmartColorPicker label="🎨 네임칸 색상" rgba={fontStyle.nameColor} borderColor={fontStyle.nameBorderColor} isImageTheme={UI_ASSETS.namebox[fontStyle.nameFrame || 'simple']().type === 'image'} onChange={(val) => onUpdate({ nameColor: val })} onBorderChange={(val) => onUpdate({ nameBorderColor: val })} useBorder={fontStyle.useNameBorder !== false} onUseBorderChange={(val) => onUpdate({ useNameBorder: val })} />
-      </div>
+      )}
       {/* 주인공 전용 초상화 영역 */}
       {showPortrait && (
         <div className="theme-divider">
@@ -314,11 +317,14 @@ const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOption
 };
 
 /**
- * 📺 인게임 미리보기 화면
+ * 📺 2. 인게임 미리보기 화면 (isNarration 속성 추가)
  */
-const InGamePreview = ({ previewBg, standingImg, currentGlobalUi, textShadowStr, isP, pAsset, nAsset, dAsset, cAsset, activeStyle, renderFontFamily, activeChar, protagonist }) => {
-  const charName = activeChar?.name || (isP ? (protagonist?.name || '주인공') : '등장인물');
-  const fullText = `현재 선택된 '${charName}' 캐릭터의 대사가 이곳에 출력됩니다. 선택한 폰트, 대사창의 색상과 투명도, 그리고 텍스트 외곽선 설정이 실제 게임에서 어떻게 보일지 이 미리보기 영역을 통해 실시간으로 체크해 보세요.`;
+const InGamePreview = ({ previewBg, standingImg, currentGlobalUi, textShadowStr, isP, isNarration, pAsset, nAsset, dAsset, cAsset, activeStyle, renderFontFamily, activeChar, protagonist }) => {
+  // ⭐ 나레이션이면 이름과 안내 문구를 바꿉니다.
+  const charName = activeChar?.name || (isP ? (protagonist?.name || '주인공') : (isNarration ? '' : '등장인물'));
+  const fullText = isNarration 
+    ? `나레이션의 대사가 이곳에 출력됩니다. 배경 설명이나 상황을 묘사할 때 네임칸 없이 화면에 깔끔하게 대사만 출력되는 것을 확인할 수 있습니다.` 
+    : `현재 선택된 '${charName}' 캐릭터의 대사가 이곳에 출력됩니다. 선택한 폰트, 대사창의 색상과 투명도, 그리고 텍스트 외곽선 설정이 실제 게임에서 어떻게 보일지 실시간으로 체크해 보세요.`;
   
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(true);
@@ -352,7 +358,8 @@ const InGamePreview = ({ previewBg, standingImg, currentGlobalUi, textShadowStr,
   }, [fullText]);
 
   const finalDialogBorder = activeStyle.useDialogBorder === false ? 'none' : dAsset.border;
-  const finalNameBorder = activeStyle.useNameBorder === false ? 'none' : nAsset.border;
+  // 나레이션일 때는 nAsset이 없을 수 있으므로 예외 처리 추가
+  const finalNameBorder = activeStyle.useNameBorder === false || !nAsset ? 'none' : nAsset.border;
   const finalPortraitBorder = activeStyle.usePortraitBorder === false ? 'none' : (pAsset ? pAsset.border : 'none');
   
   const outlineColor = parseRgba(activeStyle.outline).hex;
@@ -369,16 +376,15 @@ const InGamePreview = ({ previewBg, standingImg, currentGlobalUi, textShadowStr,
   };
 
   const calendarBoxStyle = { backgroundColor: cAsset.type === 'image' ? 'transparent' : currentGlobalUi.calendarColor, backgroundImage: cAsset.type === 'image' ? `url(${cAsset.src})` : 'none', border: cAsset.type === 'css' ? cAsset.border : 'none', borderRadius: cAsset.type === 'css' ? cAsset.borderRadius : '0' };
-  const nameBoxStyle = { backgroundColor: nAsset.type === 'image' ? 'transparent' : activeStyle.nameColor, backgroundImage: nAsset.type === 'image' ? `url(${nAsset.src})` : 'none', border: nAsset.type === 'css' ? finalNameBorder : 'none', borderRadius: nAsset.type === 'css' ? nAsset.borderRadius : '0' };
+  const nameBoxStyle = nAsset ? { backgroundColor: nAsset.type === 'image' ? 'transparent' : activeStyle.nameColor, backgroundImage: nAsset.type === 'image' ? `url(${nAsset.src})` : 'none', border: nAsset.type === 'css' ? finalNameBorder : 'none', borderRadius: nAsset.type === 'css' ? nAsset.borderRadius : '0' } : {};
   const dialogBoxStyle = { backgroundColor: dAsset.type === 'image' ? 'transparent' : activeStyle.dialogColor, backgroundImage: dAsset.type === 'image' ? `url(${dAsset.src})` : 'none', border: dAsset.type === 'css' ? finalDialogBorder : 'none', borderRadius: dAsset.type === 'css' ? dAsset.borderRadius : '0' };
 
-  // 🌟 현재 레이아웃 모드에 따른 클래스 부여
   const layoutClass = currentGlobalUi.layoutMode === 'bottom' ? 'layout-bottom' : 'layout-classic';
 
   return (
     <div className={`preview-container ${layoutClass}`} style={containerStyle}>
-      {/* 캐릭터 스탠딩 이미지 */}
-      {!isP && standingImg && (
+      {/* ⭐ 캐릭터 스탠딩 이미지 (나레이션 모드일 때는 숨김) */}
+      {!isP && !isNarration && standingImg && (
         <img src={standingImg} alt="standing" className="ig-standing" />
       )}
 
@@ -402,19 +408,21 @@ const InGamePreview = ({ previewBg, standingImg, currentGlobalUi, textShadowStr,
             <img src={pAsset.src} alt="Frame" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill', zIndex: 1 }} />
           )}
           <div style={{ position: 'absolute', inset: 0, zIndex: 2, backgroundColor: pAsset.type === 'image' ? 'transparent' : activeStyle.portraitColor, WebkitMaskImage: pAsset.type === 'image' ? `url(${pAsset.mask})` : 'none', maskImage: pAsset.type === 'image' ? `url(${pAsset.mask})` : 'none', WebkitMaskSize: '100% 100%', maskSize: '100% 100%', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', borderRadius: pAsset.type === 'css' ? pAsset.borderRadius : '0%', border: pAsset.type === 'css' ? finalPortraitBorder : 'none', overflow: 'hidden' }}>
-            {protagonist.images.length > 0 ? (
-              <img src={getImgUrl(protagonist.images[0])} alt="주인공" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>👤</div>
-            )}
-          </div>
+{standingImg || protagonist.images.length > 0 ? (
+    <img src={standingImg || getImgUrl(protagonist.images[0])} alt="주인공" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+  ) : (
+    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>👤</div>
+  )}
+</div>
         </div>
       )}
 
-      {/* 네임칸 */}
-      <div className="ig-namebox" style={nameBoxStyle}>
-        <span style={{ fontFamily: renderFontFamily, color: activeStyle.color, textShadow: charTextShadowStr }}>{charName}</span>
-      </div>
+      {/* ⭐ 네임칸 (나레이션 모드가 아닐 때만 표시) */}
+      {!isNarration && (
+        <div className="ig-namebox" style={nameBoxStyle}>
+          <span style={{ fontFamily: renderFontFamily, color: activeStyle.color, textShadow: charTextShadowStr }}>{charName}</span>
+        </div>
+      )}
 
       {/* 대화창 */}
       <div className="ig-dialogbox" style={dialogBoxStyle}>
@@ -422,13 +430,12 @@ const InGamePreview = ({ previewBg, standingImg, currentGlobalUi, textShadowStr,
       </div>
 
       {/* 하단 시스템 메뉴 */}
-{/* 🛠️ 우측 상단 시스템 퀵메뉴 (위치 고정) */}
-<div 
+      <div 
         className="ig-system-menu" 
         style={{ 
           position: 'absolute', 
-          bottom: '95cqh',           /* 원래 사용하시던 하단 기준 95% 위치 */
-          left: '70%',               /* 원래 사용하시던 왼쪽 기준 70% 위치 */
+          bottom: '95cqh', 
+          left: '70%', 
           transform: 'translateX(-50%)', 
           display: 'flex', 
           gap: '15px', 
@@ -468,7 +475,9 @@ export default function StepSettings() {
     pFontStyle, setPFontStyle, 
     characters, setCharacters, 
     customFonts, addCustomFont, 
-    globalUi, setGlobalUi 
+    globalUi, setGlobalUi,
+    // 🌟 나레이션 스토어 상태 가져오기
+    narrationFontStyle, setNarrationFontStyle 
   } = useCustomizerStore();
 
   const [previewTarget, setPreviewTarget] = useState('protagonist');
@@ -483,9 +492,12 @@ export default function StepSettings() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 🌟 레이아웃 모드 초기값 (지정 안되어 있으면 기본적으로 bottom으로 설정)
+  // 🌟 레이아웃 및 나레이션 초기값 설정
   const currentGlobalUi = globalUi || { calendarFrame: 'none', layoutMode: 'bottom' };
   const safeSetGlobalUi = setGlobalUi || (() => {});
+  
+  const currentNarrationStyle = narrationFontStyle || { font: 'Pretendard', color: '#ffffff', useOutline: false, outline: '#000000', dialogFrame: 'simple', dialogColor: 'rgba(0,0,0,0.8)', typingSound: 'type1' };
+  const safeSetNarrationStyle = setNarrationFontStyle || (() => {});
 
   const uniqueCustomFonts = Array.from(new Map(customFonts.map((f) => [f.name, f])).values());
   const fontOptions = [
@@ -494,7 +506,8 @@ export default function StepSettings() {
     { name: 'Galmuri9', value: 'Galmuri9' },
     { name: 'Galmuri7', value: 'Galmuri7' },
     { name: 'DOSGothic', value: 'DOSGothic' },
-
+    { name: 'Pretendard', value: 'Pretendard' },
+    { name: '둥근모꼴', value: 'DungGeunMo' },
     ...uniqueCustomFonts.map((f) => ({ name: `📁 ${f.name}`, value: f.name })),
   ];
 
@@ -546,17 +559,28 @@ export default function StepSettings() {
     reader.readAsDataURL(file);
   };
 
+  // 🌟 미리보기 대상 설정 로직 변경
   const isP = previewTarget === 'protagonist';
-  const activeChar = isP ? protagonist : characters.find((c) => c.id === previewTarget);
-  const activeStyle = isP ? pFontStyle : (activeChar?.fontStyle || pFontStyle);
+  const isNarration = previewTarget === 'narration';
+  const activeChar = isP || isNarration ? null : characters.find((c) => c.id === previewTarget);
+  
+  let activeStyle = pFontStyle;
+  if (isNarration) activeStyle = currentNarrationStyle;
+  else if (!isP) activeStyle = activeChar?.fontStyle || pFontStyle;
+
   const activeImgIndex = selectedImageIndices[previewTarget] || 0;
   
-  let standingImg = null;
-  if (activeChar?.images?.length > activeImgIndex) standingImg = getImgUrl(activeChar.images[activeImgIndex]);
-  else if (activeChar?.images?.length > 0) standingImg = getImgUrl(activeChar.images[0]); 
+let standingImg = null;
+const targetImages = isP ? protagonist.images : activeChar?.images;
+
+if (targetImages?.length > activeImgIndex) {
+  standingImg = getImgUrl(targetImages[activeImgIndex]);
+} else if (targetImages?.length > 0) {
+  standingImg = getImgUrl(targetImages[0]);
+}
 
   const dAsset = (UI_ASSETS.dialog[activeStyle.dialogFrame] || UI_ASSETS.dialog.simple)(activeStyle.dialogColor, activeStyle.dialogBorderColor);
-  const nAsset = (UI_ASSETS.namebox[activeStyle.nameFrame] || UI_ASSETS.namebox.simple)(activeStyle.nameColor, activeStyle.nameBorderColor);
+  const nAsset = !isNarration ? (UI_ASSETS.namebox[activeStyle.nameFrame] || UI_ASSETS.namebox.simple)(activeStyle.nameColor, activeStyle.nameBorderColor) : null;
   const pAsset = isP ? (UI_ASSETS.portrait[activeStyle.portraitStyle] || UI_ASSETS.portrait.square)(activeStyle.portraitColor, activeStyle.portraitBorderColor) : null;
   const cAsset = (UI_ASSETS.calendar[currentGlobalUi.calendarFrame] || UI_ASSETS.calendar.none)(currentGlobalUi.calendarColor);
   const renderFontFamily = activeStyle.font || currentGlobalUi.systemFont || 'sans-serif';
@@ -578,14 +602,16 @@ export default function StepSettings() {
 
         <div className="preview-tabs">
           <button className={`tab-btn ${isP ? 'active-p' : 'inactive'}`} onClick={() => setPreviewTarget('protagonist')}>😎 주인공 시점</button>
+          {/* ⭐ 나레이션 탭 추가 */}
+          <button className={`tab-btn ${isNarration ? 'active-c' : 'inactive'}`} onClick={() => setPreviewTarget('narration')}>📢 나레이션 시점</button>
           {characters.map((char) => (
-            <button key={char.id} className={`tab-btn ${!isP && previewTarget === char.id ? 'active-c' : 'inactive'}`} onClick={() => setPreviewTarget(char.id)}>🎭 {char.name || '캐릭터'} 시점</button>
+            <button key={char.id} className={`tab-btn ${!isP && !isNarration && previewTarget === char.id ? 'active-c' : 'inactive'}`} onClick={() => setPreviewTarget(char.id)}>🎭 {char.name || '캐릭터'} 시점</button>
           ))}
         </div>
 
         <InGamePreview
           previewBg={previewBg} standingImg={standingImg} currentGlobalUi={currentGlobalUi}
-          textShadowStr={textShadowStr} isP={isP} pAsset={pAsset} nAsset={nAsset} dAsset={dAsset} cAsset={cAsset}
+          textShadowStr={textShadowStr} isP={isP} isNarration={isNarration} pAsset={pAsset} nAsset={nAsset} dAsset={dAsset} cAsset={cAsset}
           activeStyle={activeStyle} renderFontFamily={renderFontFamily} activeChar={activeChar} protagonist={protagonist}
         />
       </div>
@@ -604,21 +630,14 @@ export default function StepSettings() {
       <h4 className="sub-header">🎮 3. 게임 전역 UI 셋팅</h4>
       <div className="global-ui-panel">
         
-        {/* 🌟 레이아웃 선택 토글 추가 */}
         <div className="layout-toggle-container">
           <label className="input-label">📐 화면 레이아웃 배치</label>
           <div className="layout-card-group">
-            <div 
-              className={`layout-card ${currentGlobalUi.layoutMode !== 'bottom' ? 'active' : ''}`} 
-              onClick={() => safeSetGlobalUi({ layoutMode: 'classic' })}
-            >
+            <div className={`layout-card ${currentGlobalUi.layoutMode !== 'bottom' ? 'active' : ''}`} onClick={() => safeSetGlobalUi({ layoutMode: 'classic' })}>
               <h5>기본 띄움형 (클래식)</h5>
               <p>반신 스탠딩 일러스트에 적합합니다!<br/>캐릭터 이미지가 화면의 맨 아래부터 올라갑니다.</p>
             </div>
-            <div 
-              className={`layout-card ${currentGlobalUi.layoutMode === 'bottom' ? 'active' : ''}`} 
-              onClick={() => safeSetGlobalUi({ layoutMode: 'bottom' })}
-            >
+            <div className={`layout-card ${currentGlobalUi.layoutMode === 'bottom' ? 'active' : ''}`} onClick={() => safeSetGlobalUi({ layoutMode: 'bottom' })}>
               <h5>바닥 밀착형</h5>
               <p>두상/상반신 일러스트에 적합합니다!<br/>캐릭터 이미지가 대화박스의 맨 위부터 올라갑니다.</p>
             </div>
@@ -686,9 +705,13 @@ export default function StepSettings() {
       </div>
 
       <div className="theme-list-wrap">
-        <ThemeSettingsBlock title={`😎 ${protagonist.name || '주인공'} 전용 스타일`} themeClass="protagonist" fontStyle={pFontStyle} fontOptions={fontOptions} onUpdate={(updates) => setPFontStyle({ ...pFontStyle, ...updates })} showPortrait={true} />
+        <ThemeSettingsBlock title={`😎 ${protagonist.name || '주인공'} 전용 스타일`} themeClass="protagonist" fontStyle={pFontStyle} fontOptions={fontOptions} onUpdate={(updates) => setPFontStyle({ ...pFontStyle, ...updates })} showPortrait={true} showNamebox={true} />
+        
+        {/* ⭐ 나레이션 전용 설정 블록 (네임박스와 초상화 숨김 속성 전달) */}
+        <ThemeSettingsBlock title={`📢 나레이션 전용 스타일`} themeClass="narration" fontStyle={currentNarrationStyle} fontOptions={fontOptions} onUpdate={(updates) => safeSetNarrationStyle({ ...currentNarrationStyle, ...updates })} showPortrait={false} showNamebox={false} />
+
         {characters.map((char, index) => (
-          <ThemeSettingsBlock key={char.id} title={`🎭 ${char.name || `등장인물 ${index + 1}`} 전용 스타일`} themeClass="character" fontStyle={char.fontStyle} fontOptions={fontOptions} onUpdate={(updates) => setCharacters(characters.map((c) => c.id === char.id ? { ...c, fontStyle: { ...c.fontStyle, ...updates } } : c))} showPortrait={false} />
+          <ThemeSettingsBlock key={char.id} title={`🎭 ${char.name || `등장인물 ${index + 1}`} 전용 스타일`} themeClass="character" fontStyle={char.fontStyle} fontOptions={fontOptions} onUpdate={(updates) => setCharacters(characters.map((c) => c.id === char.id ? { ...c, fontStyle: { ...c.fontStyle, ...updates } } : c))} showPortrait={false} showNamebox={true} />
         ))}
       </div>
 

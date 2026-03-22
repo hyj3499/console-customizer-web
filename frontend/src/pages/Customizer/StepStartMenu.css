@@ -14,7 +14,7 @@
 .win95-title-bar {
     display: flex; justify-content: space-between; align-items: center;
     background: linear-gradient(to right, #000080, #1084d0);
-    padding: 4px 8px; margin-bottom: 10px; font-family: 'DOSGothic', sans-serif;
+    padding: 4px 8px; margin-bottom: 10px; font-family: 'Galmuri14', sans-serif;
 }
 .win95-title-bar h5 { margin: 0; color: white; font-size: 14px; font-weight: bold; }
 .monitor-screen {

@@ -42,7 +42,7 @@ function DesktopIcon({ iconPath, label, onDoubleClick }) {
                 fontSize: '11px', 
                 textAlign: 'center', 
                 border: isSelected ? '1px dotted #ffffff' : '1px dotted transparent',
-                fontFamily: "'DOSGothic', monospace",
+                fontFamily: "'Galmuri14', monospace",
                 lineHeight: '1.2',
                 wordBreak: 'break-all',
                 maxWidth: '70px',
@@ -98,7 +98,7 @@ export default function Home() {
             backgroundColor: 'var(--win95-desktop-teal)', 
             position: 'relative', 
             overflow: 'hidden', 
-            fontFamily: "'DOSGothic', monospace",
+            fontFamily: "'Galmuri14', monospace",
             userSelect: 'none'
         }}>
             
@@ -223,7 +223,7 @@ export default function Home() {
                         <textarea 
                             readOnly 
                             defaultValue={`중앙의 [최애로운_생활.exe]를 실행하여\n나만의 비주얼 노벨을 만들어보세요!\n\n♡ ٩(❛ᴗ❛)۶ ♡`}
-                            style={{ width: '100%', height: '100%', resize: 'none', border: 'none', outline: 'none', padding: '10px', fontFamily: "'DOSGothic', monospace", fontSize: '13px', color: '#5d4037', backgroundColor: 'var(--win95-content-white)', lineHeight: '1.5' }}
+                            style={{ width: '100%', height: '100%', resize: 'none', border: 'none', outline: 'none', padding: '10px', fontFamily: "'Galmuri14', monospace", fontSize: '13px', color: '#5d4037', backgroundColor: 'var(--win95-content-white)', lineHeight: '1.5' }}
                         />
                     </div>
                 </div>

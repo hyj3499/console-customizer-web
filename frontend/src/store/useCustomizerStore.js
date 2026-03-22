@@ -31,6 +31,17 @@ const getInitialState = () => ({
         useNameBorder: false 
     },
 
+    // 🌟 추가됨: 📢 나레이션 전용 설정 (이름표, 초상화 설정 제외)
+    narrationFontStyle: {
+        font: 'Pretendard',
+        color: '#ffffff',
+        useOutline: false,
+        outline: '#000000',
+        dialogFrame: 'simple',
+        dialogColor: 'rgba(0,0,0,0.8)',
+        typingSound: 'type1'
+    },
+
     // 🎮 전역 UI 설정
     globalUi: { 
         calendarFrame: 'none', 
@@ -128,6 +139,7 @@ const getInitialState = () => ({
         }
     }
 });
+
 // ==============================================================================
 // 🎮 2. Zustand 스토어 생성
 // ==============================================================================
@@ -153,6 +165,10 @@ const useCustomizerStore = create((set) => ({
     setColor: (color) => set({ color }),
     setProtagonist: (protagonist) => set({ protagonist }),
     setPFontStyle: (style) => set((state) => ({ pFontStyle: { ...state.pFontStyle, ...style } })),
+    
+    // 🌟 추가됨: 나레이션 스타일 변경 함수
+    setNarrationFontStyle: (style) => set((state) => ({ narrationFontStyle: { ...state.narrationFontStyle, ...style } })),
+    
     setGlobalUi: (ui) => set((state) => ({ globalUi: { ...state.globalUi, ...ui } })),
     addCustomBackground: (bg) => set((state) => ({ customBackgrounds: [...state.customBackgrounds, bg] })),
     setCharacters: (chars) => set({ characters: chars }),

@@ -174,7 +174,7 @@
   --win95-accent-yellow-dark: #ccbc8e; /* 부드러운 다크 옐로우 (그림자) *
 
   /* 폰트 설정 */
-  --main-font: 'DOSGothic', 'Galmuri14', monospace;
+  --main-font: 'Galmuri9', 'Galmuri14', monospace;
   line-height: 1.5;
   font-weight: 400;
   

@@ -54,10 +54,14 @@ export default function StepEventEditor() {
         events, setEvents, activeEventId, setActiveEventId,
         showPreview, setShowPreview, previewScenario, setPreviewScenario,
         protagonist, characters, pFontStyle, globalUi,
-        customBackgrounds, addCustomBackground 
+        customBackgrounds, addCustomBackground,
+        narrationFontStyle // 🌟 나레이션 설정값 가져오기
     } = useCustomizerStore();
 
     const currentGlobalUi = globalUi || { calendarFrame: 'none', calendarColor: 'rgba(255,182,193,0.8)', calendarTextColor: '#5C4033', calendarTextUseOutline: true, calendarTextOutlineColor: '#ffffff', systemFont: 'Pretendard', layoutMode: 'bottom' };
+    
+    // 🌟 나레이션 스타일 안전 장치 (설정값이 없을 경우 기본값)
+    const safeNarrationStyle = narrationFontStyle || { font: 'Pretendard', color: '#ffffff', useOutline: false, outline: '#000000', dialogFrame: 'simple', dialogColor: 'rgba(0,0,0,0.8)', typingSound: 'type1' };
 
     const [currentBranch, setCurrentBranch] = useState('main'); 
     const [isCgMode, setIsCgMode] = useState(false);
@@ -318,8 +322,9 @@ export default function StepEventEditor() {
         updateActiveScenarios(newScenarios);
     };
 
-    const getActiveSpeakerStyle = (speakerId) => {
-        if (!speakerId || speakerId === '나레이션' || speakerId === 'PROTAGONIST') return pFontStyle;
+const getActiveSpeakerStyle = (speakerId) => {
+        if (speakerId === '나레이션') return safeNarrationStyle; // 🌟 나레이션 전용 스타일 적용
+        if (!speakerId || speakerId === 'PROTAGONIST') return pFontStyle;
         const char = characters.find(c => c.name === speakerId);
         return char ? char.fontStyle : pFontStyle;
     };
@@ -381,7 +386,7 @@ export default function StepEventEditor() {
             {showPreview && previewScenario && (previewScenario.type === 'dialog' || previewScenario.type === 'ending') && (
                 <div className="sticky-win95-preview">
                     <div className="win95-preview-title">
-                        <h5>Scene Preview: 컷 {previewScenario.index + 1}</h5>
+                        <h5>📺 인게임 미리보기: 컷 {previewScenario.index + 1}</h5>
                         <button className="win95-close-btn" onClick={() => { setShowPreview(false); setPreviewScenario(null); }}>X</button>
                     </div>
                     
