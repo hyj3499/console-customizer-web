@@ -490,9 +490,11 @@ export default function StepSettings() {
   const uniqueCustomFonts = Array.from(new Map(customFonts.map((f) => [f.name, f])).values());
   const fontOptions = [
     { name: 'Galmuri14', value: 'Galmuri14' },
-    { name: 'Pretendard', value: 'Pretendard' },
-    { name: '둥근모꼴', value: 'DungGeunMo' },
-    { name: 'Griun_PolSensibility-Rg', value: 'Griun_PolSensibility-Rg' },
+    { name: 'Galmuri7', value: 'Galmuri11' },
+    { name: 'Galmuri9', value: 'Galmuri9' },
+    { name: 'Galmuri7', value: 'Galmuri7' },
+    { name: 'DOSGothic', value: 'DOSGothic' },
+
     ...uniqueCustomFonts.map((f) => ({ name: `📁 ${f.name}`, value: f.name })),
   ];
 

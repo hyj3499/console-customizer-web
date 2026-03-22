@@ -1,29 +1,156 @@
 /* src/index.css comprehensive retro pastel rewrite */
 
-/* 1. 폰트 등록 & 렌더링 최적화 제거 (레트로 픽셀 느낌 유지) */
+/* ==========================================
+   1. 갈무리(Galmuri) 폰트 일괄 적용 (공식 CDN)
+   - 이 한 줄만 넣으면 Galmuri7, 9, 11, 14가 모두 로드됩니다!
+   ========================================== */
+@import url('https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css');
 @font-face {
   font-family: 'DOSGothic';
-  src: url('./assets/fonts/DOSGothic.ttf') format('truetype');
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_eight@1.0/DOSGothic.woff') format('woff');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
+} 
+
+
+/* ==========================================
+   2. 나머지 눈누 폰트들 (눈누 CDN 적용)
+   ========================================== */
+/*{
+@font-face {
+  font-family: 'Suhgung12';
+  /* 🚨 주의: 눈누 홈페이지에서 서궁체 '웹폰트로 사용' 코드를 복사해서 아래 url() 안에 넣어주세요! 
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2312-1@1.1/Suhgung12.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
 }
 
 @font-face {
-  font-family: 'Griun_PolSensibility-Rg'; 
-  src: url('/fonts/Griun_PolSensibility-Rg.ttf') format('truetype');
+  font-family: 'MonaS12';
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2307-1@1.1/MonaS12.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 
+@font-face {
+  font-family: 'MonaS8x12';
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2307-1@1.1/MonaS8x12.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'MonaS10x12';
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2307-1@1.1/MonaS10x12.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Mulmaru';
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2311-1@1.0/Mulmaru.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Griun_PolSensibility-Rg';
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2307-2@1.0/Griun_PolSensibility-Rg.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+
+/* 1. 폰트 등록 & 렌더링 최적화 제거 (레트로 픽셀 느낌 유지) */
+/* 1. OTF 폰트 (OpenType) */
+
+/*@font-face {
+  font-family: 'Suhgung12';
+  src: url('/fonts/Suhgung12.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'MonaS12';
+  src: url('/fonts/MonaS12.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'MonaS8x12';
+  src: url('/fonts/MonaS8x12.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'MonaS10x12';
+  src: url('/fonts/MonaS10x12.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Mulmaru';
+  src: url('/fonts/Mulmaru.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+/* 2. TTF 폰트 (TrueType) 
 @font-face {
   font-family: 'Galmuri14';
   src: url('/fonts/Galmuri14.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
+
+@font-face {
+  font-family: 'Galmuri9';
+  src: url('/fonts/Galmuri9.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Galmuri7';
+  src: url('/fonts/Galmuri7.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Griun_PolSensibility-Rg';
+  src: url('/fonts/Griun_PolSensibility-Rg.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'DOSGothic';
+  src: url('/fonts/DOSGothic.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}*/
 
 /* 2. 전역 변수 설정 (Pastel Cute Windows 95 Palette) */
 :root {
