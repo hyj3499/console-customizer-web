@@ -276,10 +276,10 @@ export default function Customizer() {
                 flexDirection: 'column'
             }}>
                 <div className="win95-title-bar" style={{ margin: '2px' }}>
-                    <span style={{ fontSize: '12px' }}>Customizer_System_v1.0.exe</span>
+                    <span style={{ fontSize: '12px' }}>최애로운_생활_Ver1.0.exe</span>
                     <div style={{ display: 'flex', gap: '2px' }}>
-                        <button style={{ width: '14px', height: '14px', fontSize: '9px', padding: 0 }}>_</button>
-                        <button style={{ width: '14px', height: '14px', fontSize: '9px', padding: 0 }}>X</button>
+                        {/*<button style={{ width: '14px', height: '14px', fontSize: '9px', padding: 0 }}>_</button>
+                        <button style={{ width: '14px', height: '14px', fontSize: '9px', padding: 0 }}>X</button>*/}
                     </div>
                 </div>
 
@@ -291,13 +291,13 @@ export default function Customizer() {
                     {currentStep === 5 && <StepCheck projectId={newId || loadId} />}                
                 </div>
 
-                <div style={{ 
-                    padding: '3vw', 
+<div style={{ 
+                    padding: '20px', // 🌟 화면 크기에 따라 너무 변하지 않도록 고정 픽셀(20px) 추천
                     backgroundColor: '#f1f3f5', 
                     borderTop: '1px solid #dee2e6',
                     display: 'flex', 
-                    justifyContent: 'center', 
-                    gap: '10px',
+                    justifyContent: 'center', // 🌟 버튼들을 가운데로 예쁘게 모아줍니다
+                    gap: '15px', // 버튼 사이 간격
                     flexWrap: 'wrap'
                 }} data-html2canvas-ignore="true">
                     {currentStep > 1 && (
@@ -309,17 +309,17 @@ export default function Customizer() {
                                 setIsEditing(false); // 1단계로 가므로 편집 깃발 내림
                             }
                             setCurrentStep(prev => prev - 1);
-                        }} className="win95-button" style={{ flex: '1', minWidth: '100px' }}>
+                        }} className="win95-button" style={{ width: '130px', padding: '8px' }}>
                             ⬅️ 이전
                         </button>
                     )}
                     {currentStep > 1 && (
-                        <button onClick={handleSave} className="win95-button" style={{ backgroundColor: '#20c997', color: 'white', flex: '1', minWidth: '100px' }}>
+                        <button onClick={handleSave} className="win95-button" style={{ backgroundColor: '#20c997', color: 'white', width: '150px', padding: '8px' }}>
                             💾 현재 상태 저장
                         </button>
                     )}
                     {currentStep < 5 && (
-                        <button onClick={handleNextStep} className="win95-button" style={{ backgroundColor: '#646cff', color: 'white', flex: '1', minWidth: '100px' }}>
+                        <button onClick={handleNextStep} className="win95-button" style={{ backgroundColor: '#646cff', color: 'white', width: '130px', padding: '8px' }}>
                             다음 단계로 ➡️
                         </button>
                     )}

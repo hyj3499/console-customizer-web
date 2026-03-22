@@ -92,7 +92,7 @@ export default function StepStartMenu() {
             {/* 📺 미리보기 모니터 */}
             <div className="win95-monitor-wrap">
                 <div className="win95-title-bar">
-                    <h5>📺 Start Menu Preview</h5>
+                    <h5>📺 인게임 미리보기</h5>
                 </div>
                 <div className="monitor-screen">
                     <img src={startMenu.bgImage?.preview || PRESET_BG[0].url} alt="bg" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

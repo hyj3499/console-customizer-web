@@ -90,6 +90,8 @@ export default function StepEventEditor() {
     const isOption1Ended = scenarios.some(s => s.branch === 'option1' && s.type === 'ending');
     const isOption2Ended = scenarios.some(s => s.branch === 'option2' && s.type === 'ending');
     const hasEndingInCurrentBranch = scenarios.some(s => s.branch === currentBranch && s.type === 'ending');
+
+    const hasOption1Nodes = scenarios.some(s => s.branch === 'option1');
     
     const isFullyEnded = hasChoiceNode 
         ? (isOption1Ended && isOption2Ended) 
@@ -277,27 +279,60 @@ export default function StepEventEditor() {
         newScenarios.splice(index + 1, 0, { type: 'dialog', branch: newBranch, isCg: currentItem.isCg || currentItem.type === 'cg_image', speaker: defaultSpeaker, protagonistImage: null, heroineImage: null, text: '', bgImage: currentItem.bgImage, bgType: currentItem.bgType || 'bg_school', dateOverride: null });
         updateActiveScenarios(newScenarios);
     };
-
-    const removeScenarioInput = (indexToRemove) => {
+const removeScenarioInput = (indexToRemove) => {
         const item = scenarios[indexToRemove];
         if (indexToRemove === 0 && item.branch === 'main') return alert('🚨 컷 1은 삭제할 수 없습니다!');
 
+        // 1. CG 배너 자체의 삭제 버튼을 눌렀을 때
         if (item.type === 'cg_image') {
             if (!window.confirm("CG 일러스트를 삭제하면 관련된 대사들이 모두 삭제됩니다.")) return;
-            updateActiveScenarios(scenarios.filter(s => !s.isCg && s.type !== 'cg_image'));
+            const newScenarios = scenarios.filter(s => !s.isCg && s.type !== 'cg_image');
+            updateActiveScenarios(newScenarios);
             setIsCgMode(false);
+
+            if (item.branch === 'option1' && newScenarios.filter(s => s.branch === 'option1').length === 0) {
+                setCurrentBranch('option1');
+            }
             return;
         }
+
+        // 2. 선택지 분기를 삭제했을 때
         if (item.type === 'choice') {
             if (!window.confirm("선택지 분기를 삭제하면 하위 대사들(1번/2번 루트)도 모두 삭제됩니다.")) return;
             updateActiveScenarios(scenarios.filter((s, idx) => idx !== indexToRemove && s.branch !== 'option1' && s.branch !== 'option2'));
             setCurrentBranch('main');
+            setIsCgMode(false); 
             return;
         }
 
-        const newScenarios = scenarios.filter((_, index) => index !== indexToRemove);
-        if (item.branch === 'option1' && newScenarios.filter(s => s.branch === 'option1').length === 0) return alert('선택지 1번 루트의 대사는 최소 1개 이상 존재해야 합니다.');
-        if (item.branch === 'option2' && newScenarios.filter(s => s.branch === 'option2').length === 0) setCurrentBranch('option1');
+        // 3. 일반/CG 대사 컷 1개 삭제 처리
+        let newScenarios = scenarios.filter((_, index) => index !== indexToRemove);
+
+        // 🌟 수정됨: 고아(Orphaned) CG 배너 자동 정리
+        // 삭제 후, cg_image 컷 바로 다음 컷이 isCg 대사가 아니거나 아예 없다면 그 cg_image 배너도 삭제합니다.
+        newScenarios = newScenarios.filter((sc, idx, arr) => {
+            if (sc.type === 'cg_image') {
+                const nextSc = arr[idx + 1];
+                if (!nextSc || !nextSc.isCg) {
+                    return false; // 연결된 CG 대사가 없으므로 이 배너도 같이 지움
+                }
+            }
+            return true;
+        });
+
+        // 🌟 수정됨: CG 컷이 모두 지워졌다면 CG 모드(isCgMode)를 자동으로 종료함
+        const currentBranchScenarios = newScenarios.filter(s => s.branch === currentBranch);
+        const lastCurrentBranchItem = currentBranchScenarios[currentBranchScenarios.length - 1];
+        if (!lastCurrentBranchItem || !lastCurrentBranchItem.isCg) {
+            setIsCgMode(false);
+        }
+
+        // 선택지 루트가 텅 비었을 때 작성 모드 복구 로직
+        if (item.branch === 'option1' && newScenarios.filter(s => s.branch === 'option1').length === 0) {
+            setCurrentBranch('option1');
+        } else if (item.branch === 'option2' && newScenarios.filter(s => s.branch === 'option2').length === 0) {
+            setCurrentBranch('option1');
+        }
         
         updateActiveScenarios(newScenarios);
         if (previewScenario && previewScenario.index === indexToRemove) setPreviewScenario(null);
@@ -535,24 +570,43 @@ const getActiveSpeakerStyle = (speakerId) => {
                         </div>
                     </div>
                     
-                    <div style={{ flex: 1, borderLeft: '1px dashed #dee2e6', paddingLeft: '20px' }}>
-                        <h4 className="config-title">📅 이벤트 시작 일시 (기본값)</h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+<div style={{ flex: 1, borderLeft: '1px dashed #dee2e6', paddingLeft: '20px' }}>
+                        <h4 className="config-title">📅 상태창 설정</h4>
+<div style={{ fontSize: '11px', color: '#868e96', marginBottom: '12px', lineHeight: '1.6', backgroundColor: '#f8f9fa', padding: '10px', borderRadius: '4px', borderLeft: '3px solid #d0bfff' }}>
+    💡 <strong>상태창 활용 팁!</strong> 다양한 정보를 입력해 몰입도를 높여보세요.<br/>
+    <div style={{ color: '#495057', marginTop: '5px' }}>
+        • <strong>연애:</strong> 호감도: ❤️❤️❤️❤️❤️ (MAX)<br/>
+        • <strong>스탯:</strong> HP: 80 | STAMINA: ■■■□□<br/>
+        • <strong>재화:</strong> LUCK: 🍀 99 | GOLD: 12,500 G<br/>
+        • <strong>날짜:</strong> 2020.03.06 02:30 AM | 🔋 85%<br/>
+        • <strong>진행:</strong> EPISODE 1 | 벚꽃 아래에서 🌸
+    </div>
+</div>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#495057' }}>윗줄에 표시될 텍스트</span>
-                                <input type="text" className="input-base" placeholder="DATE: 1月 01日" value={activeEvent.baseDate.month} onChange={(e) => handleBaseDateChange('month', e.target.value)} />
+                                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#495057' }}>윗줄 텍스트</span>
+                                <input 
+                                    type="text" 
+                                    className="input-base" 
+                                    placeholder="예: 2024. 03. 14 (화) ☀️" 
+                                    value={activeEvent.baseDate.month} 
+                                    onChange={(e) => handleBaseDateChange('month', e.target.value)} 
+                                />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#495057' }}>아래에 표시될 텍스트</span>
-                                <input type="text" className="input-base" placeholder="TIME: 12:00" value={activeEvent.baseDate.time} onChange={(e) => handleBaseDateChange('time', e.target.value)} />
+                                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#495057' }}>아랫줄 텍스트</span>
+                                <input 
+                                    type="text" 
+                                    className="input-base" 
+                                    placeholder="예: EPISODE 1 | 첫 만남" 
+                                    value={activeEvent.baseDate.time} 
+                                    onChange={(e) => handleBaseDateChange('time', e.target.value)} 
+                                />
                             </div>
-                            {/*<div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#495057' }}>달력안에 들어갈 텍스트</span>
-                                <input type="text" className="input-base" placeholder="01日" value={activeEvent.baseDate.day} onChange={(e) => handleBaseDateChange('day', e.target.value)} />
-                            </div>*/}
                         </div>
                     </div>
-                </div>
+                </div> {/* <--- config-panel 닫는 태그 */}
 
                 <div className="scenario-list">
                     {scenarios.map((scenario, index) => {
@@ -599,7 +653,7 @@ const getActiveSpeakerStyle = (speakerId) => {
                                     <div style={{ fontSize: '14px', color: '#495057', fontWeight: 'bold' }}>{effectiveDate.time}</div>
                                     <div style={{ marginTop: '10px', width: '100%' }}>
                                         <button onClick={(e) => toggleDateEditMode(e, index, scenario, effectiveDate)} style={{ width: '100%', padding: '4px 0', fontSize: '10px', backgroundColor: editingDateIndex === index ? '#2b8a3e' : '#f1f3f5', color: editingDateIndex === index ? '#fff' : '#000', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-                                            {editingDateIndex === index ? '수정 완료' : '시간 변경'}
+                                            {editingDateIndex === index ? '수정 완료' : '상태창 변경'}
                                         </button>
                                         {scenario.dateOverride && editingDateIndex !== index && (
                                              <button onClick={(e) => clearDateOverride(e, index)} style={{ width: '100%', marginTop: '5px', padding: '2px 0', fontSize: '10px', backgroundColor: '#fa5252', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>초기화</button>
@@ -646,7 +700,7 @@ const getActiveSpeakerStyle = (speakerId) => {
                                             <div style={{ padding: '12px', backgroundColor: '#e7f5ff', borderLeft: '4px solid #1971c2', borderRadius: '4px', fontSize: '13px', color: '#1864ab', lineHeight: '1.5' }}>
                                                 <strong>💡 화면에 표시될 두 가지 선택지를 입력해 주세요.</strong><br/>
                                                 각 선택지에 따라 스토리가 A/B 루트로 나뉩니다.<br/>
-                                                <span style={{ color: '#495057', fontSize: '12px' }}>(※ 루트 마지막에 🎬엔딩을 넣지 않으면, 어느 쪽을 고르든 자연스럽게 다음 이벤트로 넘어갑니다.)</span>
+                                                <span style={{ color: '#495057', fontSize: '12px' }}>(※ A/B 루트 둘 다 마지막에 🎬엔딩을 넣지 않으면, 어느 쪽을 고르든 자연스럽게 다음 이벤트로 넘어갑니다.)</span>
                                             </div>
                                             <input type="text" placeholder="선택지 1 텍스트" value={scenario.option1 || ''} onChange={(e) => handleScenarioChange(index, 'option1', e.target.value)} className="input-base" />
                                             <input type="text" placeholder="선택지 2 텍스트" value={scenario.option2 || ''} onChange={(e) => handleScenarioChange(index, 'option2', e.target.value)} className="input-base" />
@@ -749,12 +803,11 @@ const getActiveSpeakerStyle = (speakerId) => {
                         </div>
                     )}
                 </div>
-                {currentBranch === 'option1' && (
+{currentBranch === 'option1' && hasOption1Nodes && (
                     <button onClick={() => { setIsCgMode(false); setCurrentBranch('option2'); }} className="btn-large bg-orange" style={{ width: '100%', marginTop: '10px' }}>
                         ✔️ 선택지 1번 루트 종료 (2번 작성 시작)
                     </button>
                 )}
-
                 {isFullyEnded && (
                     <div style={{ marginTop: '20px', padding: '20px', backgroundColor: '#212529', color: '#ffd43b', textAlign: 'center', borderRadius: '8px', fontWeight: 'bold', border: '2px solid #ffd43b', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}>
                         <div style={{ fontSize: '24px', marginBottom: '10px' }}>🎊</div>

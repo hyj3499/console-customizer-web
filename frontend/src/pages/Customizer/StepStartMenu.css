@@ -3,27 +3,53 @@
 .startmenu-container { width: 100%; max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; padding-bottom: 50px; }
 
 /* 1. 윈도우 95 미리보기 모니터 */
+/* src/pages/Customizer/StepStartMenu.css */
+
+/* 1. 윈도우 95 미리보기 모니터 (StepSettings 스타일 이식) */
+/* src/pages/Customizer/StepStartMenu.css */
+
+/* 1. 윈도우 95 미리보기 모니터 (StepSettings 스타일 이식) */
 .win95-monitor-wrap {
-    top: 10px; z-index: 100;
-    background-color: #c0c0c0; padding: 3px;
+    margin-bottom: 20px; 
+    background: #c0c0c0; /* 윈도우 기본 회색 */
     border-top: 2px solid #fff; border-left: 2px solid #fff;
     border-right: 2px solid #000; border-bottom: 2px solid #000;
+    padding: 3px; 
     box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
-    margin-bottom: 20px;
-}
-.win95-title-bar {
-    display: flex; justify-content: space-between; align-items: center;
-    background: linear-gradient(to right, #000080, #1084d0);
-    padding: 4px 8px; margin-bottom: 10px; font-family: 'Galmuri14', sans-serif;
-}
-.win95-title-bar h5 { margin: 0; color: white; font-size: 14px; font-weight: bold; }
-.monitor-screen {
-    position: relative; width: 100%; aspect-ratio: 16/9; background-color: #000;
-    overflow: hidden; container-type: size;
-    border-top: 3px solid #808080; border-left: 3px solid #808080;
-    border-right: 3px solid #fff; border-bottom: 3px solid #fff;
 }
 
+/* 🌟 수정됨: .win95-monitor-wrap 안에 있는 타이틀 바에만 적용되도록 변경 */
+.win95-monitor-wrap .win95-title-bar { 
+    display: flex; justify-content: space-between; align-items: center; 
+    background: linear-gradient(to right, #000080, #1084d0) !important; /* 미리보기 창용 파란 그라데이션 강제 */
+    color: white; 
+    padding: 4px 8px; 
+    margin-bottom: 0; /* 아래 모니터 스크린과 딱 붙게 수정 */
+    font-family: 'Galmuri14', sans-serif;
+    border-bottom: none;
+}
+
+.win95-monitor-wrap .win95-title-bar h5 { 
+    margin: 0; 
+    color: white !important; 
+    font-size: 14px; 
+    font-weight: bold; 
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.monitor-screen { 
+    position: relative; 
+    width: 100%; 
+    aspect-ratio: 16/9; 
+    background-color: #1a1b1e; /* 화면 안쪽 어두운 배경 */
+    /* 안쪽으로 쑥 들어간 느낌의 테두리 */
+    border-top: 3px solid #808080; border-left: 3px solid #808080;
+    border-right: 3px solid #fff; border-bottom: 3px solid #fff;
+    overflow: hidden; 
+    container-type: size; 
+}
 /* 2. 컨트롤 패널 디자인 */
 .control-grid { display: flex; flex-direction: column; gap: 20px; }
 .control-card {
