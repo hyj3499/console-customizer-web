@@ -2,92 +2,17 @@
 import { useState, useRef } from 'react';
 import useCustomizerStore from '../../store/useCustomizerStore';
 import './StepStartMenu.css';
+import { SHARED_BACKGROUNDS } from '../../assets/assets';
 
-
-const PRESET_BG = [
-    // --- 기존 배경 ---
-    { id: 'bg_black', name: '검은 배경', url: '/images/bg_black.png' },
-
-    // --- 신규 추가된 배경 (/images/backgrounds 경로) ---
-    { id: 'bg_day_1', name: '하늘 (낮)', url: '/images/backgrounds/Day 1.png' },
-    { id: 'bg_evening_1', name: '하늘 (저녁)', url: '/images/backgrounds/Evening 1.png' },
-    { id: 'bg_night_1_1', name: '하늘 (밤)', url: '/images/backgrounds/Night 1-1.png' },
-    { id: 'bg_bedroom01_day', name: '침실 A (낮)', url: '/images/backgrounds/bedroom01_day.png' },
-    { id: 'bg_bedroom01_evening2', name: '침실 A (저녁)', url: '/images/backgrounds/bedroom01_evening2.png' },
-    { id: 'bg_bedroom01_nightl2', name: '침실 A (밤)', url: '/images/backgrounds/bedroom01_nightl2.png' },
-    { id: 'bg_fnc_cabinbed1_night1_lights', name: '침실 B (낮)', url: '/images/backgrounds/fnc_cabinbed1_night1_lights.png' },    
-    { id: 'bg_fnc_cabinbed1_day2', name: '침실 B (밤)', url: '/images/backgrounds/fnc_cabinbed1_day2.png' },
-    { id: 'bg_fnc_cabing1_day2', name: '거실 A', url: '/images/backgrounds/fnc_cabing1_day2.png' },
-    { id: 'bg_apartment_b_living_room_day', name: '거실 B', url: '/images/backgrounds/apartment b living room day.png' },
-    { id: 'bg_mroom_day', name: '거실 C', url: '/images/backgrounds/mroom_day.png' },
-    { id: 'bg_personal_room_c_day', name: '개인 방 (낮)', url: '/images/backgrounds/personal room c day.png' },
-    { id: 'bg_personal_room_c_night', name: '개인 방 (밤)', url: '/images/backgrounds/personal room c night.png' },
-    { id: 'bg_mroom_nightl3', name: '스크린 룸', url: '/images/backgrounds/mroom_nightl3.png'},
-    { id: 'bg_mkitchen_day', name: '주방 A', url: '/images/backgrounds/mkitchen_day.png' },
-    { id: 'bg_kitchen_dining_day', name: '주방 B', url: '/images/backgrounds/kitchen dining day.png' },
-    { id: 'bg_bathroom_a_light2', name: '욕실', url: '/images/backgrounds/bathroom a light2.png' },
-    { id: 'bg_beach_a_evening', name: '해변 (저녁)', url: '/images/backgrounds/beach a evening.png' },
-    { id: 'bg_beach_a_s2_day', name: '해변 (낮)', url: '/images/backgrounds/beach a s2 day.png' },
-    { id: 'bg_beach_a_s2_night', name: '해변 (밤)', url: '/images/backgrounds/beach a s2 night.png' },
-    { id: 'bg_bus_stop_c1day1', name: '버스 정류장 (낮)', url: '/images/backgrounds/bus_stop_c1day1.png' },
-    { id: 'bg_bus_stop_c1evening1', name: '버스 정류장 (저녁)', url: '/images/backgrounds/bus_stop_c1evening1.png' },
-    { id: 'bg_bus_stop_c1night1', name: '버스 정류장 (밤)', url: '/images/backgrounds/bus_stop_c1night1.png' },
-    { id: 'bg_bus_stop_c1night1_lights', name: '버스 정류장 (밤, 조명)', url: '/images/backgrounds/bus_stop_c1night1_lights.png' },
-    { id: 'bg_cafe_a_day', name: '카페', url: '/images/backgrounds/cafe a day.png' },
-    { id: 'bg_city_a_s1st2_day', name: '도시 거리 (낮)', url: '/images/backgrounds/city a s1st2 day.png' },
-    { id: 'bg_city_a_nightlights', name: '도시 거리 (밤, 조명)', url: '/images/backgrounds/city a nightlights.png' },    
-    { id: 'bg_city_a_s1st2_nightlights', name: '도시 거리 (밤)', url: '/images/backgrounds/city a s1st2 nightlights.png' },
-    { id: 'bg_classroom_a_s2_day', name: '교실 A (낮)', url: '/images/backgrounds/classroom a s2 day.png' },
-    { id: 'bg_classroom_a_s2_night', name: '교실 A (밤)', url: '/images/backgrounds/classroom a s2 night.png' },
-    { id: 'bg_smp_classroom1_day2', name: '교실 B (낮)', url: '/images/backgrounds/smp_classroom1_day2.png' },
-    { id: 'bg_smp_classroom1_evening1', name: '교실 B (저녁)', url: '/images/backgrounds/smp_classroom1_evening1.png' },
-    { id: 'bg_smp_classroom4_day2', name: '교실 앞', url: '/images/backgrounds/smp_classroom4_day2.png' },
-    { id: 'bg_club_room_a_day', name: '동아리방', url: '/images/backgrounds/club room a day.png' },
-    { id: 'bg_exh_ha_day4', name: '주택 앞 A (낮)', url: '/images/backgrounds/exh_ha_day4.png' },
-    { id: 'bg_exh_ha_night1_lights', name: '주택 앞 A (밤)', url: '/images/backgrounds/exh_ha_night1_lights.png' },
-    { id: 'bg_house_a_day', name: '주택 앞 B (낮)', url: '/images/backgrounds/house a day.png' },
-    { id: 'bg_fnc_path_night1', name: '어두운 숲 속', url: '/images/backgrounds/fnc_path_night1.png' },
-    { id: 'bg_fnc_road_day2', name: '도로 위', url: '/images/backgrounds/fnc_road_day2.png' },
-    { id: 'bg_interior_entrance_nightl2', name: '고풍스러운 저택 로비 (조명)', url: '/images/backgrounds/interior_entrance_nightl2.png' },    
-    { id: 'bg_interior_entrance_evening2', name: '고풍스러운 저택 로비 (저녁)', url: '/images/backgrounds/interior_entrance_evening2.png' },
-    { id: 'bg_interior_entrance_night2', name: '고풍스러운 저택 로비 (밤)', url: '/images/backgrounds/interior_entrance_night2.png' },
-    { id: 'bg_inthallway2_nightl', name: '고풍스러운 저택 홀', url: '/images/backgrounds/inthallway2_nightl.png' },
-    { id: 'bg_island_resort_s1_day', name: '휴양지', url: '/images/backgrounds/island resort s1 day.png' },
-    { id: 'bg_mansion_front2_day', name: '고풍스러운 저택 앞 (낮)', url: '/images/backgrounds/mansion_front2_day.png' },
-    { id: 'bg_mansion_front2_evening', name: '고풍스러운 저택 앞 (저녁)', url: '/images/backgrounds/mansion_front2_evening.png' },    
-    { id: 'bg_mansion_front2d_night', name: '고풍스러운 저택 앞 (밤)', url: '/images/backgrounds/mansion_front2d_night.png' },
-    { id: 'bg_mansion_front3_nightl', name: '고풍스러운 저택 정원', url: '/images/backgrounds/mansion_front3_nightl.png' },
-    { id: 'bg_nature2_day1', name: '자연 (낮)', url: '/images/backgrounds/nature2_day1.png' },
-    { id: 'bg_nature2_night1', name: '자연 (밤)', url: '/images/backgrounds/nature2_night1.png' },
-    { id: 'bg_park_a_s1_day', name: '공원 (낮)', url: '/images/backgrounds/park a s1 day.png' },
-    { id: 'bg_park_a_s1_nightlights', name: '공원 (밤)', url: '/images/backgrounds/park a s1 nightlights.png' },
-    { id: 'bg_park_s2_day', name: '놀이터', url: '/images/backgrounds/park s2 day.png' },
-    { id: 'bg_restaurant_booth_day4', name: '레스토랑', url: '/images/backgrounds/restaurant_booth_day4.png' },
-    { id: 'bg_rooftop_area_day1', name: '옥상', url: '/images/backgrounds/rooftop_area_day1.png' },
-    { id: 'bg_school_a_auditorium_day', name: '강당', url: '/images/backgrounds/school a auditorium day.png' },
-    { id: 'bg_school_a_s1_day', name: '학교 전경 (낮)', url: '/images/backgrounds/school a s1 day.png' },
-    { id: 'bg_school_a_s1_evening', name: '학교 전경 (저녁)', url: '/images/backgrounds/school a s1 evening.png' },
-    { id: 'bg_school_a_s2_day', name: '학교 옥상', url: '/images/backgrounds/school a s2 day.png' },
-    { id: 'bg_school_a_s3st2_day', name: '테니스장', url: '/images/backgrounds/school a s3st2 day.png' },
-    { id: 'bg_school_gym_a_day', name: '체육관', url: '/images/backgrounds/school gym a day.png' },
-    { id: 'bg_school_hallway_a_day', name: '학교 복도 (낮)', url: '/images/backgrounds/school hallway a day.png' },
-    { id: 'bg_school_hallway_a_evening', name: '학교 복도 (저녁)', url: '/images/backgrounds/school hallway a evening.png' },
-    { id: 'bg_school_stairs_day', name: '학교 계단 (낮)', url: '/images/backgrounds/school stairs day.png' },
-    { id: 'bg_school_stairs_evening', name: '학교 계단 (저녁)', url: '/images/backgrounds/school stairs evening.png' },
-    { id: 'bg_smp2_ar_day2', name: '미술실', url: '/images/backgrounds/smp2_ar_day2.png' },
-    { id: 'bg_smp2_mr_day1', name: '음악실', url: '/images/backgrounds/smp2_mr_day1.png' },
-    { id: 'bg_smp2_sp4_day3', name: '수영장', url: '/images/backgrounds/smp2_sp4_day3.png' },
-    { id: 'bg_wooden_bridgeway_c1day1', name: '나무 다리 (낮)', url: '/images/backgrounds/wooden_bridgeway_c1day1.png' },
-    { id: 'bg_wooden_bridgeway_c1night1', name: '나무 다리 (밤)', url: '/images/backgrounds/wooden_bridgeway_c1night1.png' }
-];
+const PRESET_BG = SHARED_BACKGROUNDS;
 
 export default function StepStartMenu() {
     const { startMenu, setStartMenu, customFonts } = useCustomizerStore();
     const fileInputRef = useRef(null);
-    const bgmInputRef = useRef(null); 
+    const bgmInputRef = useRef(null); // 🌟 BGM용 Ref 추가
     
     const [uploadedFileName, setUploadedFileName] = useState('');
-    const [uploadedBgmName, setUploadedBgmName] = useState(''); 
+    const [uploadedBgmName, setUploadedBgmName] = useState(''); // 🌟 BGM 파일명 상태 추가
 
     const title = startMenu.title || { text: '최애로운 생활', x: 50, y: 30, fontSize: 8, color: '#ffffff', font: 'Galmuri14', useOutline: true, outlineColor: '#000000' };
     const menu = startMenu.menu || { 
@@ -102,16 +27,6 @@ export default function StepStartMenu() {
         { name: 'Griun_PolSensibility-Rg', value: 'Griun_PolSensibility-Rg' },
         ...customFonts.map(f => ({ name: `📁 ${f.name}`, value: f.name }))
     ];
-
-    // ⭐ 클라우드 URL(문자열)과 방금 업로드한 파일(객체)을 모두 처리하는 똑똑한 함수
-    const getMediaUrl = (media) => {
-        if (!media) return null;
-        return typeof media === 'string' ? media : media.preview;
-    };
-
-    // 화면에 보여줄 실제 주소 계산
-    const currentBgUrl = getMediaUrl(startMenu.bgImage) || PRESET_BG[0].url;
-    const currentBgmUrl = getMediaUrl(startMenu.bgm);
 
     const getFontFamily = (selectedFont) => selectedFont || 'Galmuri14';
     const getTextShadow = (useOutline, outlineColor) => {
@@ -152,13 +67,13 @@ export default function StepStartMenu() {
         reader.readAsDataURL(file);
     };
 
-    // 🎵 BGM 업로드 핸들러
+    // 🎵 BGM 업로드 핸들러 추가
     const handleBgmUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        setUploadedBgmName(file.name);
+        setUploadedBgmName(file.name); // 파일명 저장
         const previewUrl = URL.createObjectURL(file);
-        setStartMenu({ bgm: { file: file, preview: previewUrl } }); 
+        setStartMenu({ bgm: { file: file, preview: previewUrl } }); // 스토어 저장
     };
 
     const handleCenterCheck = (isTitle, checked) => {
@@ -181,7 +96,7 @@ export default function StepStartMenu() {
                     <h5>📺 Start Menu Preview</h5>
                 </div>
                 <div className="monitor-screen">
-                    <img src={currentBgUrl} alt="bg" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={startMenu.bgImage?.preview || PRESET_BG[0].url} alt="bg" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     <div style={{ position: 'absolute', left: `${title.x}%`, top: `${title.y}%`, transform: 'translate(-50%, -50%)', fontFamily: getFontFamily(title.font), fontSize: `${title.fontSize}cqh`, color: title.color, textShadow: getTextShadow(title.useOutline, title.outlineColor), fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'center', zIndex: 10 }}>
                         {title.text || "타이틀을 입력하세요"}
                     </div>
@@ -200,31 +115,57 @@ export default function StepStartMenu() {
                     <div className="control-card-title">🖼️ 배경 및 🎵 BGM 설정</div>
                     
                     <div className="form-row">
-                        <div className="form-group" style={{ flex: 1.5 }}>
-                            <label className="form-label">배경 이미지 선택</label>
-                            <div className="bg-thumbnail-list">
-                                {PRESET_BG.map(bg => (
-                                    <img key={bg.name} src={bg.url} className={`bg-thumbnail ${currentBgUrl === bg.url ? 'active' : ''}`} onClick={() => { setStartMenu({ bgImage: { file: null, preview: bg.url } }); setUploadedFileName(''); }} />
-                                ))}
-                                <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} style={{ display: 'none' }} />
-                                <button onClick={() => fileInputRef.current.click()} className="form-input" style={{ width: 'auto', cursor: 'pointer', background: '#f8f9fa' }}>+ 파일 업로드</button>
-                            </div>
-                            {/* 불러온 파일 이름 추출 로직 강화 */}
-                            {(uploadedFileName || (typeof startMenu.bgImage === 'string' && startMenu.bgImage.length > 50)) && 
-                                <div className="uploaded-file-name">📎 이미지: {uploadedFileName || "클라우드 저장 이미지"}</div>
-                            }
-                        </div>
+<div className="form-group" style={{ flex: 1.5 }}>
+    <label className="form-label">배경 이미지 선택</label>
+    <div style={{ display: 'flex', gap: '10px' }}>
+        <select 
+            className="form-input" 
+            style={{ flex: 1 }}
+            value={uploadedFileName ? 'custom' : (startMenu.bgImage?.preview || '')}
+            onChange={(e) => {
+                const val = e.target.value;
+                if (val === 'custom_upload') {
+                    fileInputRef.current.click();
+                } else if (val !== 'custom') {
+                    setStartMenu({ bgImage: { file: null, preview: val } });
+                    setUploadedFileName('');
+                }
+            }}
+        >
+            <option value="">-- 배경 선택 --</option>
+            <optgroup label="기본 제공 배경">
+                {PRESET_BG.map(bg => (
+                    <option key={bg.url} value={bg.url}>{bg.name}</option>
+                ))}
+            </optgroup>
+            {uploadedFileName && (
+                <optgroup label="현재 업로드됨">
+                    <option value="custom">📎 {uploadedFileName}</option>
+                </optgroup>
+            )}
+            <option value="custom_upload">➕ 직접 파일 업로드...</option>
+        </select>
 
+        {/* 🌟 추가된 배경 업로드 버튼 */}
+        <button 
+            onClick={() => fileInputRef.current.click()} 
+            className="form-input" 
+            style={{ width: 'auto', cursor: 'pointer', background: '#f8f9fa', whiteSpace: 'nowrap', fontWeight: 'bold' }}
+        >
+            ➕ 배경 추가
+        </button>
+
+        <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} style={{ display: 'none' }} />
+    </div>
+</div>
                         <div className="form-group" style={{ borderLeft: '1px dashed #dee2e6', paddingLeft: '15px' }}>
                             <label className="form-label">타이틀 BGM 업로드</label>
                             <input type="file" accept="audio/*" ref={bgmInputRef} onChange={handleBgmUpload} style={{ display: 'none' }} />
                             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                                 <button onClick={() => bgmInputRef.current.click()} className="form-input" style={{ width: 'auto', cursor: 'pointer', background: '#f8f9fa', fontWeight: 'bold' }}>🎵 오디오 선택</button>
-                                {currentBgmUrl && <audio src={currentBgmUrl} controls style={{ height: '30px' }} />}
+                                {startMenu.bgm?.preview && <audio src={startMenu.bgm.preview} controls style={{ height: '30px' }} />}
                             </div>
-                            {(uploadedBgmName || (typeof startMenu.bgm === 'string' && startMenu.bgm.length > 30)) && 
-                                <div className="uploaded-file-name" style={{ background: '#fff0f6', color: '#d6336c' }}>🎶 BGM: {uploadedBgmName || "클라우드 저장 오디오"}</div>
-                            }
+                            {uploadedBgmName && <div className="uploaded-file-name" style={{ background: '#fff0f6', color: '#d6336c', marginTop: '5px', padding: '2px 5px', fontSize: '11px', borderRadius: '4px' }}>🎶 BGM: {uploadedBgmName}</div>}
                         </div>
                     </div>
                 </div>
