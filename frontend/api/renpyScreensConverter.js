@@ -207,8 +207,9 @@ style say_dialogue:
     adjust_spacing False
 
     # 상단바 메뉴
+# 상단바 메뉴
 style ig_sysmenu_text is text:
-font "${sysFont}"
+    font "${sysFont}"
     size 20
     color "#ffffff"
     hover_color "#ffd43b"
