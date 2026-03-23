@@ -93,11 +93,13 @@ const getBgStr = (frameType, bgColorVal, borderColorVal, useBorder, isNamebox) =
 
 export const generateScreensRpy = (data) => {
     const pStyle = data.pFontStyle || {};
+    // ⭐ 추가: 나레이션 스타일 가져오기 (없으면 안전하게 주인공 스타일을 임시로 씀)
+    const nStyle = data.narrationFontStyle || pStyle; 
     const ui = data.globalUi || {};
     const start = data.startMenu || {};
 
     const mainFont = safeFont(pStyle.font || ui.systemFont);
-    const sysFont = safeFont(ui.systemFont || "Galmuri14"); // ⭐ 메뉴 및 선택지용 전역 폰트
+    const sysFont = safeFont(ui.systemFont || "Galmuri14"); 
     const mainColor = rgbaToHex(pStyle.color);
     
     const getPortraitBgStr = () => {
@@ -106,7 +108,6 @@ export const generateScreensRpy = (data) => {
         }
         const bgColorHex = rgbaToHex(pStyle.portraitColor);
         
-        // ⭐ 수정: 테두리를 사용하지 않음으로 설정했을 때 테두리 없이 렌더링
         if (pStyle.usePortraitBorder === false) {
             return `Transform(Solid("${bgColorHex}"), xysize=(250, 250))`;
         }
@@ -122,9 +123,7 @@ export const generateScreensRpy = (data) => {
             (${bw}, ${bw}), Transform(Solid("${bgColorHex}"), xysize=(${inner}, ${inner})))`;
     };
 
-    const calBgStr = ui.calendarFrame === 'retro'
-        ? `Transform("images/retro_calendar_${getColorId(ui.calendarColor)}.png", xysize=(150, 150))`
-        : `Transform(Solid("${rgbaToHex(ui.calendarColor)}"), xysize=(150, 150))`;
+    // ⭐ 수정됨: 레트로 달력 배경 관련 변수 삭제
 
     const calText = rgbaToHex(ui.calendarTextColor);
     const calLine = rgbaToHex(ui.calendarTextOutlineColor);
@@ -134,6 +133,7 @@ export const generateScreensRpy = (data) => {
     const portrait_y = isBottomMode ? 830 : 780;
     const namebox_y = isBottomMode ? 775 : 725;
 
+    // ... (startMenu 관련 변수들 생략 - 원본 유지) ...
     const t = start.title || {};
     const m = start.menu || {};
     const startBgUrl = start.bgImage ? getFileName(start.bgImage) : "bg_title.png";
@@ -206,11 +206,11 @@ style say_dialogue:
     line_spacing 5
     adjust_spacing False
 
+    # 상단바 메뉴
 style ig_sysmenu_text is text:
-    font "${sysFont}"
-    size 18
+font "${sysFont}"
+    size 20
     color "#ffffff"
-    outlines [(1, "#00000080", 0, 0)]
     hover_color "#ffd43b"
 
 style ig_sysmenu_button is button:
@@ -239,6 +239,10 @@ style p_window is say_window:
     background ${getBgStr(pStyle.dialogFrame, pStyle.dialogColor, pStyle.dialogBorderColor, pStyle.useDialogBorder !== false, false)}
 style p_namebox is say_namebox:
     background ${getBgStr(pStyle.nameFrame, pStyle.nameColor, pStyle.nameBorderColor, pStyle.useNameBorder !== false, true)}
+
+# ⭐ 추가: 나레이션 전용 대화창 스타일 정의 (이름표는 쓰지 않으므로 window만 생성)
+style narration_window is say_window:
+    background ${getBgStr(nStyle.dialogFrame, nStyle.dialogColor, nStyle.dialogBorderColor, nStyle.useDialogBorder !== false, false)}
 `;
 
     if (data.characters) {
@@ -269,30 +273,35 @@ screen say(who, what):
     $ tb_h = 250           
     $ namebox_w = 180      
     $ namebox_h = 50       
-    $ cal_size = 150       
     $ box_x = ui_x + face_size + gap 
 
-    if "${ui.calendarFrame}" != "none":
-        hbox:
-            xpos ui_x ypos 50 spacing 25
-            fixed:
-                xysize (cal_size, cal_size)
-                add ${calBgStr}
-                text "[current_day]" align (0.5, 0.7) size 65 color "${calText}" font "${sysFont}" ${ui.calendarTextUseOutline ? `outlines [(2, "${calLine}", 0, 0)]` : ""}
-            vbox:
-                yalign 0.5 spacing 15
-                text "[current_month]" size 38 color "${calText}" font "${sysFont}" ${ui.calendarTextUseOutline ? `outlines [(2, "${calLine}", 0, 0)]` : ""}
-                text "[current_time]" size 38 color "${calText}" font "${sysFont}" ${ui.calendarTextUseOutline ? `outlines [(2, "${calLine}", 0, 0)]` : ""}
-
+# ⭐ 수정: 상태바 텍스트 크기를 미리보기(2.5cqh = 약 27px)와 맞추고 간격 조절
+    if getattr(store, "show_calendar", True):
+        vbox:
+            # xpos 250 (13%), ypos 50 (4.6%)
+            xpos ui_x ypos 50 spacing 8
+            
+            # [current_month] (윗줄 텍스트) - size 38에서 27로 축소
+            if current_month != "":
+                text "[current_month]" size 27 color "${calText}" font "${sysFont}" ${ui.calendarTextUseOutline ? `outlines [(2, "${calLine}", 0, 0)]` : ""}
+            
+            # [current_time] (아랫줄 텍스트) - size 38에서 27로 축소
+            if current_time != "":
+                text "[current_time]" size 27 color "${calText}" font "${sysFont}" ${ui.calendarTextUseOutline ? `outlines [(2, "${calLine}", 0, 0)]` : ""}
+# ⭐ 수정: 시스템 메뉴를 우측 상단으로 이동 & 대화창 끝부분에 맞춤
     hbox:
-        align (0.7, 0.05) spacing 15
+        # box_x(대화창 시작점) + tb_w(대화창 너비) = 대화창의 오른쪽 끝 지점
+        xpos (box_x + tb_w) + 10
+        ypos 20             # 상단 월/일/시간 텍스트와 높이를 맞춤
+        xanchor 1.0         # 이 메뉴 박스의 '오른쪽 끝'을 기준점으로 삼음 (중요!)
+        spacing 10          # 버튼 사이 간격 (미리보기 감성에 맞춰 살짝 조절)
+
         textbutton "되감기" action Rollback() text_style "ig_sysmenu_text" style "ig_sysmenu_button"
         textbutton "대사록" action ShowMenu('history') text_style "ig_sysmenu_text" style "ig_sysmenu_button"
         textbutton "자동진행" action Preference("auto-forward", "toggle") text_style "ig_sysmenu_text" style "ig_sysmenu_button"
         textbutton "저장하기" action ShowMenu('save') text_style "ig_sysmenu_text" style "ig_sysmenu_button"
         textbutton "불러오기" action ShowMenu('load') text_style "ig_sysmenu_text" style "ig_sysmenu_button"
         textbutton "설정" action ShowMenu('preferences') text_style "ig_sysmenu_text" style "ig_sysmenu_button"
-
     if getattr(store, "current_p_image", "") != "":
         fixed:
             xpos ui_x ypos ${portrait_y} xysize (face_size, face_size)

@@ -93,12 +93,16 @@ export const generateScriptRpy = (data) => {
     // ⭐ 추가: 달력 표시 여부를 결정하는 전역 플래그
     script += `default show_calendar = True\n\n`;
 
-    const pName = data.protagonist?.name || '주인공';
+const pName = data.protagonist?.name || '주인공';
     // 1. 주인공 생성
     script += buildCharacterDef("p", pName, data.pFontStyle, true);
-    // ⭐ 추가: 2. 나레이션 전용 객체 생성 (이름은 없고 주인공 스타일만 빌려옴)
-    script += buildCharacterDef("narration", null, data.pFontStyle, true);
-
+    
+    // ⭐ 수정: 2. 나레이션 전용 객체 생성 (이제 스토어의 나레이션 전용 스타일 사용)
+    // 과거 저장 데이터와의 호환성을 위해 || data.pFontStyle 안전 장치 추가
+    const safeNarrationStyle = data.narrationFontStyle || data.pFontStyle;
+    
+    // 마지막 인자를 false로 주어 'p_window'가 아닌 'narration_window' 스타일을 참조하게 함
+    script += buildCharacterDef("narration", null, safeNarrationStyle, false);
     if (data.characters) {
         data.characters.forEach(char => {
             if (char.name) {

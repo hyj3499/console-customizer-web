@@ -193,7 +193,8 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
 
     const gameData = {
         selectedMode: state.selectedMode,
-        pFontStyle: state.pFontStyle, 
+        pFontStyle: state.pFontStyle,
+        narrationFontStyle: state.narrationFontStyle, 
         globalUi: state.globalUi, 
         startMenu: {
             ...state.startMenu,
