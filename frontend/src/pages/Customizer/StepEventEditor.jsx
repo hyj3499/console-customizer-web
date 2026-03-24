@@ -366,18 +366,21 @@ const removeScenarioInput = (indexToRemove) => {
             
             let newScenarios = [...scenarios];
             let deleteCount = 1; // 자기 자신(CG 배너) 1개
+            let dialogsToDelete = 0; // 지워질 실제 대사 개수 파악
+
             for (let i = indexToRemove + 1; i < newScenarios.length; i++) {
                 if (newScenarios[i].isCg && newScenarios[i].bgImage === item.src) {
                     deleteCount++;
+                    if (newScenarios[i].type === 'dialog') dialogsToDelete++;
                 } else {
                     break;
                 }
             }
 
-            // ⭐ 수정: 해당 루트에 남은 "엔딩이 아닌 대사" 개수를 세어서 방어
-            const branchNonEndingCuts = newScenarios.filter(s => s.branch === item.branch && s.type !== 'ending' && s.type !== 'choice');
-            if (item.branch !== 'main' && branchNonEndingCuts.length <= deleteCount) {
-                return alert('🚨 선택지 루트에는 최소 1개의 대사가 있어야 합니다!\n(엔딩 컷은 대사로 포함되지 않습니다.)');
+            // ⭐ 수정: 삭제할 때 진짜 대사(dialog)가 하나도 안 남게 되면 방어!
+            const totalDialogsInBranch = newScenarios.filter(s => s.branch === item.branch && s.type === 'dialog').length;
+            if (item.branch !== 'main' && (totalDialogsInBranch - dialogsToDelete) < 1) {
+                return alert('🚨 선택지 루트에는 최소 1개의 대사가 있어야 합니다!\n(이 CG를 지우면 루트가 텅 비게 됩니다.)');
             }
             
             newScenarios.splice(indexToRemove, deleteCount);
@@ -406,11 +409,11 @@ const removeScenarioInput = (indexToRemove) => {
         }
 
         // 3. 일반/CG 대사/엔딩 컷 1개 삭제 처리
-        // ⭐ 수정: 삭제하려는 게 '엔딩'이 아닐 때만 "남은 대사가 1개인지" 검사합니다. (엔딩은 언제든 삭제 가능)
+        // ⭐ 수정: 남은 컷을 셀 때 'cg_image' 배너 등은 무시하고 오직 'dialog' 타입만 세도록 변경
         if (item.branch !== 'main' && item.type !== 'ending') {
-            const branchNonEndingCuts = scenarios.filter(s => s.branch === item.branch && s.type !== 'ending' && s.type !== 'choice');
-            if (branchNonEndingCuts.length <= 1) {
-                return alert('🚨 선택지 루트에는 최소 1개의 대사가 있어야 합니다!\n(엔딩 컷은 대사로 포함되지 않습니다.)');
+            const branchDialogCuts = scenarios.filter(s => s.branch === item.branch && s.type === 'dialog');
+            if (branchDialogCuts.length <= 1) {
+                return alert('🚨 선택지 루트에는 최소 1개의 대사가 있어야 합니다!\n(CG 배너나 엔딩은 대사 개수에 포함되지 않습니다.)');
             }
         }
 
