@@ -132,8 +132,6 @@ div:has(> .editor-container) {
 .scenario-card.type-ending input { background-color: #2b2c31 !important; border: 1px solid #ffd43b !important; color: #ffd43b !important; letter-spacing: 1px; }
 .scenario-card.type-ending p { color: #adb5bd !important; font-style: italic; }
 
-.scenario-card.branch-option1 { margin-left: 20px; }
-.scenario-card.branch-option2 { margin-left: 40px; }
 .scenario-card.is-cg { border: 2px solid #845ef7; }
 .scenario-card.preview-active { border: 3px solid #ff6b6b; box-shadow: 0 0 10px rgba(255,107,107,0.4); cursor: pointer; }
 

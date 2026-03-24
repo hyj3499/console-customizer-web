@@ -51,8 +51,9 @@ const getBgStr = (frameType, bgColorVal, borderColorVal, useBorder, isNamebox) =
     const bgColorHex = rgbaToHex(bgColorVal); 
     const bdColorHex = rgbaToHex(borderColorVal || '#dddddd');
 
+    // ⭐ 수정: xysize 고정을 없애서 박스가 글자 수에 맞춰 자유롭게 늘어나도록 변경!
     if (!useBorder) {
-        return `Transform(Solid("${bgColorHex}"), xysize=(${w}, ${h}))`;
+        return `Solid("${bgColorHex}")`; 
     }
 
     if (frameType === 'gothic') {
@@ -195,14 +196,14 @@ style say_namebox is namebox:
 
 style say_label:
     font "${mainFont}"
-    size 30 
+    size 32 
     bold True
     yalign 0.5
     xalign 0.5
 
 style say_dialogue:
     font "${mainFont}"
-    size 30
+    size 32
     line_spacing 5
     adjust_spacing False
 
@@ -312,14 +313,24 @@ screen say(who, what):
     window:
         id "window"
         xpos box_x ypos ${dialog_y} xsize tb_w ysize tb_h
+        # ⭐ 수정: 대사 시작 위치를 미리보기(padding: 3cqh 4cqw)와 픽셀 단위로 똑같이 맞춤
         text what id "what":
-            xpos 30 ypos 30 xsize (tb_w - 70)
+            size 32
+            pos (77, 32)       # 가로 77px(4cqw), 세로 32px(3cqh) 여백
+            xsize (tb_w - 154) # 오른쪽 여백도 동일하게 남기기 위해 너비 조절
 
     if who is not None:
         window:
             id "namebox"
-            xpos box_x ypos ${namebox_y} xysize (namebox_w, namebox_h)
-            text who id "who" align (0.5, 0.5)
+            xpos box_x ypos ${namebox_y}
+            # ⭐ 수정: 고정 크기(xysize)를 지우고, 글자 수에 따라 동적으로 늘어나게 설정
+            xminimum 134           # 최소 너비 (미리보기의 7cqw)
+            yminimum 58 ymaximum 58 # 높이는 58px(5.4cqh)로 고정
+            padding (19, 0, 19, 0)  # 좌우 여백 (미리보기의 1cqw)
+            
+            text who id "who":
+                size 32
+                align (0.5, 0.5)    # 네임박스 정중앙에 글자 배치
 
 ################################################################################
 ## 시작 메뉴 (Main Menu)

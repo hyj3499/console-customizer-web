@@ -9,6 +9,10 @@ import './StepEventEditor.css';
 // ==========================================
 // 💡 Step2와 동일한 UI 에셋 통합 관리
 // ==========================================
+
+const OPTION_COLORS = ['#ffafee', '#84ccff', '#1971c2', '#e64980', '#7950f2', '#12b886', '#fcc419', '#20c997', '#ff8787', '#5c940d'];
+                        
+
 const PRESET_COLORS = [
     { id: 'pink', name: '핑크', value: 'rgba(255,182,193,0.8)', colors: ['#ffb6c1', '#faafbe'] },
     { id: 'black', name: '블랙', value: 'rgba(0,0,0,0.8)', colors: ['#444444', '#000000'] },
@@ -16,12 +20,6 @@ const PRESET_COLORS = [
     { id: 'blue', name: '블루', value: 'rgba(173,216,230,0.8)', colors: ['#add8e6', '#87ceeb'] },
     { id: 'purple', name: '퍼플', value: 'rgba(205,180,219,0.8)', colors: ['#d8bfd8', '#b19cd9'] }
 ];
-const getColorId = (rgbaValue) => {
-    const found = PRESET_COLORS.find(c => c.value === rgbaValue);
-    return found ? found.id : 'pink'; 
-};
-
-const PRESET_BACKGROUNDS = SHARED_BACKGROUNDS;
 
 const UI_ASSETS = {
     dialog: {
@@ -49,6 +47,15 @@ const UI_ASSETS = {
         none: () => ({ type: 'none' })
     }
 };
+
+const getColorId = (rgbaValue) => {
+    const found = PRESET_COLORS.find(c => c.value === rgbaValue);
+    return found ? found.id : 'pink'; 
+};
+
+const PRESET_BACKGROUNDS = SHARED_BACKGROUNDS;
+
+
 
 export default function StepEventEditor() {
     const { 
@@ -93,9 +100,25 @@ export default function StepEventEditor() {
 
     const hasOption1Nodes = scenarios.some(s => s.branch === 'option1');
     
-    const isFullyEnded = hasChoiceNode 
-        ? (isOption1Ended && isOption2Ended) 
-        : isMainEnded;
+    const choiceNodeInfo = scenarios.find(s => s.type === 'choice');
+    const totalOptionsCount = choiceNodeInfo ? (choiceNodeInfo.options?.length || 2) : 0;
+    
+let isFullyEnded = false;
+    if (hasChoiceNode) {
+        let allEnded = true;
+        for (let i = 1; i <= totalOptionsCount; i++) {
+            if (!scenarios.some(s => s.branch === `option${i}` && s.type === 'ending')) {
+                allEnded = false;
+                break;
+            }
+        }
+        isFullyEnded = allEnded;
+    } else {
+        isFullyEnded = isMainEnded;
+    }
+
+    // 현재 선택된 브랜치 번호 추출 (옵션1이면 1, 옵션2면 2...)
+    const currentBranchNum = currentBranch.startsWith('option') ? parseInt(currentBranch.replace('option', '')) : 0;
 
     const getEffectiveDateForIndex = (targetIndex) => {
         let currentDate = { ...activeEvent.baseDate };
@@ -297,14 +320,14 @@ const removeScenarioInput = (indexToRemove) => {
         }
 
         // 2. 선택지 분기를 삭제했을 때
-        if (item.type === 'choice') {
-            if (!window.confirm("선택지 분기를 삭제하면 하위 대사들(1번/2번 루트)도 모두 삭제됩니다.")) return;
-            updateActiveScenarios(scenarios.filter((s, idx) => idx !== indexToRemove && s.branch !== 'option1' && s.branch !== 'option2'));
+if (item.type === 'choice') {
+            if (!window.confirm("선택지 분기를 삭제하면 하위 대사들(모든 루트)도 모두 삭제됩니다.")) return;
+            // ⭐ 수정: s.branch 뒤에 물음표(?)를 붙여 에러 방지
+            updateActiveScenarios(scenarios.filter((s, idx) => idx !== indexToRemove && !s.branch?.startsWith('option')));
             setCurrentBranch('main');
             setIsCgMode(false); 
             return;
         }
-
         // 3. 일반/CG 대사 컷 1개 삭제 처리
         let newScenarios = scenarios.filter((_, index) => index !== indexToRemove);
 
@@ -327,21 +350,76 @@ const removeScenarioInput = (indexToRemove) => {
             setIsCgMode(false);
         }
 
-        // 선택지 루트가 텅 비었을 때 작성 모드 복구 로직
-        if (item.branch === 'option1' && newScenarios.filter(s => s.branch === 'option1').length === 0) {
-            setCurrentBranch('option1');
-        } else if (item.branch === 'option2' && newScenarios.filter(s => s.branch === 'option2').length === 0) {
-            setCurrentBranch('option1');
+// 🌟 수정: 선택지 루트가 텅 비었을 때 이전 번호 작성 모드로 자동 복구
+        if (item.branch?.startsWith('option')) {
+            const currentOptNum = parseInt(item.branch.replace('option', ''));
+            const remainingCurrentBranch = newScenarios.filter(s => s.branch === item.branch);
+            
+            // 방금 지운 컷이 해당 루트의 마지막 컷이었다면
+            if (remainingCurrentBranch.length === 0) {
+                if (currentOptNum > 1) {
+                    setCurrentBranch(`option${currentOptNum - 1}`); // 이전 루트(n-1)로 되돌아감
+                } else {
+                    setCurrentBranch('option1'); // 1번 루트면 그대로 유지
+                }
+            }
         }
         
         updateActiveScenarios(newScenarios);
-        if (previewScenario && previewScenario.index === indexToRemove) setPreviewScenario(null);
+
+        // 💡 미리보기 초기화 (이 줄은 꼭 유지해야 에러가 안 납니다!)
+        if (previewScenario && previewScenario.index === indexToRemove) {
+            setPreviewScenario(null);
+        }
+    };
+// 🌟 추가: 선택지 항목 추가 함수
+    const handleAddOption = (choiceIndex) => {
+        const newScenarios = [...scenarios];
+        const choiceNode = newScenarios[choiceIndex];
+        const currentOptions = choiceNode.options || [choiceNode.option1 || '', choiceNode.option2 || ''];
+        
+        if (currentOptions.length >= 10) return alert("선택지는 최대 10개까지만 추가할 수 있습니다.");
+        
+        choiceNode.options = [...currentOptions, ''];
+        updateActiveScenarios(newScenarios);
     };
 
-    const addChoiceInput = () => {
+    // 🌟 추가: 선택지 개별 삭제 및 루트 자동 당기기 함수
+    const handleDeleteOption = (choiceIndex, optIdxToDelete) => {
+        const branchNumToDelete = optIdxToDelete + 1;
+        if (!window.confirm(`선택지 ${branchNumToDelete}번과 해당 루트의 모든 대사를 삭제하시겠습니까?\n(이후 번호의 루트들은 앞으로 당겨집니다.)`)) return;
+
+        let newScenarios = [...scenarios];
+        const choiceNode = newScenarios[choiceIndex];
+        const currentOptions = choiceNode.options || [choiceNode.option1 || '', choiceNode.option2 || ''];
+        
+        // 1. 선택지 배열에서 삭제
+        currentOptions.splice(optIdxToDelete, 1);
+        choiceNode.options = currentOptions;
+
+        // 2. 삭제된 루트의 대사 컷들 날리기
+        newScenarios = newScenarios.filter(s => s.branch !== `option${branchNumToDelete}`);
+
+        // 3. 뒷번호 루트들을 앞번호로 당겨오기 (ex: option4 -> option3)
+        newScenarios = newScenarios.map(s => {
+            if (s.branch && s.branch.startsWith('option')) {
+                const currentNum = parseInt(s.branch.replace('option', ''));
+                if (currentNum > branchNumToDelete) {
+                    return { ...s, branch: `option${currentNum - 1}` };
+                }
+            }
+            return s;
+        });
+
+        setCurrentBranch('option1'); 
+        setIsCgMode(false);
+        updateActiveScenarios(newScenarios);
+    };
+const addChoiceInput = () => {
         if (hasChoiceNode) return alert("하나의 이벤트에는 하나의 선택지 분기만 생성할 수 있습니다.");
         setIsCgMode(false);
-        updateActiveScenarios([...scenarios, { type: 'choice', option1: '', option2: '' }]);
+        // ⭐ 수정: 옵션 1, 2 대신 options 배열 구조로 초기화
+        updateActiveScenarios([...scenarios, { type: 'choice', branch: currentBranch, options: ['', ''] }]);
         setCurrentBranch('option1');
     };
 
@@ -615,16 +693,23 @@ const getActiveSpeakerStyle = (speakerId) => {
                         const effectiveDate = getEffectiveDateForIndex(index); 
                         const isFirstMainDialog = index === 0 && scenario.branch === 'main';
 
-                        const cardClasses = `scenario-card branch-${scenario.branch} ${isSelected && showPreview ? 'preview-active' : ''} ${scenario.isCg ? 'is-cg' : ''} ${scenario.type === 'ending' ? 'type-ending' : ''} ${scenario.type === 'cg_image' ? 'type-cg-banner' : ''}`;
-
-                        if (scenario.type === 'ending') {
+                    const cardClasses = `scenario-card branch-${scenario.branch} ${isSelected && showPreview ? 'preview-active' : ''} ${scenario.isCg ? 'is-cg' : ''} ${scenario.type === 'ending' ? 'type-ending' : ''} ${scenario.type === 'cg_image' ? 'type-cg-banner' : ''}`;                        if (scenario.type === 'ending') {
                             return (
                                 <div key={index} onClick={() => { if(showPreview) setPreviewScenario({ ...scenario, index }); }} className={cardClasses}>
                                     <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <span style={{ fontWeight: 'bold', color: '#ffd43b' }}>🎬 엔딩</span>
-                                            {scenario.branch === 'option1' && <span className="badge opt1">선택지 1번</span>}
-                                            {scenario.branch === 'option2' && <span className="badge opt2">선택지 2번</span>}
+                                            {/* ⭐ 수정: 하드코딩 삭제, branch 번호를 추출하여 OPTION_COLORS 배열에서 색상을 가져옴 */}
+                                            {scenario.branch?.startsWith('option') && (
+                                                <span 
+                                                    className="badge" 
+                                                    style={{ 
+                                                        backgroundColor: OPTION_COLORS[(parseInt(scenario.branch.replace('option', '')) - 1) % 10] 
+                                                    }}
+                                                >
+                                                    선택지 {scenario.branch.replace('option', '')}번
+                                                </span>
+                                            )}
                                         </div>
                                         <button onClick={(e) => { e.stopPropagation(); removeScenarioInput(index); }} className="btn-text-del">삭제</button>
                                     </div>
@@ -679,9 +764,13 @@ const getActiveSpeakerStyle = (speakerId) => {
                                                     <span style={{ fontWeight: 'bold', color: '#495057', fontSize: '15px' }}>번째 컷</span>
                                                 </div>
                                             )}
-                                            <div style={{ display: 'flex', gap: '6px' }}>
-                                                {scenario.branch === 'option1' && <span className="badge opt1" style={{ fontSize: '12px', padding: '3px 8px' }}>루트 A (선택지 1)</span>}
-                                                {scenario.branch === 'option2' && <span className="badge opt2" style={{ fontSize: '12px', padding: '3px 8px' }}>루트 B (선택지 2)</span>}
+<div style={{ display: 'flex', gap: '6px' }}>
+                                                {/* ⭐ 수정: 루트 1~10번까지 고유 색상 적용 */}
+                                                {scenario.branch?.startsWith('option') && (
+                                                    <span className={`badge ${scenario.branch}`} style={{ fontSize: '12px', padding: '3px 8px', backgroundColor: OPTION_COLORS[(parseInt(scenario.branch.replace('option', '')) - 1) % 10] }}>
+                                                        루트 {String.fromCharCode(64 + parseInt(scenario.branch.replace('option', '')))} (선택지 {scenario.branch.replace('option', '')})
+                                                    </span>
+                                                )}
                                                 {scenario.isCg && <span className="badge cg" style={{ fontSize: '12px', padding: '3px 8px' }}>🖼️ CG 모드</span>}
                                             </div>
                                         </div>
@@ -695,15 +784,44 @@ const getActiveSpeakerStyle = (speakerId) => {
                                         )}
                                     </div>
 
-                                    {scenario.type === 'choice' ? (
+{scenario.type === 'choice' ? (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                             <div style={{ padding: '12px', backgroundColor: '#e7f5ff', borderLeft: '4px solid #1971c2', borderRadius: '4px', fontSize: '13px', color: '#1864ab', lineHeight: '1.5' }}>
-                                                <strong>💡 화면에 표시될 두 가지 선택지를 입력해 주세요.</strong><br/>
-                                                각 선택지에 따라 스토리가 A/B 루트로 나뉩니다.<br/>
-                                                <span style={{ color: '#495057', fontSize: '12px' }}>(※ A/B 루트 둘 다 마지막에 🎬엔딩을 넣지 않으면, 어느 쪽을 고르든 자연스럽게 다음 이벤트로 넘어갑니다.)</span>
+                                                <strong>💡 화면에 표시될 선택지들을 입력해 주세요. (최대 10개)</strong><br/>
+                                                선택지를 삭제하면 해당 번호로 작성된 컷들도 함께 삭제되며 번호가 당겨집니다.
                                             </div>
-                                            <input type="text" placeholder="선택지 1 텍스트" value={scenario.option1 || ''} onChange={(e) => handleScenarioChange(index, 'option1', e.target.value)} className="input-base" />
-                                            <input type="text" placeholder="선택지 2 텍스트" value={scenario.option2 || ''} onChange={(e) => handleScenarioChange(index, 'option2', e.target.value)} className="input-base" />
+                                            
+                                            {/* ⭐ 수정: options 배열을 안전하게 매핑 (없으면 빈칸 2개로 대체) */}
+                                            {(scenario.options || ['', '']).map((optText, optIdx) => (
+                                                <div key={optIdx} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                                    <span style={{ fontWeight: 'bold', color: '#495057', fontSize: '14px', width: '20px' }}>{optIdx + 1}.</span>
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder={`선택지 ${optIdx + 1} 텍스트`} 
+                                                        value={optText} 
+                                                        onChange={(e) => {
+                                                            const newScenarios = [...scenarios];
+                                                            const currentOptions = [...(newScenarios[index].options || ['', ''])];
+                                                            currentOptions[optIdx] = e.target.value;
+                                                            newScenarios[index].options = currentOptions;
+                                                            updateActiveScenarios(newScenarios);
+                                                        }} 
+                                                        className="input-base" 
+                                                        style={{ flex: 1 }} 
+                                                    />
+                                                    {(scenario.options?.length || 2) > 2 && (
+                                                        <button onClick={() => handleDeleteOption(index, optIdx)} style={{ padding: '8px 12px', backgroundColor: '#fa5252', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+                                                            삭제
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                            
+                                            {(scenario.options?.length || 2) < 10 && (
+                                                <button onClick={() => handleAddOption(index)} style={{ marginTop: '5px', padding: '10px', backgroundColor: '#f1f3f5', color: '#495057', border: '2px dashed #adb5bd', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                                                    + 선택지 추가
+                                                </button>
+                                            )}
                                         </div>
                                     ) : (
                                         <>
@@ -779,13 +897,22 @@ const getActiveSpeakerStyle = (speakerId) => {
                         );
                     })}
                 </div>
-
-                <div className="controller-group">
+<div className="controller-group">
                     {!hasEndingInCurrentBranch ? (
                         <>
                             {currentBranch === 'main' && !hasChoiceNode && <button onClick={addScenarioInput} className="btn-large bg-blue">+ 일반 대사 추가</button>}
-                            {currentBranch === 'option1' && <button onClick={addScenarioInput} className="btn-large bg-green">+ 선택지 1번 루트 대사 추가</button>}
-                            {currentBranch === 'option2' && <button onClick={addScenarioInput} className="btn-large bg-orange">+ 선택지 2번 루트 대사 추가</button>}
+{currentBranch.startsWith('option') && (
+                                <button 
+                                    onClick={addScenarioInput} 
+                                    className="btn-large"
+                                    style={{ 
+                                        backgroundColor: OPTION_COLORS[(currentBranchNum - 1) % 10],
+                                        boxShadow: '0 4px 0 rgba(0,0,0,0.2)' 
+                                    }}
+                                >
+                                    + 선택지 {currentBranchNum}번 루트 대사 추가
+                                </button>
+                            )}
                             {!isCgMode && (currentBranch !== 'main' || !hasChoiceNode) && (
                                 <label className="btn-large bg-purple">
                                     🖼️ 이벤트 CG 추가 <input type="file" accept="image/*" onChange={handleCgUpload} style={{ display: 'none' }} />
@@ -799,21 +926,26 @@ const getActiveSpeakerStyle = (speakerId) => {
                         </>
                     ) : (
                         <div style={{ flex: 1, padding: '15px', backgroundColor: '#e9ecef', color: '#868e96', textAlign: 'center', borderRadius: '8px', fontWeight: 'bold' }}>
-                            🔒 현재 분기(루트)는 엔딩으로 마무리되어 더 이상 대사를 추가할 수 없습니다.
+                            🔒 현재 분기(루트 {currentBranchNum})는 엔딩으로 마무리되어 더 이상 대사를 추가할 수 없습니다.
                         </div>
                     )}
                 </div>
-{currentBranch === 'option1' && hasOption1Nodes && (
-                    <button onClick={() => { setIsCgMode(false); setCurrentBranch('option2'); }} className="btn-large bg-orange" style={{ width: '100%', marginTop: '10px' }}>
-                        ✔️ 선택지 1번 루트 종료 (2번 작성 시작)
+
+{currentBranch.startsWith('option') && 
+                 scenarios.some(s => s.branch === currentBranch) && 
+                 currentBranchNum < totalOptionsCount && (
+                    <button 
+                        onClick={() => { setIsCgMode(false); setCurrentBranch(`option${currentBranchNum + 1}`); }} 
+                        className="btn-large" 
+                        style={{ 
+                            width: '100%', 
+                            marginTop: '10px', 
+                            backgroundColor: OPTION_COLORS[currentBranchNum % 10], 
+                            boxShadow: '0 4px 0 rgba(0,0,0,0.2)'
+                        }}
+                    >
+                        ✔️ 선택지 {currentBranchNum}번 루트 종료 ({currentBranchNum + 1}번 루트 작성 시작)
                     </button>
-                )}
-                {isFullyEnded && (
-                    <div style={{ marginTop: '20px', padding: '20px', backgroundColor: '#212529', color: '#ffd43b', textAlign: 'center', borderRadius: '8px', fontWeight: 'bold', border: '2px solid #ffd43b', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}>
-                        <div style={{ fontSize: '24px', marginBottom: '10px' }}>🎊</div>
-                        모든 루트에 엔딩이 생겼습니다! 이 이벤트가 마지막 끝입니다.<br/>
-                        <span style={{ fontSize: '14px', color: '#ced4da', fontWeight: 'normal', marginTop: '5px', display: 'inline-block' }}>이 이후의 이벤트는 게임에 구현되지 않습니다!</span>
-                    </div>
                 )}
             </div>
         </div>
