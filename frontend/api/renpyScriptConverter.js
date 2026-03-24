@@ -120,14 +120,13 @@ const pName = data.protagonist?.name || '주인공';
         script += `    jump event_${data.events[0].id}\n\n`;
     }
 
-    if (data.events) {
+if (data.events) {
         data.events.forEach((event, idx) => {
             const nextEvent = data.events[idx + 1];
             const nextEventLabel = nextEvent ? `event_${nextEvent.id}` : null;
 
+            // 메인 루트만 먼저 추출 (opt1Scen, opt2Scen 등 하드코딩 삭제)
             const mainScen = event.scenarios.filter(s => s.branch === 'main' || s.type === 'choice');
-            const opt1Scen = event.scenarios.filter(s => s.branch === 'option1');
-            const opt2Scen = event.scenarios.filter(s => s.branch === 'option2');
 
             const renderBlock = (labelName, scenarioList, stateIn) => {
                 if (scenarioList.length === 0) return { out: "", stateOut: stateIn };
@@ -169,19 +168,17 @@ const pName = data.protagonist?.name || '주인공';
                         return;
                     }
 
+                    // ⭐ 수정됨: options 배열만 사용해서 1~10개 선택지 깔끔하게 생성
                     if (sc.type === 'choice') {
-                        const opt1Text = sc.option1 || "선택지 1";
-                        const opt2Text = sc.option2 || "선택지 2";
-                        // ⭐ 렌파이 기본 menu 명령어는 화면 정중앙에 버튼들을 출력합니다.
                         out += `    menu:\n`;
-                        out += `        "${opt1Text}":\n`;
-                        out += `            jump event_${event.id}_opt1\n`;
-                        out += `        "${opt2Text}":\n`;
-                        out += `            jump event_${event.id}_opt2\n`;
+                        (sc.options || []).forEach((optText, optIdx) => {
+                            const finalOptText = optText.trim() || `선택지 ${optIdx + 1}`;
+                            out += `        "${finalOptText.replace(/"/g, '\\"')}":\n`;
+                            out += `            jump event_${event.id}_option${optIdx + 1}\n`;
+                        });
                         return;
                     }
 
-                    // ⭐ 수정: CG 이미지 출력부
                     if (sc.type === 'cg_image') {
                         const cgName = getFileName(sc.src);
                         let transitionNeeded = false;
@@ -198,14 +195,12 @@ const pName = data.protagonist?.name || '주인공';
                             transitionNeeded = true;
                         }
                         
-                        // ⭐ 추가: 달력 숨김 플래그 ON
                         out += `    $ show_calendar = False\n`;
 
                         if (transitionNeeded || sIdx === 0) {
                             out += `    with ${transType}\n`;
                         }
 
-                        // ⭐ 추가: 이미지를 보여준 상태에서 클릭 대기 (대사창 뜨기 전 딜레이)
                         out += `    pause\n`;
 
                         out += `    $ current_p_image = ""\n`;
@@ -246,7 +241,6 @@ const pName = data.protagonist?.name || '주인공';
                             transitionNeeded = true;
                         }
 
-                        // ⭐ 달력 제어: CG 연출이면 달력을 끄고, 일반 대화면 달력을 켭니다.
                         if (sc.isCg) {
                             out += `    $ show_calendar = False\n`;
                         } else {
@@ -267,7 +261,6 @@ const pName = data.protagonist?.name || '주인공';
                         if (sc.speaker === 'PROTAGONIST') {
                             speaker = 'p';
                         } else if (sc.speaker === '나레이션') {
-                            // ⭐ 수정: 위에서 선언한 나레이션 전용 화자로 지정
                             speaker = 'narration';
                         } else {
                             const c = data.characters.find(char => char.name === sc.speaker);
@@ -283,9 +276,9 @@ const pName = data.protagonist?.name || '주인공';
                 if (lastSc && lastSc.type !== 'ending' && lastSc.type !== 'choice') {
                     if (nextEventLabel) {
                         out += `    window hide\n`;                  
-                        out += `    scene black\n`;                 
+                        out += `    scene black\n`;                
                         out += `    with Dissolve(1.5)\n`;          
-                        out += `    pause 0.5\n`;                     
+                        out += `    pause 0.5\n`;                    
                         out += `    jump ${nextEventLabel}\n\n`;      
                     } else {
                         out += `    return\n\n`;
@@ -296,17 +289,19 @@ const pName = data.protagonist?.name || '주인공';
 
             let curState = { bg: "", p: "", h: "" };
             
+            // 메인 루트 생성
             const mainRes = renderBlock(`event_${event.id}`, mainScen, curState);
             script += mainRes.out;
 
-            if (opt1Scen.length > 0) {
-                const opt1Res = renderBlock(`event_${event.id}_opt1`, opt1Scen, mainRes.stateOut);
-                script += opt1Res.out;
-            }
-            
-            if (opt2Scen.length > 0) {
-                const opt2Res = renderBlock(`event_${event.id}_opt2`, opt2Scen, mainRes.stateOut);
-                script += opt2Res.out;
+            // ⭐ 수정됨: 1번부터 10번까지 루프를 돌면서 존재하는 옵션(optionN) 루트들을 모두 렌더링
+            for (let i = 1; i <= 10; i++) {
+                const branchName = `option${i}`;
+                const optScen = event.scenarios.filter(s => s.branch === branchName);
+                
+                if (optScen.length > 0) {
+                    const optRes = renderBlock(`event_${event.id}_${branchName}`, optScen, mainRes.stateOut);
+                    script += optRes.out;
+                }
             }
         });
     }
