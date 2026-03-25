@@ -163,6 +163,10 @@ const CharacterForm = ({ charData, isProtagonist, onUpdate, onImageUpload, onRem
   const typeText = isProtagonist ? '😎 주인공 (Player)' : `🎭 등장인물`;
   const themeClass = isProtagonist ? 'protagonist' : 'character';
 
+  // 기존 저장 데이터 호환을 위한 안전 장치
+  const portraits = charData.portraitImages || (isProtagonist && charData.images ? charData.images : []);
+  const standings = charData.standingImages || (!isProtagonist && charData.images ? charData.images : []);
+
   return (
     <div className="char-card">
       {!isProtagonist && totalCount > 1 && (
@@ -175,16 +179,30 @@ const CharacterForm = ({ charData, isProtagonist, onUpdate, onImageUpload, onRem
         <input type="text" className="text-input" placeholder="이름 입력" value={charData.name} onChange={(e) => onUpdate('name', e.target.value)} />
       </div>
       
-      <div className="input-row">
-        <label className="input-label">스탠딩 사진 업로드 {isProtagonist && "(1:1 정사각형, 최대 10장)"}</label>
-        <input type="file" multiple accept="image/*" onChange={onImageUpload} />
+      {/* 🖼️ 1. 초상화 사진 업로드 영역 */}
+      <div className="input-row" style={{ marginTop: '15px' }}>
+        <label className="input-label">🖼️ 초상화 사진 업로드 (1:1 정사각형)</label>
+        <input type="file" multiple accept="image/*" onChange={(e) => onImageUpload(e, isProtagonist ? 'protagonist' : charData.id, 'portrait')} />
       </div>
-      
       <div className="thumbnail-list">
-        {charData.images.map((img, idx) => (
-          <div key={idx} className="thumbnail-item" onClick={() => onImageClick(isProtagonist ? 'protagonist' : charData.id, idx)} style={{ cursor: 'pointer' }} title="클릭 시 미리보기에 적용됩니다">
+        {portraits.map((img, idx) => (
+          <div key={`p-${idx}`} className="thumbnail-item" onClick={() => onImageClick(isProtagonist ? 'protagonist' : charData.id, idx, 'portrait')} style={{ cursor: 'pointer' }} title="클릭 시 미리보기에 적용됩니다">
             <img src={getImgUrl(img)} alt="thumb" className="thumbnail-img" />
-            <button className="btn-del-img" onClick={(e) => { e.stopPropagation(); onRemoveImage(idx); }}>×</button>
+            <button className="btn-del-img" onClick={(e) => { e.stopPropagation(); onRemoveImage(idx, 'portrait'); }}>×</button>
+          </div>
+        ))}
+      </div>
+
+      {/* 🧍 2. 스탠딩 사진 업로드 영역 */}
+      <div className="input-row" style={{ marginTop: '15px' }}>
+        <label className="input-label">🧍 스탠딩 사진 업로드 (전신/반신)</label>
+        <input type="file" multiple accept="image/*" onChange={(e) => onImageUpload(e, isProtagonist ? 'protagonist' : charData.id, 'standing')} />
+      </div>
+      <div className="thumbnail-list">
+        {standings.map((img, idx) => (
+          <div key={`s-${idx}`} className="thumbnail-item" onClick={() => onImageClick(isProtagonist ? 'protagonist' : charData.id, idx, 'standing')} style={{ cursor: 'pointer' }} title="클릭 시 미리보기에 적용됩니다">
+            <img src={getImgUrl(img)} alt="thumb" className="thumbnail-img" />
+            <button className="btn-del-img" onClick={(e) => { e.stopPropagation(); onRemoveImage(idx, 'standing'); }}>×</button>
           </div>
         ))}
       </div>
@@ -321,12 +339,14 @@ const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOption
 /**
  * 📺 2. 인게임 미리보기 화면 (isNarration 속성 추가)
  */
-const InGamePreview = ({ previewBg, standingImg, currentGlobalUi, textShadowStr, isP, isNarration, pAsset, nAsset, dAsset, cAsset, activeStyle, renderFontFamily, activeChar, protagonist }) => {
-  // ⭐ 나레이션이면 이름과 안내 문구를 바꿉니다.
+/**
+ * 📺 2. 인게임 미리보기 화면
+ */
+const InGamePreview = ({ previewBg, standingImg, portraitImg, currentGlobalUi, textShadowStr, isP, isNarration, pAsset, nAsset, dAsset, cAsset, activeStyle, renderFontFamily, activeChar, protagonist }) => {
   const charName = activeChar?.name || (isP ? (protagonist?.name || '주인공') : (isNarration ? '' : '등장인물'));
   const fullText = isNarration 
     ? `나레이션의 대사가 이곳에 출력됩니다. 배경 설명이나 상황을 묘사할 때 네임칸 없이 화면에 깔끔하게 대사만 출력되는 것을 확인할 수 있습니다.` 
-    : `현재 선택된 '${charName}' 캐릭터의 대사가 이곳에 출력됩니다. 선택한 폰트, 대사창의 색상과 투명도, 그리고 텍스트 외곽선 설정이 실제 게임에서 어떻게 보일지 실시간으로 체크해 보세요.`;
+    : `현재 선택된 '${charName}' 캐릭터의 대사가 이곳에 출력됩니다. 초상화 프레임과 스탠딩 일러스트가 동시에 적용된 모습을 확인해 보세요.`;
   
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(true);
@@ -334,47 +354,35 @@ const InGamePreview = ({ previewBg, standingImg, currentGlobalUi, textShadowStr,
   useEffect(() => {
     setDisplayedText(""); 
     setIsTyping(true);
-    
     let currentIndex = 0;
     let waitCount = 0; 
     const WAIT_TIME = 30; 
 
     const timer = setInterval(() => {
       if (currentIndex < fullText.length) {
-        const nextText = fullText.slice(0, currentIndex + 1);
-        setDisplayedText(nextText);
+        setDisplayedText(fullText.slice(0, currentIndex + 1));
         currentIndex++;
       } else {
         setIsTyping(false); 
         waitCount++;
         if (waitCount > WAIT_TIME) {
-          currentIndex = 0;
-          waitCount = 0;
-          setDisplayedText("");
-          setIsTyping(true);
+          currentIndex = 0; waitCount = 0; setDisplayedText(""); setIsTyping(true);
         }
       }
     }, 50);
-
     return () => clearInterval(timer);
   }, [fullText]);
 
   const finalDialogBorder = activeStyle.useDialogBorder === false ? 'none' : dAsset.border;
-  // 나레이션일 때는 nAsset이 없을 수 있으므로 예외 처리 추가
   const finalNameBorder = activeStyle.useNameBorder === false || !nAsset ? 'none' : nAsset.border;
   const finalPortraitBorder = activeStyle.usePortraitBorder === false ? 'none' : (pAsset ? pAsset.border : 'none');
   
   const outlineColor = parseRgba(activeStyle.outline).hex;
-  const charTextShadowStr = activeStyle.useOutline 
-    ? `-1px -1px 0 ${outlineColor}, 1px -1px 0 ${outlineColor}, -1px 1px 0 ${outlineColor}, 1px 1px 0 ${outlineColor}` 
-    : 'none';
+  const charTextShadowStr = activeStyle.useOutline ? `-1px -1px 0 ${outlineColor}, 1px -1px 0 ${outlineColor}, -1px 1px 0 ${outlineColor}, 1px 1px 0 ${outlineColor}` : 'none';
 
   const containerStyle = {
-    backgroundImage: previewBg === 'default' 
-      ? 'radial-gradient(circle, #343a40 10%, transparent 10%), radial-gradient(circle, #343a40 10%, transparent 10%)' 
-      : `url(${previewBg})`,
-    backgroundSize: previewBg === 'default' ? '20px 20px' : 'cover',
-    backgroundPosition: previewBg === 'default' ? '0 0, 10px 10px' : 'center',
+    backgroundImage: previewBg === 'default' ? 'radial-gradient(circle, #343a40 10%, transparent 10%), radial-gradient(circle, #343a40 10%, transparent 10%)' : `url(${previewBg})`,
+    backgroundSize: previewBg === 'default' ? '20px 20px' : 'cover', backgroundPosition: previewBg === 'default' ? '0 0, 10px 10px' : 'center',
   };
 
   const calendarBoxStyle = { backgroundColor: cAsset.type === 'image' ? 'transparent' : currentGlobalUi.calendarColor, backgroundImage: cAsset.type === 'image' ? `url(${cAsset.src})` : 'none', border: cAsset.type === 'css' ? cAsset.border : 'none', borderRadius: cAsset.type === 'css' ? cAsset.borderRadius : '0' };
@@ -385,12 +393,11 @@ const InGamePreview = ({ previewBg, standingImg, currentGlobalUi, textShadowStr,
 
   return (
     <div className={`preview-container ${layoutClass}`} style={containerStyle}>
-      {/* ⭐ 캐릭터 스탠딩 이미지 (나레이션 모드일 때는 숨김) */}
-      {!isP && !isNarration && standingImg && (
+      {/* ⭐ 스탠딩 이미지 (나레이션 모드가 아닐 경우 주인공/등장인물 모두 표시) */}
+      {!isNarration && standingImg && (
         <img src={standingImg} alt="standing" className="ig-standing" />
       )}
 
-      {/* 우측 상단 달력 */}
       <div className="ig-calendar-group">
         {currentGlobalUi.calendarFrame !== 'none' && (
           <div className="ig-calendar-box" style={calendarBoxStyle}>
@@ -403,64 +410,36 @@ const InGamePreview = ({ previewBg, standingImg, currentGlobalUi, textShadowStr,
         </div>
       </div>
 
-      {/* 주인공 초상화 영역 */}
-      {isP && pAsset && (
+      {/* ⭐ 초상화 영역 (나레이션 모드가 아닐 경우 주인공/등장인물 모두 표시) */}
+      {!isNarration && pAsset && (
         <div className="ig-portrait-area">
           {pAsset.type === 'image' && (
             <img src={pAsset.src} alt="Frame" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill', zIndex: 1 }} />
           )}
           <div style={{ position: 'absolute', inset: 0, zIndex: 2, backgroundColor: pAsset.type === 'image' ? 'transparent' : activeStyle.portraitColor, WebkitMaskImage: pAsset.type === 'image' ? `url(${pAsset.mask})` : 'none', maskImage: pAsset.type === 'image' ? `url(${pAsset.mask})` : 'none', WebkitMaskSize: '100% 100%', maskSize: '100% 100%', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', borderRadius: pAsset.type === 'css' ? pAsset.borderRadius : '0%', border: pAsset.type === 'css' ? finalPortraitBorder : 'none', overflow: 'hidden' }}>
-{standingImg || protagonist.images.length > 0 ? (
-    <img src={standingImg || getImgUrl(protagonist.images[0])} alt="주인공" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-  ) : (
-    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>👤</div>
-  )}
-</div>
+            {portraitImg ? (
+              <img src={portraitImg} alt="초상화" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>👤</div>
+            )}
+          </div>
         </div>
       )}
 
-      {/* ⭐ 네임칸 (나레이션 모드가 아닐 때만 표시) */}
       {!isNarration && (
         <div className="ig-namebox" style={nameBoxStyle}>
           <span style={{ fontFamily: renderFontFamily, color: activeStyle.color, textShadow: charTextShadowStr }}>{charName}</span>
         </div>
       )}
 
-      {/* 대화창 */}
       <div className="ig-dialogbox" style={dialogBoxStyle}>
         <p style={{ fontFamily: renderFontFamily, color: activeStyle.color, fontSize: '3cqh', margin: 0, whiteSpace: 'pre-wrap', textShadow: charTextShadowStr }}>{displayedText}</p>
       </div>
 
       {/* 하단 시스템 메뉴 */}
-      <div 
-        className="ig-system-menu" 
-        style={{ 
-          position: 'absolute', 
-          bottom: '95cqh', 
-          left: '70%', 
-          transform: 'translateX(-50%)', 
-          display: 'flex', 
-          gap: '15px', 
-          zIndex: 100, 
-          backgroundColor: 'transparent', 
-          whiteSpace: 'nowrap' 
-        }}
-      >
+      <div className="ig-system-menu" style={{ position: 'absolute', bottom: '95cqh', left: '70%', transform: 'translateX(-50%)', display: 'flex', gap: '15px', zIndex: 100 }}>
         {['되감기', '대사록', '자동진행', '저장하기', '불러오기', '설정'].map((menu) => (
-          <span 
-            key={menu} 
-            style={{ 
-              fontFamily: currentGlobalUi.systemFont || 'sans-serif', 
-              fontSize: '1.7cqh', 
-              color: '#ffffff', 
-              cursor: 'pointer', 
-              fontWeight: 'normal', 
-              textShadow: '1px 1px 3px rgba(0,0,0,1), 0px 0px 5px rgba(0,0,0,0.5)', 
-              opacity: 0.9 
-            }}
-          >
-            {menu}
-          </span>
+          <span key={menu} style={{ fontFamily: currentGlobalUi.systemFont || 'sans-serif', fontSize: '1.7cqh', color: '#ffffff', cursor: 'pointer', textShadow: '1px 1px 3px rgba(0,0,0,1)' }}>{menu}</span>
         ))}
       </div>
     </div>
@@ -478,13 +457,15 @@ export default function StepSettings() {
     characters, setCharacters, 
     customFonts, addCustomFont, 
     globalUi, setGlobalUi,
-    // 🌟 나레이션 스토어 상태 가져오기
     narrationFontStyle, setNarrationFontStyle 
   } = useCustomizerStore();
 
   const [previewTarget, setPreviewTarget] = useState('protagonist');
   const [previewBg, setPreviewBg] = useState('default');
-  const [selectedImageIndices, setSelectedImageIndices] = useState({});
+  
+  // ⭐ 선택된 초상화와 스탠딩의 인덱스를 따로 관리
+  const [selectedPortraitIndices, setSelectedPortraitIndices] = useState({});
+  const [selectedStandingIndices, setSelectedStandingIndices] = useState({});
 
   useEffect(() => {
     if (!protagonist.name) setProtagonist({ ...protagonist, name: '주인공' });
@@ -494,7 +475,6 @@ export default function StepSettings() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 🌟 레이아웃 및 나레이션 초기값 설정
   const currentGlobalUi = globalUi || { calendarFrame: 'none', layoutMode: 'bottom' };
   const safeSetGlobalUi = setGlobalUi || (() => {});
   
@@ -502,41 +482,54 @@ export default function StepSettings() {
   const safeSetNarrationStyle = setNarrationFontStyle || (() => {});
 
   const uniqueCustomFonts = Array.from(new Map(customFonts.map((f) => [f.name, f])).values());
-
-      const fontOptions = [
-              ...SHARED_FONT, // assets.js에서 정의한 기본 폰트 목록 전체를 가져옴
-    ...uniqueCustomFonts.map((f) => ({ name: `📁 ${f.name}`, value: f.name })),
-          ];
+  const fontOptions = [...SHARED_FONT, ...uniqueCustomFonts.map((f) => ({ name: `📁 ${f.name}`, value: f.name }))];
 
   const addCharacter = () => {
     if (characters.length >= 10) return alert('최대 10명까지만 추가할 수 있습니다!');
     const nextNum = characters.length + 1;
-    setCharacters([ ...characters, { id: Date.now(), name: `등장인물 ${nextNum}`, images: [], fontStyle: { font: 'Pretendard', color: '#ffffff', useOutline: false, outline: '#000000', dialogFrame: 'simple', dialogColor: 'rgba(255,182,193,0.8)', nameFrame: 'simple', nameColor: 'rgba(255,182,193,0.8)', typingSound: 'type1' } } ]);
+    // ⭐ 새 캐릭터 추가 시 portraitImages와 standingImages 빈 배열로 초기화
+    setCharacters([ ...characters, { id: Date.now(), name: `등장인물 ${nextNum}`, portraitImages: [], standingImages: [], fontStyle: { font: 'Pretendard', color: '#ffffff', useOutline: false, outline: '#000000', dialogFrame: 'simple', dialogColor: 'rgba(255,182,193,0.8)', nameFrame: 'simple', nameColor: 'rgba(255,182,193,0.8)', typingSound: 'type1' } } ]);
   };
 
-  const handleImageClick = (targetId, imgIndex) => {
+  // ⭐ 이미지 클릭 시 초상화인지 스탠딩인지 구분하여 인덱스 업데이트
+  const handleImageClick = (targetId, imgIndex, imageType) => {
     setPreviewTarget(targetId);
-    setSelectedImageIndices((prev) => ({ ...prev, [targetId]: imgIndex }));
+    if (imageType === 'portrait') setSelectedPortraitIndices((prev) => ({ ...prev, [targetId]: imgIndex }));
+    else setSelectedStandingIndices((prev) => ({ ...prev, [targetId]: imgIndex }));
   };
 
-  const handleImageUpload = async (e, targetId) => {
+  // ⭐ 이미지 업로드 시 imageType에 따라 다른 배열에 저장
+  const handleImageUpload = async (e, targetId, imageType) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
     
     const newImageData = [];
     for (let file of files) {
       const previewUrl = URL.createObjectURL(file);
-      if (targetId === 'protagonist') {
+      // 초상화 업로드일 때만 1:1 비율 검사
+      if (imageType === 'portrait') {
         const isValid = await new Promise((resolve) => {
           const img = new Image(); img.src = previewUrl; img.onload = () => resolve(img.width === img.height);
         });
-        if (!isValid) { alert(`🚨 '${file.name}' 이미지는 1:1 비율이 아닙니다!`); continue; }
+        if (!isValid) { alert(`🚨 '${file.name}' 초상화 이미지는 1:1 비율이 아닙니다!`); continue; }
       }
       newImageData.push({ file, preview: previewUrl });
     }
 
-    if (targetId === 'protagonist') { setProtagonist({ ...protagonist, images: [...protagonist.images, ...newImageData] }); } 
-    else { setCharacters(characters.map((char) => char.id === targetId ? { ...char, images: [...char.images, ...newImageData] } : char)); }
+    if (targetId === 'protagonist') { 
+      const key = imageType === 'portrait' ? 'portraitImages' : 'standingImages';
+      const currentArr = protagonist[key] || (imageType === 'portrait' && protagonist.images ? protagonist.images : []) || [];
+      setProtagonist({ ...protagonist, [key]: [...currentArr, ...newImageData] }); 
+    } else { 
+      setCharacters(characters.map((char) => {
+        if (char.id === targetId) {
+          const key = imageType === 'portrait' ? 'portraitImages' : 'standingImages';
+          const currentArr = char[key] || (imageType === 'standing' && char.images ? char.images : []) || [];
+          return { ...char, [key]: [...currentArr, ...newImageData] };
+        }
+        return char;
+      })); 
+    }
   };
 
   const handleFontUpload = (e) => {
@@ -556,7 +549,6 @@ export default function StepSettings() {
     reader.readAsDataURL(file);
   };
 
-  // 🌟 미리보기 대상 설정 로직 변경
   const isP = previewTarget === 'protagonist';
   const isNarration = previewTarget === 'narration';
   const activeChar = isP || isNarration ? null : characters.find((c) => c.id === previewTarget);
@@ -565,24 +557,24 @@ export default function StepSettings() {
   if (isNarration) activeStyle = currentNarrationStyle;
   else if (!isP) activeStyle = activeChar?.fontStyle || pFontStyle;
 
-  const activeImgIndex = selectedImageIndices[previewTarget] || 0;
+  // ⭐ 현재 선택된 초상화/스탠딩 인덱스 가져오기
+  const activePortraitIndex = selectedPortraitIndices[previewTarget] || 0;
+  const activeStandingIndex = selectedStandingIndices[previewTarget] || 0;
   
-let standingImg = null;
-const targetImages = isP ? protagonist.images : activeChar?.images;
+  // 데이터 호환성 유지하면서 이미지 배열 추출
+  const targetPortraits = isP ? (protagonist.portraitImages || protagonist.images || []) : (activeChar?.portraitImages || []);
+  const targetStandings = isP ? (protagonist.standingImages || []) : (activeChar?.standingImages || activeChar?.images || []);
 
-if (targetImages?.length > activeImgIndex) {
-  standingImg = getImgUrl(targetImages[activeImgIndex]);
-} else if (targetImages?.length > 0) {
-  standingImg = getImgUrl(targetImages[0]);
-}
+  let portraitImg = targetPortraits.length > activePortraitIndex ? getImgUrl(targetPortraits[activePortraitIndex]) : (targetPortraits.length > 0 ? getImgUrl(targetPortraits[0]) : null);
+  let standingImg = targetStandings.length > activeStandingIndex ? getImgUrl(targetStandings[activeStandingIndex]) : (targetStandings.length > 0 ? getImgUrl(targetStandings[0]) : null);
 
   const dAsset = (UI_ASSETS.dialog[activeStyle.dialogFrame] || UI_ASSETS.dialog.simple)(activeStyle.dialogColor, activeStyle.dialogBorderColor);
   const nAsset = !isNarration ? (UI_ASSETS.namebox[activeStyle.nameFrame] || UI_ASSETS.namebox.simple)(activeStyle.nameColor, activeStyle.nameBorderColor) : null;
-  const pAsset = isP ? (UI_ASSETS.portrait[activeStyle.portraitStyle] || UI_ASSETS.portrait.square)(activeStyle.portraitColor, activeStyle.portraitBorderColor) : null;
+  // ⭐ 이제 등장인물도 초상화 에셋을 적용받습니다.
+  const pAsset = !isNarration ? (UI_ASSETS.portrait[activeStyle.portraitStyle] || UI_ASSETS.portrait.square)(activeStyle.portraitColor, activeStyle.portraitBorderColor) : null;
   const cAsset = (UI_ASSETS.calendar[currentGlobalUi.calendarFrame] || UI_ASSETS.calendar.none)(currentGlobalUi.calendarColor);
   const renderFontFamily = activeStyle.font || currentGlobalUi.systemFont || 'sans-serif';
   const textShadowStr = currentGlobalUi.calendarTextUseOutline ? `-1px -1px 0 ${currentGlobalUi.calendarTextOutlineColor}, 1px -1px 0 ${currentGlobalUi.calendarTextOutlineColor}, -1px 1px 0 ${currentGlobalUi.calendarTextOutlineColor}, 1px 1px 0 ${currentGlobalUi.calendarTextOutlineColor}` : 'none';
-
   return (
     <div className="settings-container">
       <h2 className="section-title">등장인물 및 스타일 설정</h2>
@@ -606,8 +598,8 @@ if (targetImages?.length > activeImgIndex) {
           ))}
         </div>
 
-        <InGamePreview
-          previewBg={previewBg} standingImg={standingImg} currentGlobalUi={currentGlobalUi}
+<InGamePreview
+          previewBg={previewBg} standingImg={standingImg} portraitImg={portraitImg} currentGlobalUi={currentGlobalUi}
           textShadowStr={textShadowStr} isP={isP} isNarration={isNarration} pAsset={pAsset} nAsset={nAsset} dAsset={dAsset} cAsset={cAsset}
           activeStyle={activeStyle} renderFontFamily={renderFontFamily} activeChar={activeChar} protagonist={protagonist}
         />
@@ -615,14 +607,39 @@ if (targetImages?.length > activeImgIndex) {
 
       {/* 👤 2. 등장인물 및 사진 설정 섹션 */}
       <h4 className="sub-header">👤 2. 이름 및 스탠딩 일러 설정</h4>
-      <div className="char-list-container">
-        <CharacterForm charData={protagonist} isProtagonist={true} onUpdate={(k, v) => setProtagonist({ ...protagonist, [k]: v })} onImageUpload={(e) => handleImageUpload(e, 'protagonist')} onRemoveImage={(idx) => setProtagonist({ ...protagonist, images: protagonist.images.filter((_, i) => i !== idx) })} onImageClick={handleImageClick} />
+<div className="char-list-container">
+        <CharacterForm 
+          charData={protagonist} isProtagonist={true} totalCount={1}
+          onUpdate={(k, v) => setProtagonist({ ...protagonist, [k]: v })} 
+          onImageUpload={handleImageUpload} 
+          onRemoveImage={(idx, type) => {
+            const key = type === 'portrait' ? 'portraitImages' : 'standingImages';
+            const arr = protagonist[key] || (type === 'portrait' ? protagonist.images : []) || [];
+            setProtagonist({ ...protagonist, [key]: arr.filter((_, i) => i !== idx) });
+          }} 
+          onImageClick={handleImageClick} 
+        />
         {characters.map((char) => (
-          <CharacterForm key={char.id} charData={char} isProtagonist={false} totalCount={characters.length} onUpdate={(k, v) => setCharacters(characters.map((c) => c.id === char.id ? { ...c, [k]: v } : c))} onImageUpload={(e) => handleImageUpload(e, char.id)} onRemoveImage={(idx) => setCharacters(characters.map((c) => c.id === char.id ? { ...c, images: c.images.filter((_, i) => i !== idx) } : c))} onRemoveChar={(id) => setCharacters(characters.filter((c) => c.id !== id))} onImageClick={handleImageClick} />
+          <CharacterForm 
+            key={char.id} charData={char} isProtagonist={false} totalCount={characters.length} 
+            onUpdate={(k, v) => setCharacters(characters.map((c) => c.id === char.id ? { ...c, [k]: v } : c))} 
+            onImageUpload={handleImageUpload} 
+            onRemoveImage={(idx, type) => {
+              const key = type === 'portrait' ? 'portraitImages' : 'standingImages';
+              setCharacters(characters.map((c) => {
+                if(c.id === char.id) {
+                  const arr = c[key] || (type === 'standing' ? c.images : []) || [];
+                  return { ...c, [key]: arr.filter((_, i) => i !== idx) };
+                }
+                return c;
+              }));
+            }} 
+            onRemoveChar={(id) => setCharacters(characters.filter((c) => c.id !== id))} 
+            onImageClick={handleImageClick} 
+          />
         ))}
         <button className="btn-add-char" onClick={addCharacter}>➕ 등장인물 추가하기 ({characters.length} / 10)</button>
       </div>
-
       {/* 🎮 3. 게임 전역 UI 셋팅 섹션 */}
       <h4 className="sub-header">🎮 3. 게임 전역 UI 셋팅</h4>
       <div className="global-ui-panel">
@@ -707,8 +724,8 @@ if (targetImages?.length > activeImgIndex) {
         {/* ⭐ 나레이션 전용 설정 블록 (네임박스와 초상화 숨김 속성 전달) */}
         <ThemeSettingsBlock title={`📢 나레이션 전용 스타일`} themeClass="narration" fontStyle={currentNarrationStyle} fontOptions={fontOptions} onUpdate={(updates) => safeSetNarrationStyle({ ...currentNarrationStyle, ...updates })} showPortrait={false} showNamebox={false} />
 
-        {characters.map((char, index) => (
-          <ThemeSettingsBlock key={char.id} title={`🎭 ${char.name || `등장인물 ${index + 1}`} 전용 스타일`} themeClass="character" fontStyle={char.fontStyle} fontOptions={fontOptions} onUpdate={(updates) => setCharacters(characters.map((c) => c.id === char.id ? { ...c, fontStyle: { ...c.fontStyle, ...updates } } : c))} showPortrait={false} showNamebox={true} />
+{characters.map((char, index) => (
+          <ThemeSettingsBlock key={char.id} title={`🎭 ${char.name || `등장인물 ${index + 1}`} 전용 스타일`} themeClass="character" fontStyle={char.fontStyle} fontOptions={fontOptions} onUpdate={(updates) => setCharacters(characters.map((c) => c.id === char.id ? { ...c, fontStyle: { ...c.fontStyle, ...updates } } : c))} showPortrait={true} showNamebox={true} />
         ))}
       </div>
 

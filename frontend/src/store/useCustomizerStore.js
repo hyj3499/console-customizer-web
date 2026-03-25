@@ -9,9 +9,10 @@ const getInitialState = () => ({
     color: '',
     
     // 😎 주인공 설정
-    protagonist: { 
+protagonist: { 
         name: '주인공', 
-        images: [] 
+        portraitImages: [], // 🖼️ 초상화(정사각형) 전용
+        standingImages: []  // 🧍 스탠딩 전용
     },
     pFontStyle: { 
         font: 'Galmuri14', 
@@ -59,18 +60,19 @@ const getInitialState = () => ({
     customFonts: [],
 
     // 🎭 등장인물 설정
-    characters: [
+characters: [
         { 
             id: Date.now(), 
             name: '등장인물 1', 
-            images: [], 
+            portraitImages: [], // 🖼️ 초상화 전용
+            standingImages: [], // 🧍 스탠딩 전용
             fontStyle: { 
                 font: 'Galmuri14', 
                 color: '#ffffff', 
                 useOutline: true, 
                 outline: '#7d1212', 
                 dialogFrame: 'retro', 
-                dialogColor: 'rgba(0,0,0,0.8)', // 블랙
+                dialogColor: 'rgba(0,0,0,0.8)', 
                 nameFrame: 'gothic', 
                 nameColor: 'rgba(0, 0, 0, 0.15)', 
                 useNameBorder: false, 

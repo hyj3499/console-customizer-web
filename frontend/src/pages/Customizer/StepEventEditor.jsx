@@ -55,7 +55,90 @@ const getColorId = (rgbaValue) => {
 
 const PRESET_BACKGROUNDS = SHARED_BACKGROUNDS;
 
+// ==========================================
+// 🌟 추가: 독립적인 표정 선택기 컴포넌트 (갤러리/콤보박스 지원)
+// ==========================================
+const ImageSelectorPanel = ({ title, type, protagonist, characters, onSelect, selectedImage }) => {
+    const [galleryMode, setGalleryMode] = useState(false);
+    const [selectedChar, setSelectedChar] = useState('protagonist');
 
+    // type에 따라 초상화/스탠딩 배열을 다르게 참조
+    const imageKey = type === 'portrait' ? 'portraitImages' : 'standingImages';
+
+    // 갤러리 모드와 콤보박스 선택에 따라 보여줄 이미지 배열 생성
+    let displayImages = [];
+    if (galleryMode) {
+        // 모든 캐릭터의 이미지를 긁어모음
+        const pImgs = protagonist[imageKey] || protagonist.images || [];
+        displayImages.push(...pImgs);
+        characters.forEach(c => {
+            const cImgs = c[imageKey] || c.images || [];
+            displayImages.push(...cImgs);
+        });
+    } else {
+        // 콤보박스에서 선택한 특정 캐릭터의 이미지만 표시
+        if (selectedChar === 'protagonist') {
+            displayImages = protagonist[imageKey] || protagonist.images || [];
+        } else {
+            const c = characters.find(char => char.id.toString() === selectedChar);
+            displayImages = c ? (c[imageKey] || c.images || []) : [];
+        }
+    }
+
+    return (
+        <div style={{ flex: 1, padding: '12px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
+            {/* 타이틀 및 갤러리 모드 체크박스 */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#495057' }}>{title}</span>
+                <label style={{ fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: '#1971c2', fontWeight: 'bold' }}>
+                    <input type="checkbox" checked={galleryMode} onChange={(e) => setGalleryMode(e.target.checked)} style={{ cursor: 'pointer' }} />
+                    갤러리로 보기
+                </label>
+            </div>
+            
+            {/* 콤보박스 (갤러리 모드가 아닐 때만 노출) */}
+            {!galleryMode && (
+                <select 
+                    value={selectedChar} 
+                    onChange={(e) => setSelectedChar(e.target.value)}
+                    className="input-base"
+                    style={{ width: '100%', marginBottom: '10px', padding: '6px', fontSize: '12px' }}
+                >
+                    <option value="protagonist">😎 {protagonist.name || '주인공'}</option>
+                    {characters.map(c => (
+                        <option key={c.id} value={c.id.toString()}>🎭 {c.name || '등장인물'}</option>
+                    ))}
+                </select>
+            )}
+
+            {/* 이미지 리스트 렌더링 */}
+            <div className="face-list" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', maxHeight: '140px', overflowY: 'auto', padding: '4px' }}>
+                {/* 비우기(🚫) 버튼 */}
+                <div 
+                    onClick={(e) => { e.stopPropagation(); onSelect(null); }} 
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', fontSize: '18px', borderColor: selectedImage === null ? '#fa5252' : '#ccc', borderWidth: selectedImage === null ? '3px' : '1px', borderStyle: 'solid', cursor: 'pointer', width: '45px', height: '45px', borderRadius: '6px' }}
+                    title="이미지 제거"
+                >
+                    🚫
+                </div>
+                {/* 추출된 이미지 나열 */}
+                {displayImages.map((img, i) => {
+                    const imgSrc = img.preview || img;
+                    const isActive = selectedImage === imgSrc;
+                    return (
+                        <img 
+                            key={i} 
+                            src={imgSrc} 
+                            alt="face" 
+                            onClick={(e) => { e.stopPropagation(); onSelect(imgSrc); }} 
+                            style={{ width: '45px', height: '45px', objectFit: 'cover', borderRadius: '6px', cursor: 'pointer', border: isActive ? '3px solid #1971c2' : '1px solid #ccc', boxSizing: 'border-box', transform: isActive ? 'scale(1.05)' : 'scale(1)', transition: '0.1s' }}
+                        />
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
 
 export default function StepEventEditor() {
     const { 
@@ -566,15 +649,6 @@ const getActiveSpeakerStyle = (speakerId) => {
 
     const layoutClass = currentGlobalUi.layoutMode === 'bottom' ? 'layout-bottom' : 'layout-classic';
 
-    // ✅ return 바로 위에 이 로그 코드를 붙여넣으세요!
-    console.log("==== 🚨 렌더링 상태 체크 ====");
-    console.log("1. 현재 보고 있는 이벤트 ID:", activeEventId);
-    console.log("2. 현재 브랜치(currentBranch):", currentBranch);
-    console.log("3. 현재 브랜치에 대사가 있는가?:", scenarios.filter(s => s.branch === currentBranch).length > 0);
-    console.log("4. 전체 시나리오 마지막 컷의 브랜치:", scenarios[scenarios.length - 1]?.branch);
-    console.log("===============================");
-
-
     return (
         <div className="editor-container">
             
@@ -946,29 +1020,29 @@ const getActiveSpeakerStyle = (speakerId) => {
                                                 <input type="text" placeholder="대사를 입력하세요..." value={scenario.text} onChange={(e) => handleScenarioChange(index, 'text', e.target.value)} className="input-base" style={{ flex: 1 }} />
                                             </div>
 
-                                            {!scenario.isCg && (
+{!scenario.isCg && (
                                                 <div style={{ display: 'flex', gap: '20px', marginTop: '15px' }}>
-                                                    <div className="face-panel">
-                                                        <span style={{ fontSize: '12px', fontWeight: 'bold' }}>👤 주인공 표정</span>
-                                                        <div className="face-list">
-                                                            <div onClick={(e) => { e.stopPropagation(); handleScenarioChange(index, 'protagonistImage', null); }} className="face-img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', fontSize: '18px', borderColor: scenario.protagonistImage === null ? '#fa5252' : '#ccc', borderWidth: scenario.protagonistImage === null ? '3px' : '1px' }}>🚫</div>
-                                                            {protagonist.images.map((img, i) => (
-                                                                <img key={i} src={img.preview} alt="p" onClick={(e) => { e.stopPropagation(); handleScenarioChange(index, 'protagonistImage', img.preview); }} className={`face-img ${scenario.protagonistImage === img.preview ? 'active-p' : ''}`} />
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                    <div className="face-panel">
-                                                        <span style={{ fontSize: '12px', fontWeight: 'bold' }}>🎭 상대방 표정</span>
-                                                        <div className="face-list">
-                                                            <div onClick={(e) => { e.stopPropagation(); handleScenarioChange(index, 'heroineImage', null); }} className="face-img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', fontSize: '18px', borderColor: scenario.heroineImage === null ? '#fa5252' : '#ccc', borderWidth: scenario.heroineImage === null ? '3px' : '1px' }}>🚫</div>
-                                                            {(!activeSpeakerChar) && characters.flatMap(c => c.images).map((img, i) => (
-                                                                <img key={`all-${i}`} src={img.preview} alt="h" onClick={(e) => { e.stopPropagation(); handleScenarioChange(index, 'heroineImage', img.preview); }} className={`face-img ${scenario.heroineImage === img.preview ? 'active-h' : ''}`} />
-                                                            ))}
-                                                            {activeSpeakerChar && activeSpeakerChar.images.map((img, i) => (
-                                                                <img key={`spec-${i}`} src={img.preview} alt="h" onClick={(e) => { e.stopPropagation(); handleScenarioChange(index, 'heroineImage', img.preview); }} className={`face-img ${scenario.heroineImage === img.preview ? 'active-h' : ''}`} />
-                                                            ))}
-                                                        </div>
-                                                    </div>
+                                                    
+                                                    {/* ⭐ 1. 초상화 표정 선택 패널 */}
+                                                    <ImageSelectorPanel 
+                                                        title="🖼️ 초상화 표정 선택" 
+                                                        type="portrait" 
+                                                        protagonist={protagonist} 
+                                                        characters={characters} 
+                                                        selectedImage={scenario.protagonistImage} 
+                                                        onSelect={(imgUrl) => handleScenarioChange(index, 'protagonistImage', imgUrl)} 
+                                                    />
+
+                                                    {/* ⭐ 2. 스탠딩 표정 선택 패널 */}
+                                                    <ImageSelectorPanel 
+                                                        title="🧍 스탠딩 표정 선택" 
+                                                        type="standing" 
+                                                        protagonist={protagonist} 
+                                                        characters={characters} 
+                                                        selectedImage={scenario.heroineImage} 
+                                                        onSelect={(imgUrl) => handleScenarioChange(index, 'heroineImage', imgUrl)} 
+                                                    />
+                                                    
                                                 </div>
                                             )}
                                             {/* 🌟 수정: 대사 박스 하단 다기능 미니 컨트롤 바 */}
