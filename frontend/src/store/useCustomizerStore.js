@@ -24,31 +24,16 @@ const getInitialState = () => ({
                 dialogFrame: 'retro', 
                 dialogColor: 'rgba(173,216,230,0.8)',
                 nameFrame: 'simple', 
-                nameColor: 'rgba(255, 182, 193, 0)', 
+                nameColor: 'rgba(255, 182, 193, 0)',
+                typingSound: 'type4',
+                useNameBorder: false,        // 네임박스 외곽선 유무
+                nameBorderColor: '#dddddd',  // 네임박스 외곽선 색상
+                useDialogBorder: false,
                 portraitStyle: 'retro', 
-                portraitColor: 'rgba(173,216,230,0.8)',
-                typingSound: 'type4'
+                portraitColor: 'rgba(173,216,230,0.8)'
             } 
         }
     ],
-
-    pFontStyle: { 
-        font: 'Galmuri14', 
-        color: '#ffffff', 
-        useOutline: true, 
-        outline: '#000000', 
-        dialogFrame: 'retro', 
-        dialogColor: 'rgba(173,216,230,0.8)', // 연한 블루
-        dialogBorderColor: '#dddddd', 
-        nameFrame: 'simple', 
-        nameColor: 'rgba(255, 182, 193, 0)', // 투명
-        nameBorderColor: '#dddddd', 
-        portraitStyle: 'retro', 
-        portraitColor: 'rgba(173,216,230,0.8)', 
-        portraitBorderColor: '#dddddd', 
-        typingSound: 'type4', 
-        useNameBorder: false 
-    },
 
     // 🌟 추가됨: 📢 나레이션 전용 설정 (이름표, 초상화 설정 제외)
     narrationFontStyle: {
@@ -177,7 +162,6 @@ loadProjectData: (loadedData) => set((state) => ({
     setIsEditing: (bool) => set({ isEditing: bool }),
     setColor: (color) => set({ color }),
     setProtagonist: (protagonist) => set({ protagonist }),
-    setPFontStyle: (style) => set((state) => ({ pFontStyle: { ...state.pFontStyle, ...style } })),
     
     // 🌟 추가됨: 나레이션 스타일 변경 함수
     setNarrationFontStyle: (style) => set((state) => ({ narrationFontStyle: { ...state.narrationFontStyle, ...style } })),

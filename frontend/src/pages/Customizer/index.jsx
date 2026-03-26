@@ -48,7 +48,7 @@ export default function Customizer() {
     
     const store = useCustomizerStore();
     const { 
-        setEvents, setProtagonist, setCharacters, setPFontStyle, 
+        setEvents, setProtagonist, setCharacters, 
         setGlobalUi, setStartMenu, addCustomFont, resetStore,
         setIsEditing // ⭐ 전역 상태 변경 함수 추가
     } = store;
@@ -154,7 +154,6 @@ export default function Customizer() {
                 }
 
                 if (data.globalUi) setGlobalUi(data.globalUi);
-                if (data.pFontStyle) setPFontStyle(data.pFontStyle);
                 
                 if (data.protagonist) {
                     setProtagonist({
