@@ -93,12 +93,14 @@ const getBgStr = (frameType, bgColorVal, borderColorVal, useBorder, isNamebox) =
 };
 
 export const generateScreensRpy = (data) => {
-    const pStyle = data.pFontStyle || {};
-    // ⭐ 추가: 나레이션 스타일 가져오기 (없으면 안전하게 주인공 스타일을 임시로 씀)
+    // ⭐ 수정됨: characters 배열에서 주인공을 찾아 폰트 스타일을 가져옵니다.
+    const protagonist = (data.characters || []).find(c => c.isProtagonist) || {};
+    const pStyle = protagonist.fontStyle || {}; 
+    
     const nStyle = data.narrationFontStyle || pStyle; 
     const ui = data.globalUi || {};
     const start = data.startMenu || {};
-
+    
     const mainFont = safeFont(pStyle.font || ui.systemFont);
     const sysFont = safeFont(ui.systemFont || "Galmuri14"); 
     const mainColor = rgbaToHex(pStyle.color);
@@ -247,8 +249,9 @@ style narration_window is say_window:
     background ${getBgStr(nStyle.dialogFrame, nStyle.dialogColor, nStyle.dialogBorderColor, nStyle.useDialogBorder !== false, false)}
 `;
 
-    if (data.characters) {
-        data.characters.forEach(char => {
+if (data.characters) {
+        // ⭐ 수정됨: 주인공(isProtagonist: true)은 제외하고 나머지 캐릭터들만 스타일 생성
+        data.characters.filter(c => !c.isProtagonist).forEach(char => {
             const cStyle = char.fontStyle || {};
             rpy += `
 style char_${char.id}_window is say_window:

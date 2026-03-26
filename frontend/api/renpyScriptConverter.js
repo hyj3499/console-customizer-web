@@ -93,24 +93,27 @@ export const generateScriptRpy = (data) => {
     // ⭐ 추가: 달력 표시 여부를 결정하는 전역 플래그
     script += `default show_calendar = True\n\n`;
 
-const pName = data.protagonist?.name || '주인공';
-    // 1. 주인공 생성
-    script += buildCharacterDef("p", pName, data.pFontStyle, true);
+// ⭐ 수정: characters 배열에서 주인공을 찾아 이름과 스타일을 가져옵니다.
+    const protagonist = (data.characters || []).find(c => c.isProtagonist) || {};
+    const pName = protagonist.name || '주인공';
+    const pStyle = protagonist.fontStyle || {};
+
+    // 1. 주인공 생성 (추출한 pStyle 적용)
+    script += buildCharacterDef("p", pName, pStyle, true);
     
-    // ⭐ 수정: 2. 나레이션 전용 객체 생성 (이제 스토어의 나레이션 전용 스타일 사용)
-    // 과거 저장 데이터와의 호환성을 위해 || data.pFontStyle 안전 장치 추가
-    const safeNarrationStyle = data.narrationFontStyle || data.pFontStyle;
-    
-    // 마지막 인자를 false로 주어 'p_window'가 아닌 'narration_window' 스타일을 참조하게 함
+    // 2. 나레이션 전용 객체 생성
+    // 과거 데이터 호환성 및 주인공 스타일 상속을 위해 pStyle을 Fallback으로 사용
+    const safeNarrationStyle = data.narrationFontStyle || pStyle;
     script += buildCharacterDef("narration", null, safeNarrationStyle, false);
+
+    // 3. 기타 등장인물 생성 (⭐ 주의: 주인공은 위에서 만들었으므로 필터링해서 제외해야 중복 에러가 안 납니다!)
     if (data.characters) {
-        data.characters.forEach(char => {
+        data.characters.filter(c => !c.isProtagonist).forEach(char => {
             if (char.name) {
                 script += buildCharacterDef(`char_${char.id}`, char.name, char.fontStyle, false);
             }
         });
     }
-
     script += `\n################################################################################\n`;
     script += `## 3. 게임 실행 루프 (선택지 및 분기 자동 처리)\n`;
     script += `################################################################################\n`;
