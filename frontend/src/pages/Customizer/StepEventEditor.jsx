@@ -1,18 +1,15 @@
 // src/pages/Customizer/StepEventEditor.jsx
 import { useState, useRef, useEffect } from 'react';
 import { SHARED_BACKGROUNDS } from '../../assets/assets';
-
 import useCustomizerStore from '../../store/useCustomizerStore';
 import './StepEventEditor.css';
 
-
 // ==========================================
-// 💡 Step2와 동일한 UI 에셋 통합 관리
+// 💡 UI 에셋 및 색상 설정
 // ==========================================
 
 const OPTION_COLORS = ['#ffafee', '#84ccff', '#1971c2', '#e64980', '#7950f2', '#12b886', '#fcc419', '#20c997', '#ff8787', '#5c940d'];
                         
-
 const PRESET_COLORS = [
     { id: 'pink', name: '핑크', value: 'rgba(255,182,193,0.8)', colors: ['#ffb6c1', '#faafbe'] },
     { id: 'black', name: '블랙', value: 'rgba(0,0,0,0.8)', colors: ['#444444', '#000000'] },
@@ -42,8 +39,6 @@ const UI_ASSETS = {
         reborn:  (bg) => ({ type: 'image', src: `/images/reborn_frame_${getColorId(bg)}.png` , mask: '/images/retro_frame_mask.png' }) 
     },
     calendar: {
-        //simple: (bg, border='#dddddd') => ({ name: '심플형', type: 'css', border: `2px solid ${border}`, borderRadius: '4px' }),
-        //retro:  (bg) => ({ name: '🕹️ 레트로 (이미지)', type: 'image', src: `/images/retro_calendar_${getColorId(bg)}.png` })
         none: () => ({ type: 'none' })
     }
 };
@@ -56,38 +51,36 @@ const getColorId = (rgbaValue) => {
 const PRESET_BACKGROUNDS = SHARED_BACKGROUNDS;
 
 // ==========================================
-// 🌟 추가: 독립적인 표정 선택기 컴포넌트 (갤러리/콤보박스 지원)
+// 🌟 통합된 표정 선택기 컴포넌트 (주인공/등장인물 구분 제거)
 // ==========================================
-const ImageSelectorPanel = ({ title, type, protagonist, characters, onSelect, selectedImage }) => {
+const ImageSelectorPanel = ({ title, type, characters, onSelect, selectedImage }) => {
     const [galleryMode, setGalleryMode] = useState(false);
-    const [selectedChar, setSelectedChar] = useState('protagonist');
+    
+    const protagonist = characters.find(c => c.isProtagonist) || characters[0];
+    const [selectedChar, setSelectedChar] = useState('');
 
-    // type에 따라 초상화/스탠딩 배열을 다르게 참조
+    // 초기값으로 주인공이 자동 선택되도록 설정
+    useEffect(() => {
+        if (!selectedChar && protagonist) {
+            setSelectedChar(protagonist.id.toString());
+        }
+    }, [characters, protagonist, selectedChar]);
+
     const imageKey = type === 'portrait' ? 'portraitImages' : 'standingImages';
 
-    // 갤러리 모드와 콤보박스 선택에 따라 보여줄 이미지 배열 생성
     let displayImages = [];
     if (galleryMode) {
-        // 모든 캐릭터의 이미지를 긁어모음
-        const pImgs = protagonist[imageKey] || protagonist.images || [];
-        displayImages.push(...pImgs);
         characters.forEach(c => {
-            const cImgs = c[imageKey] || c.images || [];
+            const cImgs = c[imageKey] || [];
             displayImages.push(...cImgs);
         });
     } else {
-        // 콤보박스에서 선택한 특정 캐릭터의 이미지만 표시
-        if (selectedChar === 'protagonist') {
-            displayImages = protagonist[imageKey] || protagonist.images || [];
-        } else {
-            const c = characters.find(char => char.id.toString() === selectedChar);
-            displayImages = c ? (c[imageKey] || c.images || []) : [];
-        }
+        const c = characters.find(char => char.id.toString() === selectedChar);
+        displayImages = c ? (c[imageKey] || []) : [];
     }
 
     return (
         <div style={{ flex: 1, padding: '12px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
-            {/* 타이틀 및 갤러리 모드 체크박스 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#495057' }}>{title}</span>
                 <label style={{ fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: '#1971c2', fontWeight: 'bold' }}>
@@ -96,7 +89,6 @@ const ImageSelectorPanel = ({ title, type, protagonist, characters, onSelect, se
                 </label>
             </div>
             
-            {/* 콤보박스 (갤러리 모드가 아닐 때만 노출) */}
             {!galleryMode && (
                 <select 
                     value={selectedChar} 
@@ -104,16 +96,16 @@ const ImageSelectorPanel = ({ title, type, protagonist, characters, onSelect, se
                     className="input-base"
                     style={{ width: '100%', marginBottom: '10px', padding: '6px', fontSize: '12px' }}
                 >
-                    <option value="protagonist">😎 {protagonist.name || '주인공'}</option>
+                    {/* 통합 배열 순회 출력 */}
                     {characters.map(c => (
-                        <option key={c.id} value={c.id.toString()}>🎭 {c.name || '등장인물'}</option>
+                        <option key={c.id} value={c.id.toString()}>
+                            {c.isProtagonist ? '😎' : '🎭'} {c.name || '캐릭터'}
+                        </option>
                     ))}
                 </select>
             )}
 
-            {/* 이미지 리스트 렌더링 */}
             <div className="face-list" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', maxHeight: '140px', overflowY: 'auto', padding: '4px' }}>
-                {/* 비우기(🚫) 버튼 */}
                 <div 
                     onClick={(e) => { e.stopPropagation(); onSelect(null); }} 
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', fontSize: '18px', borderColor: selectedImage === null ? '#fa5252' : '#ccc', borderWidth: selectedImage === null ? '3px' : '1px', borderStyle: 'solid', cursor: 'pointer', width: '45px', height: '45px', borderRadius: '6px' }}
@@ -121,7 +113,6 @@ const ImageSelectorPanel = ({ title, type, protagonist, characters, onSelect, se
                 >
                     🚫
                 </div>
-                {/* 추출된 이미지 나열 */}
                 {displayImages.map((img, i) => {
                     const imgSrc = img.preview || img;
                     const isActive = selectedImage === imgSrc;
@@ -139,19 +130,37 @@ const ImageSelectorPanel = ({ title, type, protagonist, characters, onSelect, se
         </div>
     );
 };
-
+// ⭐ 바로 여기! 컴포넌트 정의 직전에 넣어주세요.
+const actionButtonStyle = (bgColor, textColor, label) => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '7px 14px',
+    fontSize: '11px',
+    fontWeight: '700',
+    borderRadius: '6px',
+    border: 'none',
+    backgroundColor: bgColor,
+    color: textColor,
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    fontFamily: 'inherit',
+    minWidth: '80px',
+    boxShadow: bgColor === '#2f3542' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+});
 export default function StepEventEditor() {
     const { 
         events, setEvents, activeEventId, setActiveEventId,
         showPreview, setShowPreview, previewScenario, setPreviewScenario,
-        protagonist, characters, pFontStyle, globalUi,
-        customBackgrounds, addCustomBackground,
-        narrationFontStyle // 🌟 나레이션 설정값 가져오기
+        characters, globalUi, customBackgrounds, addCustomBackground,
+        narrationFontStyle
     } = useCustomizerStore();
 
+    // 🌟 분리된 구조 통합 처리
+    const protagonist = characters.find(c => c.isProtagonist) || characters[0] || {};
+    const pFontStyle = protagonist.fontStyle || {};
+
     const currentGlobalUi = globalUi || { calendarFrame: 'none', calendarColor: 'rgba(255,182,193,0.8)', calendarTextColor: '#5C4033', calendarTextUseOutline: true, calendarTextOutlineColor: '#ffffff', systemFont: 'Pretendard', layoutMode: 'bottom' };
-    
-    // 🌟 나레이션 스타일 안전 장치 (설정값이 없을 경우 기본값)
     const safeNarrationStyle = narrationFontStyle || { font: 'Pretendard', color: '#ffffff', useOutline: false, outline: '#000000', dialogFrame: 'simple', dialogColor: 'rgba(0,0,0,0.8)', typingSound: 'type1' };
 
     const [currentBranch, setCurrentBranch] = useState('main'); 
@@ -163,18 +172,12 @@ export default function StepEventEditor() {
     const scenarios = activeEvent.scenarios;
     const hasChoiceNode = scenarios.some(s => s.type === 'choice');
 
-    // ✅ 이 하나만 남겨두세요!
-// ✅ 수정된 영리한 루트 추적 로직
     useEffect(() => {
         if (scenarios && scenarios.length > 0) {
-            // 1. 현재 이벤트의 가장 마지막 컷을 가져옵니다.
             const lastScen = scenarios[scenarios.length - 1]; 
-
             if (lastScen.type === 'choice') {
-                // 분기 설정 직후라면 무조건 1번 루트 시작
                 setCurrentBranch('option1');
             } else if (lastScen.type === 'ending' && lastScen.branch?.startsWith('option')) {
-                // 마지막이 엔딩인데, 다음 작성할 선택지 번호가 남아있다면 자동 이동
                 const currentNum = parseInt(lastScen.branch.replace('option', ''));
                 const choiceNode = scenarios.find(s => s.type === 'choice');
                 const totalOpts = choiceNode?.options?.length || 2;
@@ -185,28 +188,20 @@ export default function StepEventEditor() {
                     setCurrentBranch(lastScen.branch);
                 }
             } else {
-                // 그 외 일반적인 경우, 무조건 마지막 컷의 브랜치를 유지함 (핵심!)
                 setCurrentBranch(lastScen.branch || 'main');
             }
         } else {
             setCurrentBranch('main');
         }
-    }, [activeEventId]); // 이벤트가 바뀔 때 딱 한 번 실행되어 위치를 잡습니다.
-
-    const defaultSpeaker = 'PROTAGONIST'; 
-    const displayProtagonistName = protagonist.name || '주인공';
-
+    }, [activeEventId]); 
+// ==========================================
     const isMainEnded = scenarios.some(s => s.branch === 'main' && s.type === 'ending');
-    const isOption1Ended = scenarios.some(s => s.branch === 'option1' && s.type === 'ending');
-    const isOption2Ended = scenarios.some(s => s.branch === 'option2' && s.type === 'ending');
     const hasEndingInCurrentBranch = scenarios.some(s => s.branch === currentBranch && s.type === 'ending');
-
-    const hasOption1Nodes = scenarios.some(s => s.branch === 'option1');
     
     const choiceNodeInfo = scenarios.find(s => s.type === 'choice');
     const totalOptionsCount = choiceNodeInfo ? (choiceNodeInfo.options?.length || 2) : 0;
     
-let isFullyEnded = false;
+    let isFullyEnded = false;
     if (hasChoiceNode) {
         let allEnded = true;
         for (let i = 1; i <= totalOptionsCount; i++) {
@@ -220,8 +215,9 @@ let isFullyEnded = false;
         isFullyEnded = isMainEnded;
     }
 
-    // 현재 선택된 브랜치 번호 추출 (옵션1이면 1, 옵션2면 2...)
     const currentBranchNum = currentBranch.startsWith('option') ? parseInt(currentBranch.replace('option', '')) : 0;
+    const defaultSpeaker = 'PROTAGONIST'; 
+    const displayProtagonistName = protagonist.name || '주인공';
 
     const getEffectiveDateForIndex = (targetIndex) => {
         let currentDate = { ...activeEvent.baseDate };
@@ -326,9 +322,7 @@ let isFullyEnded = false;
 
     const toggleDateEditMode = (e, index, scenario, effectiveDate) => {
         e.stopPropagation();
-        
         if (showPreview) setPreviewScenario({ ...scenario, index });
-        
         if (editingDateIndex === index) {
             setEditingDateIndex(null);
         } else {
@@ -355,7 +349,6 @@ let isFullyEnded = false;
                 newScenarios[index].bgType = value;
                 newScenarios[index].bgImage = customBg.url;
                 updateActiveScenarios(newScenarios);
-                
                 if (showPreview) setPreviewScenario({ ...newScenarios[index], index });
             }
         } else {
@@ -365,7 +358,6 @@ let isFullyEnded = false;
                 newScenarios[index].bgType = value;
                 newScenarios[index].bgImage = preset.url;
                 updateActiveScenarios(newScenarios);
-                
                 if (showPreview) setPreviewScenario({ ...newScenarios[index], index });
             }
         }
@@ -389,39 +381,97 @@ let isFullyEnded = false;
         e.target.value = '';
     };
 
-    const addScenarioInput = () => {
-        const lastBg = scenarios.length > 0 ? scenarios[scenarios.length-1].bgImage : null;
-        const lastBgType = scenarios.length > 0 ? scenarios[scenarios.length-1].bgType : 'bg_school';
-        updateActiveScenarios([...scenarios, { type: 'dialog', branch: currentBranch, isCg: isCgMode, speaker: defaultSpeaker, protagonistImage: null, heroineImage: null, text: '', bgImage: lastBg, bgType: lastBgType, dateOverride: null }]);
-    };
+const addScenarioInput = () => {
+    // 1. 기본값 준비 (에셋 리스트의 첫 번째)
+    const defaultBgId = PRESET_BACKGROUNDS[0]?.id;
+    const defaultBgUrl = PRESET_BACKGROUNDS[0]?.url;
 
-    const addEndingInput = () => {
-        updateActiveScenarios([...scenarios, { type: 'ending', branch: currentBranch, text: '' }]);
-    };
+    let lastBg = defaultBgUrl;
+    let lastBgType = defaultBgId;
 
-// 🌟 수정: 종류별(대사, CG, 엔딩, 분기)로 중간에 끼워넣는 기능 통합
-// 🌟 수정: 종류별 끼워넣기 및 엔딩 추가 시 하위 대사 삭제 로직 (요청 3번)
-// 🌟 수정: 컷 복사(copy) 기능 추가 및 종류별 끼워넣기 통합
-    const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = null) => {
+    // 2. 배경 복사 로직
+    if (currentBranch.startsWith('option')) {
+        // ⭐ 선택지 분기 루트라면? 'choice' 노드 바로 앞에 있던 대사의 배경을 찾음
+        const choiceIndex = scenarios.findIndex(s => s.type === 'choice');
+        if (choiceIndex > 0) {
+            // "선택지 박스"가 나오기 바로 전 컷의 배경을 그대로 물려받음
+            lastBg = scenarios[choiceIndex - 1].bgImage || defaultBgUrl;
+            lastBgType = scenarios[choiceIndex - 1].bgType || defaultBgId;
+        }
+    } else if (scenarios.length > 0) {
+        // 메인 루트라면 그냥 현재 가장 마지막 컷의 배경을 물려받음
+        lastBg = scenarios[scenarios.length - 1].bgImage || defaultBgUrl;
+        lastBgType = scenarios[scenarios.length - 1].bgType || defaultBgId;
+    }
+
+    // 3. 데이터 조립 및 추가
+    updateActiveScenarios([
+        ...scenarios,
+        {
+            type: 'dialog',
+            branch: currentBranch,
+            isCg: isCgMode,
+            speaker: defaultSpeaker,
+            protagonistImage: null,
+            heroineImage: null,
+            text: '',
+            bgImage: lastBg,
+            bgType: lastBgType,
+            dateOverride: null
+        }
+    ]);
+};
+
+// 🚨 여기에 아래 함수를 추가해 주세요! 🚨
+    const handleCgUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        // 1. 임시 URL 생성
+        const objectUrl = URL.createObjectURL(file);
+        
+        // 2. CG 모드 활성화
+        setIsCgMode(true);
+        
+        // 3. 시나리오 데이터 구성 (배너 + 첫 대사)
+        const newScenarios = [...scenarios, 
+            { 
+                type: 'cg_image', 
+                src: objectUrl, 
+                file: file, 
+                branch: currentBranch 
+            },
+            { 
+                type: 'dialog', 
+                branch: currentBranch, 
+                isCg: true, 
+                speaker: defaultSpeaker, 
+                protagonistImage: null, 
+                heroineImage: null, 
+                text: '', 
+                bgImage: objectUrl, 
+                file: file, 
+                bgType: 'custom_cg', 
+                dateOverride: null 
+            }
+        ];
+        
+        updateActiveScenarios(newScenarios);
+    };
+    
+    
+const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = null) => {
         let newScenarios = [...scenarios];
         let newBranch = currentItem.branch;
 
-        // 엔딩 추가 처리
+        // ⭐ 1. 엔딩 컷 추가 (여기서 반드시 return 해야 아래쪽 '복사' 로직으로 안 넘어갑니다!)
         if (type === 'ending') {
-            const hasFollowing = newScenarios.slice(index + 1).some(s => s.branch === newBranch);
-            if (hasFollowing) {
-                const routeName = newBranch === 'main' ? '일반 루트' : `선택지 ${newBranch.replace('option', '')}번 루트`;
-                if (!window.confirm(`⚠️ ${routeName}에 엔딩을 추가하면 이 컷 이후의 대사들이 전부 삭제됩니다.\n계속 진행하시겠습니까?`)) {
-                    return;
-                }
-                newScenarios = newScenarios.filter((s, i) => i <= index || s.branch !== newBranch);
-            }
             newScenarios.splice(index + 1, 0, { type: 'ending', branch: newBranch, text: '' });
             updateActiveScenarios(newScenarios);
-            return;
+            return; 
         }
 
-        // CG 추가 처리
+        // 2. CG 추가 처리
         if (type === 'cg_image') {
             const cgItem = { type: 'cg_image', src: extraData.url, file: extraData.file, branch: newBranch };
             const dialogItem = { type: 'dialog', branch: newBranch, isCg: true, speaker: defaultSpeaker, protagonistImage: null, heroineImage: null, text: '', bgImage: extraData.url, file: extraData.file, bgType: 'custom_cg', dateOverride: null };
@@ -431,7 +481,7 @@ let isFullyEnded = false;
             return;
         }
 
-        // 선택지, 대사 추가 및 🌟 컷 복사 처리
+        // 3. 선택지, 대사 추가 및 컷 복사 처리
         let newItem = {};
         if (type === 'choice') {
             if (hasChoiceNode) return alert("선택지 분기는 하나만 생성할 수 있습니다.");
@@ -439,19 +489,18 @@ let isFullyEnded = false;
             setIsCgMode(false);
             setCurrentBranch('option1');
         } else if (type === 'copy') {
-            // ⭐ 추가: 현재 컷의 모든 정보(표정, 배경, 대사 등)를 그대로 복제
             newItem = { ...currentItem };
             if (newItem.dateOverride) {
-                newItem.dateOverride = { ...newItem.dateOverride }; // 날짜 정보도 안전하게 복사
+                newItem.dateOverride = { ...newItem.dateOverride };
             }
         } else {
-            newItem = { type: 'dialog', branch: newBranch, isCg: currentItem.isCg || currentItem.type === 'cg_image', speaker: defaultSpeaker, protagonistImage: null, heroineImage: null, text: '', bgImage: currentItem.bgImage, bgType: currentItem.bgType || 'bg_school', dateOverride: null };
+            // 일반 대사 (엔딩 블록에서 return이 없으면 이쪽으로 빠져서 컷이 복사된 것처럼 보입니다!)
+            newItem = { type: 'dialog', branch: newBranch, isCg: currentItem.isCg || currentItem.type === 'cg_image', speaker: defaultSpeaker, protagonistImage: null, heroineImage: null, text: '', bgImage: currentItem.bgImage, bgType: currentItem.bgType || PRESET_BACKGROUNDS[0]?.id, dateOverride: null };
         }
 
         newScenarios.splice(index + 1, 0, newItem);
         updateActiveScenarios(newScenarios);
     };
-    // 🌟 추가: 인라인 버튼 전용 CG 업로드 함수
     const handleInlineCgUpload = (e, index, currentItem) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -459,17 +508,17 @@ let isFullyEnded = false;
         insertScenarioAfter(index, currentItem, 'cg_image', { file, url });
         e.target.value = '';
     };
-const removeScenarioInput = (indexToRemove) => {
+
+    const removeScenarioInput = (indexToRemove) => {
         const item = scenarios[indexToRemove];
         if (indexToRemove === 0 && item.branch === 'main') return alert('🚨 컷 1은 삭제할 수 없습니다!');
 
-        // 1. CG 배너 자체의 삭제 버튼을 눌렀을 때
         if (item.type === 'cg_image') {
             if (!window.confirm("이 CG 일러스트와 연결된 대사들을 모두 삭제하시겠습니까?")) return;
             
             let newScenarios = [...scenarios];
-            let deleteCount = 1; // 자기 자신(CG 배너) 1개
-            let dialogsToDelete = 0; // 지워질 실제 대사 개수 파악
+            let deleteCount = 1; 
+            let dialogsToDelete = 0; 
 
             for (let i = indexToRemove + 1; i < newScenarios.length; i++) {
                 if (newScenarios[i].isCg && newScenarios[i].bgImage === item.src) {
@@ -480,7 +529,6 @@ const removeScenarioInput = (indexToRemove) => {
                 }
             }
 
-            // ⭐ 수정: 삭제할 때 진짜 대사(dialog)가 하나도 안 남게 되면 방어!
             const totalDialogsInBranch = newScenarios.filter(s => s.branch === item.branch && s.type === 'dialog').length;
             if (item.branch !== 'main' && (totalDialogsInBranch - dialogsToDelete) < 1) {
                 return alert('🚨 선택지 루트에는 최소 1개의 대사가 있어야 합니다!\n(이 CG를 지우면 루트가 텅 비게 됩니다.)');
@@ -502,7 +550,6 @@ const removeScenarioInput = (indexToRemove) => {
             return;
         }
 
-        // 2. 선택지 분기를 삭제했을 때
         if (item.type === 'choice') {
             if (!window.confirm("선택지 분기를 삭제하면 하위 대사들(모든 루트)도 모두 삭제됩니다.")) return;
             updateActiveScenarios(scenarios.filter((s, idx) => idx !== indexToRemove && !s.branch?.startsWith('option')));
@@ -511,18 +558,15 @@ const removeScenarioInput = (indexToRemove) => {
             return;
         }
 
-        // 3. 일반/CG 대사/엔딩 컷 1개 삭제 처리
-        // ⭐ 수정: 남은 컷을 셀 때 'cg_image' 배너 등은 무시하고 오직 'dialog' 타입만 세도록 변경
         if (item.branch !== 'main' && item.type !== 'ending') {
             const branchDialogCuts = scenarios.filter(s => s.branch === item.branch && s.type === 'dialog');
             if (branchDialogCuts.length <= 1) {
-                return alert('🚨 선택지 루트에는 최소 1개의 대사가 있어야 합니다!\n(CG 배너나 엔딩은 대사 개수에 포함되지 않습니다.)');
+                return alert('🚨 선택지 루트에는 최소 1개의 대사가 있어야 합니다!');
             }
         }
 
         let newScenarios = scenarios.filter((_, index) => index !== indexToRemove);
 
-        // 고아(Orphaned) CG 배너 자동 정리
         newScenarios = newScenarios.filter((sc, idx, arr) => {
             if (sc.type === 'cg_image') {
                 const nextSc = arr[idx + 1];
@@ -546,19 +590,16 @@ const removeScenarioInput = (indexToRemove) => {
         updateActiveScenarios(newScenarios);
         if (previewScenario && previewScenario.index === indexToRemove) setPreviewScenario(null);
     };
-// 🌟 추가: 선택지 항목 추가 함수
+
     const handleAddOption = (choiceIndex) => {
         const newScenarios = [...scenarios];
         const choiceNode = newScenarios[choiceIndex];
         const currentOptions = choiceNode.options || [choiceNode.option1 || '', choiceNode.option2 || ''];
-        
         if (currentOptions.length >= 10) return alert("선택지는 최대 10개까지만 추가할 수 있습니다.");
-        
         choiceNode.options = [...currentOptions, ''];
         updateActiveScenarios(newScenarios);
     };
 
-    // 🌟 추가: 선택지 개별 삭제 및 루트 자동 당기기 함수
     const handleDeleteOption = (choiceIndex, optIdxToDelete) => {
         const branchNumToDelete = optIdxToDelete + 1;
         if (!window.confirm(`선택지 ${branchNumToDelete}번과 해당 루트의 모든 대사를 삭제하시겠습니까?\n(이후 번호의 루트들은 앞으로 당겨집니다.)`)) return;
@@ -567,14 +608,11 @@ const removeScenarioInput = (indexToRemove) => {
         const choiceNode = newScenarios[choiceIndex];
         const currentOptions = choiceNode.options || [choiceNode.option1 || '', choiceNode.option2 || ''];
         
-        // 1. 선택지 배열에서 삭제
         currentOptions.splice(optIdxToDelete, 1);
         choiceNode.options = currentOptions;
 
-        // 2. 삭제된 루트의 대사 컷들 날리기
         newScenarios = newScenarios.filter(s => s.branch !== `option${branchNumToDelete}`);
 
-        // 3. 뒷번호 루트들을 앞번호로 당겨오기 (ex: option4 -> option3)
         newScenarios = newScenarios.map(s => {
             if (s.branch && s.branch.startsWith('option')) {
                 const currentNum = parseInt(s.branch.replace('option', ''));
@@ -589,29 +627,9 @@ const removeScenarioInput = (indexToRemove) => {
         setIsCgMode(false);
         updateActiveScenarios(newScenarios);
     };
-const addChoiceInput = () => {
-        if (hasChoiceNode) return alert("하나의 이벤트에는 하나의 선택지 분기만 생성할 수 있습니다.");
-        setIsCgMode(false);
-        // ⭐ 수정: 옵션 1, 2 대신 options 배열 구조로 초기화
-        updateActiveScenarios([...scenarios, { type: 'choice', branch: currentBranch, options: ['', ''] }]);
-        setCurrentBranch('option1');
-    };
 
-    const handleCgUpload = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const objectUrl = URL.createObjectURL(file);
-        
-        setIsCgMode(true);
-        const newScenarios = [...scenarios, 
-            { type: 'cg_image', src: objectUrl, file: file, branch: currentBranch },
-            { type: 'dialog', branch: currentBranch, isCg: true, speaker: defaultSpeaker, text: '', bgImage: objectUrl, file: file, bgType: 'custom_cg', dateOverride: null }
-        ];
-        updateActiveScenarios(newScenarios);
-    };
-
-const getActiveSpeakerStyle = (speakerId) => {
-        if (speakerId === '나레이션') return safeNarrationStyle; // 🌟 나레이션 전용 스타일 적용
+    const getActiveSpeakerStyle = (speakerId) => {
+        if (speakerId === '나레이션') return safeNarrationStyle;
         if (!speakerId || speakerId === 'PROTAGONIST') return pFontStyle;
         const char = characters.find(c => c.name === speakerId);
         return char ? char.fontStyle : pFontStyle;
@@ -623,16 +641,14 @@ const getActiveSpeakerStyle = (speakerId) => {
         return speakerId; 
     };
 
-    // 현재 말하는 사람의 스타일 (폰트, 대화창 테마 용도)
     const activeStyle = previewScenario ? getActiveSpeakerStyle(previewScenario.speaker) : pFontStyle;
     const renderFontFamily = activeStyle?.font || currentGlobalUi?.systemFont || 'sans-serif';
 
-    const dAsset = (UI_ASSETS.dialog[activeStyle.dialogFrame] || UI_ASSETS.dialog.simple)(activeStyle.dialogColor, activeStyle.dialogBorderColor);
-    const nAsset = (UI_ASSETS.namebox[activeStyle.nameFrame] || UI_ASSETS.namebox.simple)(activeStyle.nameColor, activeStyle.nameBorderColor);
+    const dAsset = (UI_ASSETS.dialog[activeStyle?.dialogFrame] || UI_ASSETS.dialog.simple)(activeStyle?.dialogColor, activeStyle?.dialogBorderColor);
+    const nAsset = (UI_ASSETS.namebox[activeStyle?.nameFrame] || UI_ASSETS.namebox.simple)(activeStyle?.nameColor, activeStyle?.nameBorderColor);
     const cAsset = (UI_ASSETS.calendar[currentGlobalUi.calendarFrame] || UI_ASSETS.calendar.none)(currentGlobalUi.calendarColor); 
 
-    // ⭐ 버그 1 해결: 초상화 프레임은 무조건 주인공(pFontStyle)의 값을 참조하도록 고정
-    const pAsset = (UI_ASSETS.portrait[pFontStyle.portraitStyle] || UI_ASSETS.portrait.square)(pFontStyle.portraitColor, pFontStyle.portraitBorderColor);
+    const pAsset = (UI_ASSETS.portrait[pFontStyle?.portraitStyle] || UI_ASSETS.portrait.square)(pFontStyle?.portraitColor, pFontStyle?.portraitBorderColor);
     const finalPortraitBorder = pFontStyle?.usePortraitBorder === false ? 'none' : (pAsset ? pAsset.border : 'none');
 
     const getCalendarTextShadow = () => {
@@ -646,12 +662,10 @@ const getActiveSpeakerStyle = (speakerId) => {
     
     const previewDate = previewScenario ? getEffectiveDateForIndex(previewScenario.index) : activeEvent.baseDate;
     const isNarration = previewScenario?.speaker === '나레이션';
-
     const layoutClass = currentGlobalUi.layoutMode === 'bottom' ? 'layout-bottom' : 'layout-classic';
 
     return (
         <div className="editor-container">
-            
             <div className="preview-toggle-wrap">
                 <span style={{ fontWeight: 'bold' }}>📺 인게임 연출 미리보기 모드</span>
                 <label className="toggle-switch-label">
@@ -711,14 +725,13 @@ const getActiveSpeakerStyle = (speakerId) => {
                                     </div>
                                 )}
                                 
-{previewScenario.protagonistImage && (
+                                {previewScenario.protagonistImage && (
                                     <div className="ig-portrait-area">
-                                        {/* 🚨 수정: zIndex를 3에서 1로 내려서 배경(프레임)으로 깔리게 만듦 */}
                                         {pAsset.type === 'image' && <img src={pAsset.src} alt="Frame" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'fill', pointerEvents: 'none', zIndex: 1 }} />}
                                         
                                         <div style={{
                                             position: 'absolute', width: '100%', height: '100%', 
-                                            zIndex: 2, /* 🌟 주인공 사진이 프레임 위(zIndex 1)에 올라가도록 유지 */
+                                            zIndex: 2, 
                                             backgroundColor: pAsset.type === 'image' ? 'transparent' : (pFontStyle.portraitColor || 'rgba(255,182,193,0.8)'),
                                             WebkitMaskImage: pAsset.type === 'image' ? `url("${pAsset.mask}")` : 'none', 
                                             maskImage: pAsset.type === 'image' ? `url("${pAsset.mask}")` : 'none',
@@ -735,21 +748,22 @@ const getActiveSpeakerStyle = (speakerId) => {
                                 
                                 {previewScenario.speaker && !isNarration && (
                                     <div className="ig-namebox" style={{
-                                        backgroundColor: nAsset.type === 'image' ? 'transparent' : (activeStyle.nameColor || 'rgba(0,0,0,0.8)'), 
+                                        backgroundColor: nAsset.type === 'image' ? 'transparent' : (activeStyle?.nameColor || 'rgba(0,0,0,0.8)'), 
                                         backgroundImage: nAsset.type === 'image' ? `url(${nAsset.src})` : 'none', 
                                         border: nAsset.type === 'css' ? finalNameBorder : 'none', 
                                         borderRadius: nAsset.type === 'css' ? nAsset.borderRadius : '0'
                                     }}>
-                                        <span style={{ fontFamily: renderFontFamily, color: activeStyle.color || '#fff', textShadow: activeStyle.useOutline ? `-1px -1px 0 ${activeStyle.outline}, 1px -1px 0 ${activeStyle.outline}, -1px 1px 0 ${activeStyle.outline}, 1px 1px 0 ${activeStyle.outline}` : 'none', fontSize: '3cqh'}}>
+                                        <span style={{ fontFamily: renderFontFamily, color: activeStyle?.color || '#fff', textShadow: activeStyle?.useOutline ? `-1px -1px 0 ${activeStyle.outline}, 1px -1px 0 ${activeStyle.outline}, -1px 1px 0 ${activeStyle.outline}, 1px 1px 0 ${activeStyle.outline}` : 'none', fontSize: '3cqh'}}>
                                             {getSpeakerName(previewScenario.speaker)}
                                         </span>
                                     </div>
                                 )}
 
                                 <div className="ig-dialogbox" style={{
-                                    backgroundColor: dAsset.type === 'image' ? 'transparent' : (activeStyle.dialogColor || 'rgba(0,0,0,0.8)'), backgroundImage: dAsset.type === 'image' ? `url(${dAsset.src})` : 'none',
-                                    border: dAsset.type === 'css' ? finalDialogBorder : 'none', borderRadius: dAsset.type === 'css' ? dAsset.borderRadius : '0'                                }}>
-                                    <p style={{ fontFamily: renderFontFamily, color: activeStyle.color || '#fff', textShadow: activeStyle.useOutline ? `-1px -1px 0 ${activeStyle.outline}, 1px -1px 0 ${activeStyle.outline}, -1px 1px 0 ${activeStyle.outline}, 1px 1px 0 ${activeStyle.outline}` : 'none', fontSize: '3cqh', marginTop: 0 }}>
+                                    backgroundColor: dAsset.type === 'image' ? 'transparent' : (activeStyle?.dialogColor || 'rgba(0,0,0,0.8)'), backgroundImage: dAsset.type === 'image' ? `url(${dAsset.src})` : 'none',
+                                    border: dAsset.type === 'css' ? finalDialogBorder : 'none', borderRadius: dAsset.type === 'css' ? dAsset.borderRadius : '0'
+                                }}>
+                                    <p style={{ fontFamily: renderFontFamily, color: activeStyle?.color || '#fff', textShadow: activeStyle?.useOutline ? `-1px -1px 0 ${activeStyle.outline}, 1px -1px 0 ${activeStyle.outline}, -1px 1px 0 ${activeStyle.outline}, 1px 1px 0 ${activeStyle.outline}` : 'none', fontSize: '3cqh', marginTop: 0 }}>
                                         {previewScenario.text}
                                     </p>
                                 </div>
@@ -773,24 +787,13 @@ const getActiveSpeakerStyle = (speakerId) => {
                 </div>
             )}
 
-            {/* (...아래 이벤트 탭 및 시나리오 리스트 등 렌더링 코드는 기존과 완벽히 동일하므로 생략 없이 사용 가능합니다) */}
             <div className="event-tabs-wrap">
                 {events.map(ev => (
                     <div key={ev.id} className="event-tab">
-                        <button onClick={() => { 
-                                setActiveEventId(ev.id); 
-                                setPreviewScenario(null); 
-                                setIsCgMode(false);
-                                
-                            
-                            }}
-                            className={`event-tab-btn ${activeEventId === ev.id ? 'active' : 'inactive'}`}
-                        >
+                        <button onClick={() => { setActiveEventId(ev.id); setPreviewScenario(null); setIsCgMode(false); }} className={`event-tab-btn ${activeEventId === ev.id ? 'active' : 'inactive'}`}>
                             {ev.title}
                         </button>
-                        {ev.id !== 1 && (
-                            <button onClick={(e) => deleteEvent(e, ev.id)} className="event-tab-del" style={{ color: activeEventId === ev.id ? '#ffc9c9' : '#adb5bd' }}>✖</button>
-                        )}
+                        {ev.id !== 1 && <button onClick={(e) => deleteEvent(e, ev.id)} className="event-tab-del" style={{ color: activeEventId === ev.id ? '#ffc9c9' : '#adb5bd' }}>✖</button>}
                     </div>
                 ))}
                 <button onClick={addNewEvent} className="event-add-btn">+ 새 이벤트</button>
@@ -806,65 +809,40 @@ const getActiveSpeakerStyle = (speakerId) => {
                         </div>
                     </div>
                     
-<div style={{ flex: 1, borderLeft: '1px dashed #dee2e6', paddingLeft: '20px' }}>
+                    <div style={{ flex: 1, borderLeft: '1px dashed #dee2e6', paddingLeft: '20px' }}>
                         <h4 className="config-title">📅 상태창 설정</h4>
-<div style={{ fontSize: '11px', color: '#868e96', marginBottom: '12px', lineHeight: '1.6', backgroundColor: '#f8f9fa', padding: '10px', borderRadius: '4px', borderLeft: '3px solid #d0bfff' }}>
-    💡 <strong>상태창 활용 팁!</strong> 다양한 정보를 입력해 몰입도를 높여보세요.<br/>
-    <div style={{ color: '#495057', marginTop: '5px' }}>
-        • <strong>연애:</strong> 호감도: ❤️❤️❤️❤️❤️ (MAX)<br/>
-        • <strong>스탯:</strong> HP: 80 | STAMINA: ■■■□□<br/>
-        • <strong>재화:</strong> LUCK: 🍀 99 | GOLD: 12,500 G<br/>
-        • <strong>날짜:</strong> 2020.03.06 02:30 AM | 🔋 85%<br/>
-        • <strong>진행:</strong> EPISODE 1 | 벚꽃 아래에서 🌸
-    </div>
-</div>
-                        
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#495057' }}>윗줄 텍스트</span>
-                                <input 
-                                    type="text" 
-                                    className="input-base" 
-                                    placeholder="예: 2024. 03. 14 (화) ☀️" 
-                                    value={activeEvent.baseDate.month} 
-                                    onChange={(e) => handleBaseDateChange('month', e.target.value)} 
-                                />
+                                <input type="text" className="input-base" placeholder="예: 2024. 03. 14 (화) ☀️" value={activeEvent.baseDate.month} onChange={(e) => handleBaseDateChange('month', e.target.value)} />
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#495057' }}>아랫줄 텍스트</span>
-                                <input 
-                                    type="text" 
-                                    className="input-base" 
-                                    placeholder="예: EPISODE 1 | 첫 만남" 
-                                    value={activeEvent.baseDate.time} 
-                                    onChange={(e) => handleBaseDateChange('time', e.target.value)} 
-                                />
+                                <input type="text" className="input-base" placeholder="예: EPISODE 1 | 첫 만남" value={activeEvent.baseDate.time} onChange={(e) => handleBaseDateChange('time', e.target.value)} />
                             </div>
                         </div>
                     </div>
-                </div> {/* <--- config-panel 닫는 태그 */}
-
-                <div className="scenario-list">
+                </div>
+<div className="scenario-list">
                     {scenarios.map((scenario, index) => {
                         const isSelected = previewScenario?.index === index;
-                        const activeSpeakerChar = characters.find(c => c.name === scenario.speaker);
                         const effectiveDate = getEffectiveDateForIndex(index); 
                         const isFirstMainDialog = index === 0 && scenario.branch === 'main';
+                        const cardClasses = `scenario-card branch-${scenario.branch} ${isSelected && showPreview ? 'preview-active' : ''} ${scenario.isCg ? 'is-cg' : ''} ${scenario.type === 'ending' ? 'type-ending' : ''} ${scenario.type === 'cg_image' ? 'type-cg-banner' : ''}`;                        
 
-                    const cardClasses = `scenario-card branch-${scenario.branch} ${isSelected && showPreview ? 'preview-active' : ''} ${scenario.isCg ? 'is-cg' : ''} ${scenario.type === 'ending' ? 'type-ending' : ''} ${scenario.type === 'cg_image' ? 'type-cg-banner' : ''}`;                        if (scenario.type === 'ending') {
+                        const hasEndingInThisBranch = scenarios.some(s => s.branch === scenario.branch && s.type === 'ending');
+                        
+                        const isNextAlsoCg = index < scenarios.length - 1 && scenarios[index + 1].isCg && scenarios[index + 1].branch === scenario.branch;
+
+                        // ========== 1. 엔딩 컷 ==========
+                        if (scenario.type === 'ending') {
                             return (
                                 <div key={index} onClick={() => { if(showPreview) setPreviewScenario({ ...scenario, index }); }} className={cardClasses}>
                                     <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
-<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <span style={{ fontWeight: 'bold', color: '#ffd43b' }}>🎬 엔딩</span>
-                                            {/* ⭐ 수정: 하드코딩 삭제, branch 번호를 추출하여 OPTION_COLORS 배열에서 색상을 가져옴 */}
                                             {scenario.branch?.startsWith('option') && (
-                                                <span 
-                                                    className="badge" 
-                                                    style={{ 
-                                                        backgroundColor: OPTION_COLORS[(parseInt(scenario.branch.replace('option', '')) - 1) % 10] 
-                                                    }}
-                                                >
+                                                <span className="badge" style={{ backgroundColor: OPTION_COLORS[(parseInt(scenario.branch.replace('option', '')) - 1) % 10] }}>
                                                     선택지 {scenario.branch.replace('option', '')}번
                                                 </span>
                                             )}
@@ -874,11 +852,11 @@ const getActiveSpeakerStyle = (speakerId) => {
                                     <input type="text" placeholder="예시) BAD END: 마지막 잎새" value={scenario.text} onChange={(e) => handleScenarioChange(index, 'text', e.target.value)} 
                                         style={{ width: '80%', padding: '12px', borderRadius: '6px', border: '1px solid #495057', backgroundColor: '#343a40', color: '#fff', textAlign: 'center', fontSize: '16px', fontWeight: 'bold' }} 
                                     />
-                                    <p style={{ fontSize: '12px', color: '#868e96', marginTop: '10px' }}>이 대사가 출력된 후 게임이 종료됩니다.</p>
                                 </div>
                             );
                         }
 
+                        // ========== 2. CG 배너 ==========
                         if (scenario.type === 'cg_image') {
                             return (
                                 <div key={index} className={cardClasses}>
@@ -889,6 +867,7 @@ const getActiveSpeakerStyle = (speakerId) => {
                             );
                         }
 
+                        // ========== 3. 일반 대사/선택지 컷 ==========
                         return (
                             <div key={index} onClick={() => { if(showPreview) setPreviewScenario({ ...scenario, index }); }} className={cardClasses}>
                                 <div className="scenario-sidebar">
@@ -899,13 +878,12 @@ const getActiveSpeakerStyle = (speakerId) => {
                                             {editingDateIndex === index ? '수정 완료' : '상태창 변경'}
                                         </button>
                                         {scenario.dateOverride && editingDateIndex !== index && (
-                                             <button onClick={(e) => clearDateOverride(e, index)} style={{ width: '100%', marginTop: '5px', padding: '2px 0', fontSize: '10px', backgroundColor: '#fa5252', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>초기화</button>
+                                            <button onClick={(e) => clearDateOverride(e, index)} style={{ width: '100%', marginTop: '5px', padding: '2px 0', fontSize: '10px', backgroundColor: '#fa5252', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>초기화</button>
                                         )}
                                         {editingDateIndex === index && scenario.dateOverride && (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '5px' }}>
-                                                <input type="text" placeholder="윗줄 텍스트" title="윗줄에 표시될 텍스트" value={scenario.dateOverride.month} onChange={(e) => handleDateOverrideChange(index, 'month', e.target.value)} className="input-base" style={{ fontSize: '10px', padding: '4px' }} onClick={(e) => e.stopPropagation()} />
-                                                <input type="text" placeholder="아랫줄 텍스트" title="아래에 표시될 텍스트" value={scenario.dateOverride.time} onChange={(e) => handleDateOverrideChange(index, 'time', e.target.value)} className="input-base" style={{ fontSize: '10px', padding: '4px' }} onClick={(e) => e.stopPropagation()} />
-                                                {/*<input type="text" placeholder="달력 내부 텍스트" title="달력안에 들어갈 텍스트" value={scenario.dateOverride.day} onChange={(e) => handleDateOverrideChange(index, 'day', e.target.value)} className="input-base" style={{ fontSize: '10px', padding: '4px' }} onClick={(e) => e.stopPropagation()} />*/}
+                                                <input type="text" placeholder="윗줄 텍스트" value={scenario.dateOverride.month} onChange={(e) => handleDateOverrideChange(index, 'month', e.target.value)} className="input-base" style={{ fontSize: '10px', padding: '4px' }} onClick={(e) => e.stopPropagation()} />
+                                                <input type="text" placeholder="아랫줄 텍스트" value={scenario.dateOverride.time} onChange={(e) => handleDateOverrideChange(index, 'time', e.target.value)} className="input-base" style={{ fontSize: '10px', padding: '4px' }} onClick={(e) => e.stopPropagation()} />
                                             </div>
                                         )}
                                     </div>
@@ -922,8 +900,7 @@ const getActiveSpeakerStyle = (speakerId) => {
                                                     <span style={{ fontWeight: 'bold', color: '#495057', fontSize: '15px' }}>번째 컷</span>
                                                 </div>
                                             )}
-<div style={{ display: 'flex', gap: '6px' }}>
-                                                {/* ⭐ 수정: 루트 1~10번까지 고유 색상 적용 */}
+                                            <div style={{ display: 'flex', gap: '6px' }}>
                                                 {scenario.branch?.startsWith('option') && (
                                                     <span className={`badge ${scenario.branch}`} style={{ fontSize: '12px', padding: '3px 8px', backgroundColor: OPTION_COLORS[(parseInt(scenario.branch.replace('option', '')) - 1) % 10] }}>
                                                         루트 {String.fromCharCode(64 + parseInt(scenario.branch.replace('option', '')))} (선택지 {scenario.branch.replace('option', '')})
@@ -942,14 +919,13 @@ const getActiveSpeakerStyle = (speakerId) => {
                                         )}
                                     </div>
 
-{scenario.type === 'choice' ? (
+                                    {scenario.type === 'choice' ? (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                             <div style={{ padding: '12px', backgroundColor: '#e7f5ff', borderLeft: '4px solid #1971c2', borderRadius: '4px', fontSize: '13px', color: '#1864ab', lineHeight: '1.5' }}>
                                                 <strong>💡 화면에 표시될 선택지들을 입력해 주세요. (최대 10개)</strong><br/>
                                                 선택지를 삭제하면 해당 번호로 작성된 컷들도 함께 삭제되며 번호가 당겨집니다.
                                             </div>
                                             
-                                            {/* ⭐ 수정: options 배열을 안전하게 매핑 (없으면 빈칸 2개로 대체) */}
                                             {(scenario.options || ['', '']).map((optText, optIdx) => (
                                                 <div key={optIdx} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                                                     <span style={{ fontWeight: 'bold', color: '#495057', fontSize: '14px', width: '20px' }}>{optIdx + 1}.</span>
@@ -968,17 +944,13 @@ const getActiveSpeakerStyle = (speakerId) => {
                                                         style={{ flex: 1 }} 
                                                     />
                                                     {(scenario.options?.length || 2) > 2 && (
-                                                        <button onClick={() => handleDeleteOption(index, optIdx)} style={{ padding: '8px 12px', backgroundColor: '#fa5252', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-                                                            삭제
-                                                        </button>
+                                                        <button onClick={() => handleDeleteOption(index, optIdx)} style={{ padding: '8px 12px', backgroundColor: '#fa5252', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>삭제</button>
                                                     )}
                                                 </div>
                                             ))}
                                             
                                             {(scenario.options?.length || 2) < 10 && (
-                                                <button onClick={() => handleAddOption(index)} style={{ marginTop: '5px', padding: '10px', backgroundColor: '#f1f3f5', color: '#495057', border: '2px dashed #adb5bd', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
-                                                    + 선택지 추가
-                                                </button>
+                                                <button onClick={() => handleAddOption(index)} style={{ marginTop: '5px', padding: '10px', backgroundColor: '#f1f3f5', color: '#495057', border: '2px dashed #adb5bd', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>+ 선택지 추가</button>
                                             )}
                                         </div>
                                     ) : (
@@ -991,7 +963,7 @@ const getActiveSpeakerStyle = (speakerId) => {
                                             ) : (
                                                 <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                     <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#1971c2', backgroundColor: '#e7f5ff', padding: '4px 8px', borderRadius: '4px' }}>🖼️ 이 컷의 배경</label>
-                                                    <select value={scenario.bgType || 'bg_school'} onChange={(e) => handleBgSelectChange(index, e.target.value)} className="input-base" style={{ fontSize: '12px', padding: '6px' }}>
+                                                    <select value={scenario.bgType || PRESET_BACKGROUNDS[0]?.id} onChange={(e) => handleBgSelectChange(index, e.target.value)} className="input-base" style={{ fontSize: '12px', padding: '6px' }}>
                                                         <optgroup label="기본 제공 배경">
                                                             {PRESET_BACKGROUNDS.map(bg => <option key={bg.id} value={bg.id}>{bg.name}</option>)}
                                                         </optgroup>
@@ -1009,180 +981,202 @@ const getActiveSpeakerStyle = (speakerId) => {
                                                 </div>
                                             )}
                                             <div style={{ display: 'flex', gap: '10px' }}>
-                                                <select value={scenario.speaker} onChange={(e) => handleScenarioChange(index, 'speaker', e.target.value)} className="input-base" style={{ width: '120px' }}>
-                                                    <option value="PROTAGONIST">{displayProtagonistName}</option>
-                                                    <option value="나레이션">나레이션</option>
-                                                    {characters.map((c, charIdx) => {
+                                                <select value={scenario.speaker} onChange={(e) => handleScenarioChange(index, 'speaker', e.target.value)} className="input-base" style={{ width: '130px' }}>
+                                                    <option value="PROTAGONIST">😎 {displayProtagonistName}</option>
+                                                    <option value="나레이션">📢 나레이션</option>
+                                                    {characters.filter(c => !c.isProtagonist).map((c, charIdx) => {
                                                         const defaultName = `등장인물 ${charIdx + 1}`;
-                                                        return <option key={c.id} value={c.name || defaultName}>{c.name || defaultName}</option>;
+                                                        return <option key={c.id} value={c.name || defaultName}>🎭 {c.name || defaultName}</option>;
                                                     })}
                                                 </select>
                                                 <input type="text" placeholder="대사를 입력하세요..." value={scenario.text} onChange={(e) => handleScenarioChange(index, 'text', e.target.value)} className="input-base" style={{ flex: 1 }} />
                                             </div>
 
-{!scenario.isCg && (
+                                            {!scenario.isCg && (
                                                 <div style={{ display: 'flex', gap: '20px', marginTop: '15px' }}>
-                                                    
-                                                    {/* ⭐ 1. 초상화 표정 선택 패널 */}
                                                     <ImageSelectorPanel 
                                                         title="🖼️ 초상화 표정 선택" 
                                                         type="portrait" 
-                                                        protagonist={protagonist} 
                                                         characters={characters} 
                                                         selectedImage={scenario.protagonistImage} 
                                                         onSelect={(imgUrl) => handleScenarioChange(index, 'protagonistImage', imgUrl)} 
                                                     />
-
-                                                    {/* ⭐ 2. 스탠딩 표정 선택 패널 */}
                                                     <ImageSelectorPanel 
                                                         title="🧍 스탠딩 표정 선택" 
                                                         type="standing" 
-                                                        protagonist={protagonist} 
                                                         characters={characters} 
                                                         selectedImage={scenario.heroineImage} 
                                                         onSelect={(imgUrl) => handleScenarioChange(index, 'heroineImage', imgUrl)} 
                                                     />
-                                                    
                                                 </div>
                                             )}
-                                            {/* 🌟 수정: 대사 박스 하단 다기능 미니 컨트롤 바 */}
-                                            
- {/* 🌟 수정: 대사 박스 하단 미니 컨트롤 바 (다음 루트 시작 버튼 삭제 / 엔딩 조건 추가) */}
-{/* ⭐ 삭제됨: [+ 이 컷 아래에 대사 추가] 긴 버튼은 완전히 삭제했습니다. */}
-
-                                            {/* 🌟 수정: 대사 박스 하단 미니 컨트롤 바 (복사 기능으로 교체) */}
- {/* 🌟 수정: 버튼별 색상을 rgba로 변경하여 연하게 만들기 */}
-{/* 🌟 수정: 대사 박스 하단 미니 컨트롤 바 */}
-{/* 🌟 수정: 대사 박스 하단 미니 컨트롤 바 (크기 고정 및 정렬) */}
-                                            <div style={{ display: 'flex', gap: '6px', marginTop: '15px', backgroundColor: '#f8f9fa', padding: '8px', borderRadius: '6px', border: '1px dashed #ced4da', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
-                                                
-                                                {/* 1. 복사 버튼 (가장 길게 크기 고정) */}
-                                                <button 
-                                                    onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'copy'); }} 
-                                                    style={{ width: '170px', padding: '6px 0', fontSize: '11px', fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', backgroundColor: 'rgba(255, 185, 197, 0.61)', color: '#65021e', fontFamily: 'inherit' }}
-                                                >
-                                                    + 이 컷 아래 대사 복사
-                                                </button>
-                                                
-                                                {/* 2. CG 관련 버튼 (크기 고정) */}
-                                                {scenario.isCg ? (
-                                                    <>
-                                                        <button 
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setIsCgMode(false);
-                                                                const lastBg = scenario.bgImage;
-                                                                const nextItem = { type: 'dialog', branch: scenario.branch, isCg: false, speaker: defaultSpeaker, protagonistImage: null, heroineImage: null, text: '', bgImage: lastBg, bgType: 'bg_school', dateOverride: null };
-                                                                const newScenarios = [...scenarios];
-                                                                newScenarios.splice(index + 1, 0, nextItem);
-                                                                updateActiveScenarios(newScenarios);
-                                                            }}
-                                                            style={{ width: '90px', padding: '6px 0', fontSize: '11px', fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', backgroundColor: 'rgba(25, 113, 194, 0.3)', color: '#1864ab', boxShadow: '0 2px 0 rgba(24, 100, 171, 0.2)', fontFamily: 'inherit' }}
-                                                        >
-                                                            일반대사 추가
-                                                        </button>
-                                                        <label style={{ width: '90px', padding: '6px 0', fontSize: '11px', fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', textAlign: 'center', backgroundColor: 'rgba(132, 94, 247, 0.3)', color: '#6741d9', boxShadow: '0 2px 0 rgba(103, 65, 217, 0.2)', fontFamily: 'inherit' }}>
-                                                            + CG <input type="file" accept="image/*" onChange={(e) => handleInlineCgUpload(e, index, scenario)} style={{ display: 'none' }} onClick={(e) => e.stopPropagation()} />
-                                                        </label>
-                                                    </>
-                                                ) : (
-                                                    <label style={{ width: '70px', padding: '6px 0', fontSize: '11px', fontWeight: 'bold', border: 'none', borderRadius: '4px', cursor: 'pointer', textAlign: 'center', backgroundColor: 'rgba(132, 94, 247, 0.3)', color: '#6741d9', boxShadow: '0 2px 0 rgba(103, 65, 217, 0.2)', fontFamily: 'inherit' }}>
-                                                        + CG <input type="file" accept="image/*" onChange={(e) => handleInlineCgUpload(e, index, scenario)} style={{ display: 'none' }} onClick={(e) => e.stopPropagation()} />
-                                                    </label>
-                                                )}
-                                                
-                                                {/* 3. 엔딩 버튼 (크기 고정) */}
-                                                {scenario.type !== 'ending' && !(hasChoiceNode && scenario.branch === 'main') && (
-                                                    <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'ending'); }} style={{ width: '70px', padding: '6px 0', fontSize: '12px', fontWeight: 'bold', backgroundColor: '#343a40', color: '#ffd43b',  borderRadius: '4px', cursor: 'pointer', fontFamily: 'inherit' }}>
-                                                        + 엔딩
-                                                    </button>
-                                                )}
-                                                
-                                                {/* 4. 선택지 분기 버튼 (크기 고정) */}
-                                                {!hasChoiceNode && scenario.branch === 'main' && (
-                                                    <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'choice'); }} style={{ width: '90px', padding: '6px 0', fontSize: '12px', fontWeight: 'bold', backgroundColor: '#ffba749c', color: '#005117', border: 'none', borderRadius: '4px', cursor: 'pointer', fontFamily: 'inherit' }}>
-                                                        + 선택지 분기
-                                                    </button>
-                                                )}
-                                            </div>
                                         </>
                                     )}
+
+                                    {/* ⭐ 인라인 툴바 (수정됨) */}
+<div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '16px', flexWrap: 'wrap', paddingTop: '12px', borderTop: '1px solid #edf2f7' }} onClick={(e) => e.stopPropagation()}>
+                                            
+                                            {/* 그룹 1: 흐름 복제 및 연장 */}
+                                            <div style={{ display: 'flex', gap: '6px' }}>
+                                                
+                                                {/* 1. 기본 메인 버튼 (항상 표시) */}
+                                                <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'copy'); }} style={actionButtonStyle('rgba(255, 107, 129, 0.1)', '#ff4757', '📋 대사 이어가기')}>
+                                                    📋 대사 복사하기
+                                                </button>
+                                                
+                                                {/* 2. CG 상태에 따라 똑똑하게 바뀌는 서브 버튼 */}
+                                                {scenario.isCg ? (
+                                                    /* CG 모드일 때: 내가 이 CG 묶음의 마지막일 때만 '종료 버튼' 표시 */
+                                                    !isNextAlsoCg && (
+                                                        <button onClick={(e) => {
+                                                            e.stopPropagation(); setIsCgMode(false);
+                                                            const lastBg = scenario.bgImage;
+                                                            const nextItem = { type: 'dialog', branch: scenario.branch, isCg: false, speaker: defaultSpeaker, protagonistImage: null, heroineImage: null, text: '', bgImage: lastBg, bgType: PRESET_BACKGROUNDS[0]?.id, dateOverride: null };
+                                                            const newScenarios = [...scenarios]; newScenarios.splice(index + 1, 0, nextItem); updateActiveScenarios(newScenarios);
+                                                        }} style={actionButtonStyle('rgba(55, 66, 250, 0.1)', '#3742fa', '💬 CG 모드 종료 일반 대사 시작')}>
+                                                            💬 CG 모드 종료 일반 대사 시작
+                                                        </button>
+                                                    )
+                                                ) : (
+                                                    /* CG 모드가 아닐 때(일반 대사): '새로운 대사 추가' 버튼 표시 */
+                                                    <button onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        insertScenarioAfter(index, scenario, 'dialog'); // 'dialog' 타입은 텍스트를 비운 새 컷을 만듭니다.
+                                                    }} style={actionButtonStyle('rgba(51, 154, 240, 0.1)', '#1c7ed6', '💬 새로운 대사 추가')}>
+                                                        💬 새로운 대사 추가
+                                                    </button>
+                                                )}
+
+                                            </div>
+
+                                        <div style={{ width: '1px', height: '18px', backgroundColor: '#e2e8f0' }} />
+                                        
+                                        <div style={{ display: 'flex', gap: '6px' }}>
+                                            <label style={{ ...actionButtonStyle('rgba(132, 94, 247, 0.1)', '#6741d9', '🖼️ CG 삽입'), cursor: 'pointer' }}>🖼️ CG 삽입<input type="file" accept="image/*" onChange={(e) => handleInlineCgUpload(e, index, scenario)} style={{ display: 'none' }} onClick={(e) => e.stopPropagation()} /></label>
+                                        </div>
+
+                                        <div style={{ width: '1px', height: '18px', backgroundColor: '#e2e8f0' }} />
+                                        
+                                        <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
+                                            {!hasChoiceNode && scenario.branch === 'main' && (
+                                                <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'choice'); }} style={actionButtonStyle('rgba(255, 165, 2, 0.1)', '#e67e22', '🔀 선택지 분기')}>🔀 선택지 분기</button>
+                                            )}
+                                            
+                                            {/* ⭐ 1번 요청 적용: 현재 루트에 엔딩이 없을 때만 엔딩 버튼 표시. onClick 함수 파라미터(ending) 정상 확인 */}
+                                            {!hasEndingInThisBranch && !(hasChoiceNode && scenario.branch === 'main') && (
+                                                <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'ending'); }} style={actionButtonStyle('#2f3542', '#ffffff', '🎬 엔딩')}>🎬 엔딩</button>
+                                            )}
+                                        </div>
+                                    </div>
+
                                 </div>
                             </div>
                         );
                     })}
                 </div>
 {/* 🌟 수정: 유령 버튼을 완벽히 제거한 하단 컨트롤러 */}
-                <div className="controller-group" style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    
-                    {(() => {
-                        const currentBranchScenarios = scenarios.filter(s => s.branch === currentBranch);
-                        const lastCut = scenarios[scenarios.length - 1];
+{/* 🌟 하단 작업 컨트롤러 (Action Bar 감성으로 통합) */}
+<div className="controller-group" style={{ 
+    marginTop: '30px', 
+    padding: '20px', 
+    backgroundColor: '#ffffff', 
+    borderRadius: '12px', 
+    border: '1px solid #edf2f7',
+    display: 'flex', 
+    flexDirection: 'column', 
+    gap: '12px' 
+}}>
+    
+    {(() => {
+        const currentBranchScenarios = scenarios.filter(s => s.branch === currentBranch);
+        const isBranchValid = currentBranch === 'main' || (hasChoiceNode && currentBranch.startsWith('option'));
+        if (!isBranchValid) return null;
+        
+        const currentTotalOpts = choiceNodeInfo ? (choiceNodeInfo.options?.length || 2) : 2;
+
+        return (
+            <>
+                {/* 1. 대사가 아예 없을 때 (첫 시작 액션) */}
+                {currentBranchScenarios.length === 0 && !hasEndingInCurrentBranch && (
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <button 
+                            onClick={addScenarioInput} 
+                            style={{ 
+                                ...actionButtonStyle(
+                                    currentBranch === 'main' ? 'rgba(51, 154, 240, 0.1)' : `${OPTION_COLORS[(currentBranchNum - 1) % 10]}1A`, // 1A는 투명도 10%
+                                    currentBranch === 'main' ? '#1c7ed6' : OPTION_COLORS[(currentBranchNum - 1) % 10]
+                                ), 
+                                flex: 1, height: '45px', fontSize: '13px' 
+                            }}
+                        >
+                            {currentBranch === 'main' ? '✨ 일반 대사 시작하기' : `✨ 선택지 ${currentBranchNum}번 루트 시작`}
+                        </button>
                         
-                        // 방어 로직 1, 2 유지
-                        const isBranchValid = currentBranch === 'main' || (hasChoiceNode && currentBranch.startsWith('option'));
-                        if (!isBranchValid) return null;
-                        if (currentBranch.startsWith('option')) {
-                            const optionNum = parseInt(currentBranch.replace('option', ''));
-                            if (optionNum > totalOptionsCount) return null; 
-                        }
-
-                        return (
-                            <>
-                                {/* 1. 대사가 아예 없을 때 (첫 시작) */}
-                                {currentBranchScenarios.length === 0 && !hasEndingInCurrentBranch && (
-                                    <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
-                                        <button 
-                                            onClick={addScenarioInput} 
-                                            className="btn-large" 
-                                            style={{ backgroundColor: currentBranch === 'main' ? '#339af0' : OPTION_COLORS[(currentBranchNum - 1) % 10], color: 'white', flex: 1, border: 'none', borderRadius: '8px', padding: '12px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 0 rgba(0,0,0,0.2)', fontFamily: 'inherit' }}
-                                        >
-                                            + {currentBranch === 'main' ? '일반' : `선택지 ${currentBranchNum}번`} 대사 시작하기
-                                        </button>
-                                        
-                                        <label className="btn-large bg-purple" style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', color: 'white', fontWeight: 'bold', cursor: 'pointer', textAlign: 'center', boxShadow: '0 4px 0 rgba(0,0,0,0.2)', fontFamily: 'inherit' }}>
-                                            🖼️ CG 추가 <input type="file" accept="image/*" onChange={handleCgUpload} style={{ display: 'none' }} />
-                                        </label>
-                                    </div>
-                                )}
-
-                                {/* 2. 대사가 있을 때: (엔딩 유무에 상관없이 렌더링되게 분리) */}
-                                {currentBranchScenarios.length > 0 && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
-                                        
-                                        {/* ⭐ 루트 확인 완료 버튼은 엔딩이 나도 계속 표시! (다음 루트로 넘어가기 위함) */}
-                                        {currentBranch.startsWith('option') && currentBranchNum < totalOptionsCount && (
-                                            <button 
-                                                onClick={() => { setIsCgMode(false); setCurrentBranch(`option${currentBranchNum + 1}`); }} 
-                                                className="btn-large" 
-                                                style={{ width: '100%', backgroundColor: OPTION_COLORS[currentBranchNum % 10], boxShadow: '0 4px 0 rgba(0,0,0,0.2)', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'inherit' }}
-                                            >
-                                                ✔️ 선택지 {currentBranchNum}번 루트 확인 완료 (다음 번호로)
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-                            </>
-                        );
-                    })()}
-
-                    {/* 3. 엔딩 안내 메시지 */}
-                    {hasEndingInCurrentBranch && (
-                        <div style={{ flex: 1, padding: '15px', backgroundColor: '#e9ecef', color: '#868e96', textAlign: 'center', borderRadius: '8px', fontWeight: 'bold', fontFamily: 'inherit' }}>
-                            🔒 현재 분기({currentBranch === 'main' ? '일반 루트' : `루트 ${currentBranchNum}`})는 엔딩으로 마무리되었습니다.
-                        </div>
-                    )}
-                </div>
-                {/* 🌟 4. 모든 루트 엔딩 시 게임 종료 안내판 */}
-                {isFullyEnded && (
-                    <div style={{ marginTop: '20px', padding: '20px', backgroundColor: '#212529', color: '#ffd43b', textAlign: 'center', borderRadius: '8px', fontWeight: 'bold', border: '2px solid #ffd43b', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}>
-                        <div style={{ fontSize: '24px', marginBottom: '10px' }}>🎊</div>
-                        모든 루트에 엔딩이 생성되어 게임이 여기서 종료됩니다!<br/>
-                        <span style={{ fontSize: '14px', color: '#ced4da', fontWeight: 'normal', marginTop: '5px', display: 'inline-block' }}>
-                            이후의 이벤트는 게임에 구현되지 않습니다.
-                        </span>
+                        <label style={{ 
+                            ...actionButtonStyle('rgba(132, 94, 247, 0.1)', '#7048e8'), 
+                            flex: 1, height: '45px', fontSize: '13px', cursor: 'pointer' 
+                        }}>
+                            🖼️ CG로 시작하기 
+                            <input type="file" accept="image/*" onChange={handleCgUpload} style={{ display: 'none' }} />
+                        </label>
                     </div>
                 )}
+
+                {/* 2. 대사가 있을 때 (다음 단계 내비게이션) */}
+                {currentBranchScenarios.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {currentBranch.startsWith('option') && currentBranchNum < currentTotalOpts && (
+                            <button 
+                                onClick={() => { setIsCgMode(false); setCurrentBranch(`option${currentBranchNum + 1}`); }} 
+                                style={{ 
+                                    ...actionButtonStyle(`${OPTION_COLORS[currentBranchNum % 10]}1A`, OPTION_COLORS[currentBranchNum % 10]),
+                                    width: '100%', height: '45px', fontSize: '13px', border: `1px dashed ${OPTION_COLORS[currentBranchNum % 10]}4D`
+                                }}
+                            >
+                                ✔️ {currentBranchNum}번 루트 완료 → 다음 선택지({currentBranchNum + 1}번) 편집하기
+                            </button>
+                        )}
+                    </div>
+                )}
+            </>
+        );
+    })()}
+
+    {/* 3. 엔딩 안내 메시지 (차분한 정보 박스) */}
+    {hasEndingInCurrentBranch && (
+        <div style={{ 
+            padding: '12px', 
+            backgroundColor: '#f8f9fa', 
+            color: '#718096', 
+            textAlign: 'center', 
+            borderRadius: '8px', 
+            fontSize: '12px',
+            fontWeight: '600',
+            border: '1px solid #e2e8f0'
+        }}>
+            🔒 현재 분기({currentBranch === 'main' ? '일반 루트' : `루트 ${currentBranchNum}`})는 엔딩으로 마무리되었습니다.
+        </div>
+    )}
+
+    {/* 4. 모든 루트 엔딩 시 (세련된 축하/완료 카드) */}
+    {isFullyEnded && (
+        <div style={{ 
+            marginTop: '10px', 
+            padding: '20px', 
+            background: 'linear-gradient(135deg, #2d3436 0%, #000000 100%)', 
+            color: '#ffd43b', 
+            textAlign: 'center', 
+            borderRadius: '12px', 
+            boxShadow: '0 10px 20px rgba(0,0,0,0.15)' 
+        }}>
+            <div style={{ fontSize: '20px', marginBottom: '8px' }}>🏁</div>
+            <div style={{ fontWeight: '800', fontSize: '15px', letterSpacing: '-0.5px' }}>모든 루트의 이야기가 완성되었습니다!</div>
+            <div style={{ fontSize: '12px', color: '#a0aec0', marginTop: '4px', fontWeight: '400' }}>
+                이제 이 이벤트의 모든 분기에 엔딩이 존재합니다.
+            </div>
+        </div>
+    )}
+</div>
             </div>
         </div>
     );

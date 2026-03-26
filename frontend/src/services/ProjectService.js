@@ -37,20 +37,15 @@ export const saveProjectToServer = async (id, pw) => {
 
 export const uploadAndSaveProject = async (projectId, htmlString) => {
     const state = useCustomizerStore.getState();
-    
-    // ⭐ 핵심: 이름이 아닌 '임시 URL(blob)'을 열쇠로 사용해 꼬임을 방지!
     const blobToFingerprint = {};  
     const filesToUpload = [];   
 
     const collectFile = (item) => {
         const file = item?.file;
         const url = item?.preview || item?.url;
-        
         if (file && url) {
             const fingerprint = getFileFingerprint(file, projectId);
-            blobToFingerprint[url] = fingerprint; // 임시 주소를 고유 지문에 묶어줌
-            
-            // 💡 파일 내용이 완전히 같은 것만 중복 제거 (클라우드에는 딱 1번만 올립니다!)
+            blobToFingerprint[url] = fingerprint;
             if (!filesToUpload.some(f => f.fingerprint === fingerprint)) {
                 filesToUpload.push({ file, fingerprint, originalName: generateSafeName(file) });
             }
@@ -60,16 +55,11 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
     // ==============================================================================
     // 1. 모든 물리적 파일 긁어모으기
     // ==============================================================================
-    state.protagonist?.images?.forEach(collectFile);
-    state.protagonist?.portraitImages?.forEach(collectFile);
-    state.protagonist?.standingImages?.forEach(collectFile);
-
-    state.characters?.forEach(c => {
-        c.images?.forEach(collectFile);
+state.characters?.forEach(c => {
         c.portraitImages?.forEach(collectFile);
         c.standingImages?.forEach(collectFile);
     });
-
+    
     state.customBackgrounds?.forEach(collectFile);
     state.customFonts?.forEach(collectFile);
 
@@ -179,7 +169,6 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
 
     const gameData = {
         selectedMode: state.selectedMode,
-        pFontStyle: state.pFontStyle,
         narrationFontStyle: state.narrationFontStyle, 
         globalUi: state.globalUi, 
         startMenu: {
@@ -187,32 +176,24 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
             bgImage: getCleanUrl(state.startMenu?.bgImage),
             bgm: getCleanUrl(state.startMenu?.bgm)
         },
-        protagonist: {
-            name: state.protagonist?.name || "",
-            images: state.protagonist?.images?.map(getCleanUrl).filter(Boolean) || [],
-            portraitImages: state.protagonist?.portraitImages?.map(getCleanUrl).filter(Boolean) || [],
-            standingImages: state.protagonist?.standingImages?.map(getCleanUrl).filter(Boolean) || []
-        },
-        characters: state.characters?.map(c => ({
-            ...c,
-            images: c.images?.map(getCleanUrl).filter(Boolean) || [],
+characters: state.characters?.map(c => ({
+            id: c.id,
+            isProtagonist: c.isProtagonist || false,
+            name: c.name,
             portraitImages: c.portraitImages?.map(getCleanUrl).filter(Boolean) || [],
-            standingImages: c.standingImages?.map(getCleanUrl).filter(Boolean) || []
+            standingImages: c.standingImages?.map(getCleanUrl).filter(Boolean) || [],
+            fontStyle: c.fontStyle
         })) || [],
         events: eventsToSave,
-        customFonts: state.customFonts?.map(f => ({
-            name: f.name,
-            url: getCleanUrl(f.file ? f.url : f.url) 
-        })) || []
+        customFonts: state.customFonts?.map(f => ({ name: f.name, url: getCleanUrl(f.url) }))
     };
 
     const response = await axios.post(`${API_URL}/save`, {
         projectId,
         gameData: JSON.stringify(gameData),
         htmlContent: htmlString,
-        urlMap: {} // 프론트엔드가 주소를 꽂아주므로 백엔드는 아무것도 안 해도 됨!
+        urlMap: {} 
     });
     
-    console.log("🎉 저장 대성공!");
     return response.data;
 };

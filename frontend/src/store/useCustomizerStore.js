@@ -8,12 +8,30 @@ const getInitialState = () => ({
     isEditing: false,
     color: '',
     
-    // 😎 주인공 설정
-protagonist: { 
-        name: '주인공', 
-        portraitImages: [], // 🖼️ 초상화(정사각형) 전용
-        standingImages: []  // 🧍 스탠딩 전용
-    },
+// 🎭 모든 등장인물 (0번 인덱스는 항상 주인공으로 고정)
+    characters: [
+        { 
+            id: 'protagonist', 
+            isProtagonist: true,
+            name: '주인공', 
+            portraitImages: [], 
+            standingImages: [], 
+            fontStyle: { 
+                font: 'Galmuri14', 
+                color: '#ffffff', 
+                useOutline: true, 
+                outline: '#000000', 
+                dialogFrame: 'retro', 
+                dialogColor: 'rgba(173,216,230,0.8)',
+                nameFrame: 'simple', 
+                nameColor: 'rgba(255, 182, 193, 0)', 
+                portraitStyle: 'retro', 
+                portraitColor: 'rgba(173,216,230,0.8)',
+                typingSound: 'type4'
+            } 
+        }
+    ],
+
     pFontStyle: { 
         font: 'Galmuri14', 
         color: '#ffffff', 
@@ -59,27 +77,6 @@ protagonist: {
     customBackgrounds: [],
     customFonts: [],
 
-    // 🎭 등장인물 설정
-characters: [
-        { 
-            id: Date.now(), 
-            name: '등장인물 1', 
-            portraitImages: [], // 🖼️ 초상화 전용
-            standingImages: [], // 🧍 스탠딩 전용
-            fontStyle: { 
-                font: 'Galmuri14', 
-                color: '#ffffff', 
-                useOutline: true, 
-                outline: '#7d1212', 
-                dialogFrame: 'retro', 
-                dialogColor: 'rgba(0,0,0,0.8)', 
-                nameFrame: 'gothic', 
-                nameColor: 'rgba(0, 0, 0, 0.15)', 
-                useNameBorder: false, 
-                typingSound: 'type3' 
-            } 
-        }
-    ],
 
     // 📅 이벤트 및 시나리오 설정
     events: [
@@ -153,13 +150,27 @@ const useCustomizerStore = create((set) => ({
     resetStore: () => set(getInitialState()),
 
     // ⭐ 프로젝트 파일 불러오기
-    loadProjectData: (loadedData) => set((state) => ({
-        ...state,         
-        ...loadedData,    
+loadProjectData: (loadedData) => set((state) => ({
+        ...state,
+        ...loadedData,
+        characters: (loadedData.characters || state.characters).map(c => ({
+            ...c,
+            portraitImages: c.portraitImages || [],
+            standingImages: c.standingImages || []
+        })),
         isEditing: true,
-        activeEventId: loadedData.events?.[0]?.id || 1, 
-        showPreview: false,
-        previewScenario: null
+    })),
+
+    // ⭐ 캐릭터 및 주인공 통합 업데이트 함수
+    updateCharacter: (id, updates) => set((state) => ({
+        characters: state.characters.map(c => c.id === id ? { ...c, ...updates } : c)
+    })),
+
+    // ⭐ 캐릭터 스타일 통합 업데이트 함수
+    updateCharacterStyle: (id, styleUpdates) => set((state) => ({
+        characters: state.characters.map(c => 
+            c.id === id ? { ...c, fontStyle: { ...c.fontStyle, ...styleUpdates } } : c
+        )
     })),
     
     // --- Setter 함수들 ---
