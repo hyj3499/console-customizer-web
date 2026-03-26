@@ -868,25 +868,32 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                         }
 
                         // ========== 3. 일반 대사/선택지 컷 ==========
+// ========== 3. 일반 대사/선택지 컷 ==========
                         return (
                             <div key={index} onClick={() => { if(showPreview) setPreviewScenario({ ...scenario, index }); }} className={cardClasses}>
+                                
+                                {/* 1. 왼쪽 사이드바: 분기 설정이 아닐 때만 노출 */}
                                 <div className="scenario-sidebar">
-                                    <div style={{ fontSize: '10px', color: '#868e96', fontWeight: 'bold', marginBottom: '5px' }}>{effectiveDate.month}</div>
-                                    <div style={{ fontSize: '14px', color: '#495057', fontWeight: 'bold' }}>{effectiveDate.time}</div>
-                                    <div style={{ marginTop: '10px', width: '100%' }}>
-                                        <button onClick={(e) => toggleDateEditMode(e, index, scenario, effectiveDate)} style={{ width: '100%', padding: '4px 0', fontSize: '10px', backgroundColor: editingDateIndex === index ? '#2b8a3e' : '#f1f3f5', color: editingDateIndex === index ? '#fff' : '#000', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-                                            {editingDateIndex === index ? '수정 완료' : '상태창 변경'}
-                                        </button>
-                                        {scenario.dateOverride && editingDateIndex !== index && (
-                                            <button onClick={(e) => clearDateOverride(e, index)} style={{ width: '100%', marginTop: '5px', padding: '2px 0', fontSize: '10px', backgroundColor: '#fa5252', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>초기화</button>
-                                        )}
-                                        {editingDateIndex === index && scenario.dateOverride && (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '5px' }}>
-                                                <input type="text" placeholder="윗줄 텍스트" value={scenario.dateOverride.month} onChange={(e) => handleDateOverrideChange(index, 'month', e.target.value)} className="input-base" style={{ fontSize: '10px', padding: '4px' }} onClick={(e) => e.stopPropagation()} />
-                                                <input type="text" placeholder="아랫줄 텍스트" value={scenario.dateOverride.time} onChange={(e) => handleDateOverrideChange(index, 'time', e.target.value)} className="input-base" style={{ fontSize: '10px', padding: '4px' }} onClick={(e) => e.stopPropagation()} />
+                                    {scenario.type !== 'choice' && (
+                                        <>
+                                            <div style={{ fontSize: '10px', color: '#868e96', fontWeight: 'bold', marginBottom: '5px' }}>{effectiveDate.month}</div>
+                                            <div style={{ fontSize: '14px', color: '#495057', fontWeight: 'bold' }}>{effectiveDate.time}</div>
+                                            <div style={{ marginTop: '10px', width: '100%' }}>
+                                                <button onClick={(e) => toggleDateEditMode(e, index, scenario, effectiveDate)} style={{ width: '100%', padding: '4px 0', fontSize: '10px', backgroundColor: editingDateIndex === index ? '#2b8a3e' : '#f1f3f5', color: editingDateIndex === index ? '#fff' : '#000', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+                                                    {editingDateIndex === index ? '수정 완료' : '상태창 변경'}
+                                                </button>
+                                                {scenario.dateOverride && editingDateIndex !== index && (
+                                                    <button onClick={(e) => clearDateOverride(e, index)} style={{ width: '100%', marginTop: '5px', padding: '2px 0', fontSize: '10px', backgroundColor: '#fa5252', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>초기화</button>
+                                                )}
+                                                {editingDateIndex === index && scenario.dateOverride && (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '5px' }}>
+                                                        <input type="text" placeholder="윗줄 텍스트" value={scenario.dateOverride.month} onChange={(e) => handleDateOverrideChange(index, 'month', e.target.value)} className="input-base" style={{ fontSize: '10px', padding: '4px' }} onClick={(e) => e.stopPropagation()} />
+                                                        <input type="text" placeholder="아랫줄 텍스트" value={scenario.dateOverride.time} onChange={(e) => handleDateOverrideChange(index, 'time', e.target.value)} className="input-base" style={{ fontSize: '10px', padding: '4px' }} onClick={(e) => e.stopPropagation()} />
+                                                    </div>
+                                                )}
                                             </div>
-                                        )}
-                                    </div>
+                                        </>
+                                    )}
                                 </div>
 
                                 <div className="scenario-main">
@@ -903,7 +910,7 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                                             <div style={{ display: 'flex', gap: '6px' }}>
                                                 {scenario.branch?.startsWith('option') && (
                                                     <span className={`badge ${scenario.branch}`} style={{ fontSize: '12px', padding: '3px 8px', backgroundColor: OPTION_COLORS[(parseInt(scenario.branch.replace('option', '')) - 1) % 10] }}>
-                                                        루트 {String.fromCharCode(64 + parseInt(scenario.branch.replace('option', '')))} (선택지 {scenario.branch.replace('option', '')})
+                                                        루트 {String.fromCharCode(64 + parseInt(scenario.branch.replace('option', '')))} (선택지 {scenario.branch.replace('option', '')}번)
                                                     </span>
                                                 )}
                                                 {scenario.isCg && <span className="badge cg" style={{ fontSize: '12px', padding: '3px 8px' }}>🖼️ CG 모드</span>}
@@ -920,6 +927,7 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                                     </div>
 
                                     {scenario.type === 'choice' ? (
+                                        /* --- 분기 설정 입력창 --- */
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                             <div style={{ padding: '12px', backgroundColor: '#e7f5ff', borderLeft: '4px solid #1971c2', borderRadius: '4px', fontSize: '13px', color: '#1864ab', lineHeight: '1.5' }}>
                                                 <strong>💡 화면에 표시될 선택지들을 입력해 주세요. (최대 10개)</strong><br/>
@@ -954,6 +962,7 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                                             )}
                                         </div>
                                     ) : (
+                                        /* --- 일반 대사 입력창 --- */
                                         <>
                                             {scenario.isCg ? (
                                                 <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -994,39 +1003,24 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
 
                                             {!scenario.isCg && (
                                                 <div style={{ display: 'flex', gap: '20px', marginTop: '15px' }}>
-                                                    <ImageSelectorPanel 
-                                                        title="🖼️ 초상화 표정 선택" 
-                                                        type="portrait" 
-                                                        characters={characters} 
-                                                        selectedImage={scenario.protagonistImage} 
-                                                        onSelect={(imgUrl) => handleScenarioChange(index, 'protagonistImage', imgUrl)} 
-                                                    />
-                                                    <ImageSelectorPanel 
-                                                        title="🧍 스탠딩 표정 선택" 
-                                                        type="standing" 
-                                                        characters={characters} 
-                                                        selectedImage={scenario.heroineImage} 
-                                                        onSelect={(imgUrl) => handleScenarioChange(index, 'heroineImage', imgUrl)} 
-                                                    />
+                                                    <ImageSelectorPanel title="🖼️ 초상화 표정 선택" type="portrait" characters={characters} selectedImage={scenario.protagonistImage} onSelect={(imgUrl) => handleScenarioChange(index, 'protagonistImage', imgUrl)} />
+                                                    <ImageSelectorPanel title="🧍 스탠딩 표정 선택" type="standing" characters={characters} selectedImage={scenario.heroineImage} onSelect={(imgUrl) => handleScenarioChange(index, 'heroineImage', imgUrl)} />
                                                 </div>
                                             )}
                                         </>
                                     )}
 
-                                    {/* ⭐ 인라인 툴바 (수정됨) */}
-<div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '16px', flexWrap: 'wrap', paddingTop: '12px', borderTop: '1px solid #edf2f7' }} onClick={(e) => e.stopPropagation()}>
+                                    {/* 2. 하단 인라인 툴바: 분기 설정이 아닐 때만 노출 */}
+                                    {scenario.type !== 'choice' && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '16px', flexWrap: 'wrap', paddingTop: '12px', borderTop: '1px solid #edf2f7' }} onClick={(e) => e.stopPropagation()}>
                                             
                                             {/* 그룹 1: 흐름 복제 및 연장 */}
                                             <div style={{ display: 'flex', gap: '6px' }}>
-                                                
-                                                {/* 1. 기본 메인 버튼 (항상 표시) */}
-                                                <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'copy'); }} style={actionButtonStyle('rgba(255, 107, 129, 0.1)', '#ff4757', '📋 대사 이어가기')}>
+                                                <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'copy'); }} style={actionButtonStyle('rgba(255, 107, 129, 0.1)', '#ff4757', '📋 대사 복사하기')}>
                                                     📋 대사 복사하기
                                                 </button>
                                                 
-                                                {/* 2. CG 상태에 따라 똑똑하게 바뀌는 서브 버튼 */}
                                                 {scenario.isCg ? (
-                                                    /* CG 모드일 때: 내가 이 CG 묶음의 마지막일 때만 '종료 버튼' 표시 */
                                                     !isNextAlsoCg && (
                                                         <button onClick={(e) => {
                                                             e.stopPropagation(); setIsCgMode(false);
@@ -1038,145 +1032,87 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                                                         </button>
                                                     )
                                                 ) : (
-                                                    /* CG 모드가 아닐 때(일반 대사): '새로운 대사 추가' 버튼 표시 */
-                                                    <button onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        insertScenarioAfter(index, scenario, 'dialog'); // 'dialog' 타입은 텍스트를 비운 새 컷을 만듭니다.
-                                                    }} style={actionButtonStyle('rgba(51, 154, 240, 0.1)', '#1c7ed6', '💬 새로운 대사 추가')}>
+                                                    <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'dialog'); }} style={actionButtonStyle('rgba(51, 154, 240, 0.1)', '#1c7ed6', '💬 새로운 대사 추가')}>
                                                         💬 새로운 대사 추가
                                                     </button>
                                                 )}
-
                                             </div>
 
-                                        <div style={{ width: '1px', height: '18px', backgroundColor: '#e2e8f0' }} />
-                                        
-                                        <div style={{ display: 'flex', gap: '6px' }}>
-                                            <label style={{ ...actionButtonStyle('rgba(132, 94, 247, 0.1)', '#6741d9', '🖼️ CG 삽입'), cursor: 'pointer' }}>🖼️ CG 삽입<input type="file" accept="image/*" onChange={(e) => handleInlineCgUpload(e, index, scenario)} style={{ display: 'none' }} onClick={(e) => e.stopPropagation()} /></label>
-                                        </div>
-
-                                        <div style={{ width: '1px', height: '18px', backgroundColor: '#e2e8f0' }} />
-                                        
-                                        <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
-                                            {!hasChoiceNode && scenario.branch === 'main' && (
-                                                <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'choice'); }} style={actionButtonStyle('rgba(255, 165, 2, 0.1)', '#e67e22', '🔀 선택지 분기')}>🔀 선택지 분기</button>
-                                            )}
+                                            <div style={{ width: '1px', height: '18px', backgroundColor: '#e2e8f0' }} />
                                             
-                                            {/* ⭐ 1번 요청 적용: 현재 루트에 엔딩이 없을 때만 엔딩 버튼 표시. onClick 함수 파라미터(ending) 정상 확인 */}
-                                            {!hasEndingInThisBranch && !(hasChoiceNode && scenario.branch === 'main') && (
-                                                <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'ending'); }} style={actionButtonStyle('#2f3542', '#ffffff', '🎬 엔딩')}>🎬 엔딩</button>
-                                            )}
+                                            {/* 그룹 2: 미디어 삽입 (보라색 스타일) */}
+                                            <div style={{ display: 'flex', gap: '6px' }}>
+                                                <label style={{ ...actionButtonStyle('rgba(132, 94, 247, 0.1)', '#6741d9', '🖼️ CG 삽입'), cursor: 'pointer' }}>
+                                                    🖼️ CG 삽입
+                                                    <input type="file" accept="image/*" onChange={(e) => handleInlineCgUpload(e, index, scenario)} style={{ display: 'none' }} onClick={(e) => e.stopPropagation()} />
+                                                </label>
+                                            </div>
+
+                                            <div style={{ width: '1px', height: '18px', backgroundColor: '#e2e8f0' }} />
+                                            
+                                            {/* 그룹 3: 구조 변경 */}
+                                            <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
+                                                {!hasChoiceNode && scenario.branch === 'main' && (
+                                                    <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'choice'); }} style={actionButtonStyle('rgba(255, 165, 2, 0.1)', '#e67e22', '🔀 선택지 분기')}>🔀 선택지 분기</button>
+                                                )}
+                                                {!hasEndingInThisBranch && !(hasChoiceNode && scenario.branch === 'main') && (
+                                                    <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'ending'); }} style={actionButtonStyle('#2f3542', '#ffffff', '🎬 엔딩')}>🎬 엔딩</button>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
 
                                 </div>
                             </div>
                         );
                     })}
                 </div>
-{/* 🌟 수정: 유령 버튼을 완벽히 제거한 하단 컨트롤러 */}
-{/* 🌟 하단 작업 컨트롤러 (Action Bar 감성으로 통합) */}
-<div className="controller-group" style={{ 
-    marginTop: '30px', 
-    padding: '20px', 
-    backgroundColor: '#ffffff', 
-    borderRadius: '12px', 
-    border: '1px solid #edf2f7',
-    display: 'flex', 
-    flexDirection: 'column', 
-    gap: '12px' 
-}}>
-    
-    {(() => {
-        const currentBranchScenarios = scenarios.filter(s => s.branch === currentBranch);
-        const isBranchValid = currentBranch === 'main' || (hasChoiceNode && currentBranch.startsWith('option'));
-        if (!isBranchValid) return null;
-        
-        const currentTotalOpts = choiceNodeInfo ? (choiceNodeInfo.options?.length || 2) : 2;
 
-        return (
-            <>
-                {/* 1. 대사가 아예 없을 때 (첫 시작 액션) */}
-                {currentBranchScenarios.length === 0 && !hasEndingInCurrentBranch && (
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                        <button 
-                            onClick={addScenarioInput} 
-                            style={{ 
-                                ...actionButtonStyle(
-                                    currentBranch === 'main' ? 'rgba(51, 154, 240, 0.1)' : `${OPTION_COLORS[(currentBranchNum - 1) % 10]}1A`, // 1A는 투명도 10%
-                                    currentBranch === 'main' ? '#1c7ed6' : OPTION_COLORS[(currentBranchNum - 1) % 10]
-                                ), 
-                                flex: 1, height: '45px', fontSize: '13px' 
-                            }}
-                        >
-                            {currentBranch === 'main' ? '✨ 일반 대사 시작하기' : `✨ 선택지 ${currentBranchNum}번 루트 시작`}
-                        </button>
-                        
-                        <label style={{ 
-                            ...actionButtonStyle('rgba(132, 94, 247, 0.1)', '#7048e8'), 
-                            flex: 1, height: '45px', fontSize: '13px', cursor: 'pointer' 
-                        }}>
-                            🖼️ CG로 시작하기 
-                            <input type="file" accept="image/*" onChange={handleCgUpload} style={{ display: 'none' }} />
-                        </label>
-                    </div>
-                )}
+                {/* 🌟 하단 작업 컨트롤러 (Action Bar) */}
+                <div className="controller-group" style={{ marginTop: '30px', padding: '20px', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #edf2f7', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {(() => {
+                        const currentBranchScenarios = scenarios.filter(s => s.branch === currentBranch);
+                        const isBranchValid = currentBranch === 'main' || (hasChoiceNode && currentBranch.startsWith('option'));
+                        if (!isBranchValid) return null;
+                        const currentTotalOpts = choiceNodeInfo ? (choiceNodeInfo.options?.length || 2) : 2;
 
-                {/* 2. 대사가 있을 때 (다음 단계 내비게이션) */}
-                {currentBranchScenarios.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {currentBranch.startsWith('option') && currentBranchNum < currentTotalOpts && (
-                            <button 
-                                onClick={() => { setIsCgMode(false); setCurrentBranch(`option${currentBranchNum + 1}`); }} 
-                                style={{ 
-                                    ...actionButtonStyle(`${OPTION_COLORS[currentBranchNum % 10]}1A`, OPTION_COLORS[currentBranchNum % 10]),
-                                    width: '100%', height: '45px', fontSize: '13px', border: `1px dashed ${OPTION_COLORS[currentBranchNum % 10]}4D`
-                                }}
-                            >
-                                ✔️ {currentBranchNum}번 루트 완료 → 다음 선택지({currentBranchNum + 1}번) 편집하기
-                            </button>
-                        )}
-                    </div>
-                )}
-            </>
-        );
-    })()}
-
-    {/* 3. 엔딩 안내 메시지 (차분한 정보 박스) */}
-    {hasEndingInCurrentBranch && (
-        <div style={{ 
-            padding: '12px', 
-            backgroundColor: '#f8f9fa', 
-            color: '#718096', 
-            textAlign: 'center', 
-            borderRadius: '8px', 
-            fontSize: '12px',
-            fontWeight: '600',
-            border: '1px solid #e2e8f0'
-        }}>
-            🔒 현재 분기({currentBranch === 'main' ? '일반 루트' : `루트 ${currentBranchNum}`})는 엔딩으로 마무리되었습니다.
-        </div>
-    )}
-
-    {/* 4. 모든 루트 엔딩 시 (세련된 축하/완료 카드) */}
-    {isFullyEnded && (
-        <div style={{ 
-            marginTop: '10px', 
-            padding: '20px', 
-            background: 'linear-gradient(135deg, #2d3436 0%, #000000 100%)', 
-            color: '#ffd43b', 
-            textAlign: 'center', 
-            borderRadius: '12px', 
-            boxShadow: '0 10px 20px rgba(0,0,0,0.15)' 
-        }}>
-            <div style={{ fontSize: '20px', marginBottom: '8px' }}>🏁</div>
-            <div style={{ fontWeight: '800', fontSize: '15px', letterSpacing: '-0.5px' }}>모든 루트의 이야기가 완성되었습니다!</div>
-            <div style={{ fontSize: '12px', color: '#a0aec0', marginTop: '4px', fontWeight: '400' }}>
-                이제 이 이벤트의 모든 분기에 엔딩이 존재합니다.
-            </div>
-        </div>
-    )}
-</div>
+                        return (
+                            <>
+                                {currentBranchScenarios.length === 0 && !hasEndingInCurrentBranch && (
+                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                        <button onClick={addScenarioInput} style={{ ...actionButtonStyle(currentBranch === 'main' ? 'rgba(51, 154, 240, 0.1)' : `${OPTION_COLORS[(currentBranchNum - 1) % 10]}1A`, currentBranch === 'main' ? '#1c7ed6' : OPTION_COLORS[(currentBranchNum - 1) % 10]), flex: 1, height: '45px', fontSize: '13px' }}>
+                                            {currentBranch === 'main' ? '✨ 일반 대사 시작하기' : `✨ 선택지 ${currentBranchNum}번 루트 시작`}
+                                        </button>
+                                        <label style={{ ...actionButtonStyle('rgba(132, 94, 247, 0.1)', '#7048e8'), flex: 1, height: '45px', fontSize: '13px', cursor: 'pointer' }}>
+                                            🖼️ CG로 시작하기 <input type="file" accept="image/*" onChange={handleCgUpload} style={{ display: 'none' }} />
+                                        </label>
+                                    </div>
+                                )}
+                                {currentBranchScenarios.length > 0 && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                        {currentBranch.startsWith('option') && currentBranchNum < currentTotalOpts && (
+                                            <button onClick={() => { setIsCgMode(false); setCurrentBranch(`option${currentBranchNum + 1}`); }} style={{ ...actionButtonStyle(`${OPTION_COLORS[currentBranchNum % 10]}1A`, OPTION_COLORS[currentBranchNum % 10]), width: '100%', height: '45px', fontSize: '13px', border: `1px dashed ${OPTION_COLORS[currentBranchNum % 10]}4D` }}>
+                                                ✔️ {currentBranchNum}번 루트 완료 → 다음 선택지({currentBranchNum + 1}번) 편집하기
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </>
+                        );
+                    })()}
+                    {hasEndingInCurrentBranch && (
+                        <div style={{ padding: '12px', backgroundColor: '#f8f9fa', color: '#718096', textAlign: 'center', borderRadius: '8px', fontSize: '12px', fontWeight: '600', border: '1px solid #e2e8f0' }}>
+                            🔒 현재 분기({currentBranch === 'main' ? '일반 루트' : `루트 ${currentBranchNum}`})는 엔딩으로 마무리되었습니다.
+                        </div>
+                    )}
+                    {isFullyEnded && (
+                        <div style={{ marginTop: '10px', padding: '20px', background: 'linear-gradient(135deg, #2d3436 0%, #000000 100%)', color: '#ffd43b', textAlign: 'center', borderRadius: '12px', boxShadow: '0 10px 20px rgba(0,0,0,0.15)' }}>
+                            <div style={{ fontSize: '20px', marginBottom: '8px' }}>🏁</div>
+                            <div style={{ fontWeight: '800', fontSize: '15px', letterSpacing: '-0.5px' }}>모든 루트의 이야기가 완성되었습니다!</div>
+                            <div style={{ fontSize: '12px', color: '#a0aec0', marginTop: '4px', fontWeight: '400' }}>이제 이 이벤트의 모든 분기에 엔딩이 존재합니다.</div>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
