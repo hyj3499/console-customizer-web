@@ -52,12 +52,12 @@ const getInitialState = () => ({
 
     // 🌟 추가됨: 📢 나레이션 전용 설정 (이름표, 초상화 설정 제외)
     narrationFontStyle: {
-        font: 'Pretendard',
+        font: 'Galmuri14',
         color: '#ffffff',
         useOutline: false,
         outline: '#000000',
         dialogFrame: 'simple',
-        dialogColor: 'rgba(0,0,0,0.8)',
+        dialogColor: 'rgba(0, 0, 0, 0.6)',
         typingSound: 'type1'
     },
 
@@ -172,7 +172,7 @@ loadProjectData: (loadedData) => set((state) => ({
             c.id === id ? { ...c, fontStyle: { ...c.fontStyle, ...styleUpdates } } : c
         )
     })),
-    
+
     // --- Setter 함수들 ---
     setIsEditing: (bool) => set({ isEditing: bool }),
     setColor: (color) => set({ color }),

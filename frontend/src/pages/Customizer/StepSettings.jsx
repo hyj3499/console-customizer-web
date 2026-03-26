@@ -393,7 +393,7 @@ const InGamePreview = ({ previewBg, standingImg, portraitImg, currentGlobalUi, t
         <div className="ig-portrait-area">
           {pAsset.type === 'image' && <img src={pAsset.src} alt="Frame" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill', zIndex: 1 }} />}
           <div style={{ position: 'absolute', inset: 0, zIndex: 2, backgroundColor: pAsset.type === 'image' ? 'transparent' : activeStyle.portraitColor, WebkitMaskImage: pAsset.type === 'image' ? `url(${pAsset.mask})` : 'none', maskImage: pAsset.type === 'image' ? `url(${pAsset.mask})` : 'none', WebkitMaskSize: '100% 100%', maskSize: '100% 100%', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', borderRadius: pAsset.type === 'css' ? pAsset.borderRadius : '0%', border: pAsset.type === 'css' ? finalPortraitBorder : 'none', overflow: 'hidden' }}>
-            {portraitImg ? <img src={portraitImg} alt="초상화" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>👤</div>}
+            {portraitImg ? <img src={portraitImg} alt="초상화" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}></div>}
           </div>
         </div>
       )}
@@ -452,7 +452,10 @@ export default function StepSettings() {
       name: `등장인물 ${characters.length}`, 
       portraitImages: [], 
       standingImages: [], 
-      fontStyle: { font: 'Pretendard', color: '#ffffff', useOutline: false, outline: '#000000', dialogFrame: 'simple', dialogColor: 'rgba(255,182,193,0.8)', nameFrame: 'simple', nameColor: 'rgba(255,182,193,0.8)', typingSound: 'type1' } 
+      fontStyle: { font: 'Galmuri14', color: '#ffffff', useOutline: false, outline: '#000000', dialogFrame: 'simple', dialogColor: 'rgba(0, 0, 0, 0.6)', nameFrame: 'simple', nameColor: 'rgba(0, 0, 0, 0.6)', typingSound: 'type1',"usePortraitBorder": false,
+        "portraitColor": "rgba(255, 182, 193, 0)",
+        "useNameBorder": false,
+        "useDialogBorder": false} 
     }]);
   };
 

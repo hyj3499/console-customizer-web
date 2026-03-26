@@ -2,59 +2,72 @@ import React, { useMemo } from 'react';
 import useCustomizerStore from '../../store/useCustomizerStore';
 import './StepCheck.css';
 
-export default function StepCheck({ projectId }) {  // ⭐ projectId를 받아오도록 추가!
-    const { events, protagonist } = useCustomizerStore();
-    // 'PROTAGONIST' 태그를 실제 플레이어 이름으로 번환해주는 함수
+// 에디터와 동일한 선택지 컬러 팔레트 적용
+const OPTION_COLORS = ['#ffafee', '#84ccff', '#1971c2', '#e64980', '#7950f2', '#12b886', '#fcc419', '#20c997', '#ff8787', '#5c940d'];
+
+export default function StepCheck({ projectId }) {
+    // ⭐ protagonist 대신 characters 전체를 가져옵니다.
+    const { events, characters } = useCustomizerStore();
+
+    // ⭐ 통합된 주인공 찾기 로직 반영
     const getSpeakerName = (speaker) => {
-        if (speaker === 'PROTAGONIST') return protagonist.name || '주인공';
+        if (speaker === 'PROTAGONIST') {
+            const protagonist = characters.find(c => c.isProtagonist) || {};
+            return protagonist.name || '주인공';
+        }
         return speaker || '나레이션';
     };
 
-    // ⭐ 시나리오 무결성 검사 로직
+    // ⭐ 다중 선택지에 맞춘 시나리오 무결성 검사 로직
     const warnings = useMemo(() => {
         const issueList = [];
         let fullyEndedEventIndex = -1;
 
         events.forEach((event, index) => {
             const scenarios = event.scenarios;
-            const hasChoiceNode = scenarios.some(s => s.type === 'choice');
+            const choiceNode = scenarios.find(s => s.type === 'choice');
+            const hasChoiceNode = !!choiceNode;
 
-            // 1. 빈 선택지 분기 검사
+            let isFullyEnded = false;
+
             if (hasChoiceNode) {
-                const opt1Contents = scenarios.filter(s => s.branch === 'option1' && s.type !== 'choice');
-                const opt2Contents = scenarios.filter(s => s.branch === 'option2' && s.type !== 'choice');
+                const totalOptions = choiceNode.options?.length || 2;
+                let allEnded = true;
 
-                if (opt1Contents.length === 0) {
-                    issueList.push(`[${event.title}] 선택지 A(1번) 루트에 아무런 대사가 없습니다.`);
+                // 선택지 개수만큼 반복하며 텅 빈 루트와 엔딩 여부 검사
+                for (let i = 1; i <= totalOptions; i++) {
+                    const branchName = `option${i}`;
+                    const branchContents = scenarios.filter(s => s.branch === branchName && s.type !== 'choice');
+                    const hasEnding = scenarios.some(s => s.branch === branchName && s.type === 'ending');
+
+                    if (branchContents.length === 0) {
+                        issueList.push(`[${event.title}] 선택지 ${i}번 루트에 아무런 대사가 없습니다.`);
+                    }
+                    
+                    if (!hasEnding) {
+                        allEnded = false;
+                        if (index === events.length - 1 && fullyEndedEventIndex === -1) {
+                            issueList.push(`마지막 이벤트인 [${event.title}]의 선택지 ${i}번 루트에 🎬엔딩이 없습니다.`);
+                        }
+                    }
                 }
-                if (opt2Contents.length === 0) {
-                    issueList.push(`[${event.title}] 선택지 B(2번) 루트에 아무런 대사가 없습니다.`);
+                isFullyEnded = allEnded;
+
+            } else {
+                // 일반 루트 검사
+                isFullyEnded = scenarios.some(s => s.branch === 'main' && s.type === 'ending');
+                
+                if (index === events.length - 1 && fullyEndedEventIndex === -1 && !isFullyEnded) {
+                    issueList.push(`마지막 이벤트인 [${event.title}]에 🎬엔딩이 없습니다. 플레이 중 게임이 멈추거나 튕길 수 있습니다.`);
                 }
             }
-
-            // 2. 엔딩 도달 여부
-            const isMainEnded = scenarios.some(s => s.branch === 'main' && s.type === 'ending');
-            const isOpt1Ended = scenarios.some(s => s.branch === 'option1' && s.type === 'ending');
-            const isOpt2Ended = scenarios.some(s => s.branch === 'option2' && s.type === 'ending');
-            
-            const isFullyEnded = hasChoiceNode ? (isOpt1Ended && isOpt2Ended) : isMainEnded;
 
             if (isFullyEnded && fullyEndedEventIndex === -1) {
                 fullyEndedEventIndex = index;
             }
-
-            // 3. 마지막 이벤트인데 엔딩으로 막지 않았을 경우 검사
-            if (index === events.length - 1 && fullyEndedEventIndex === -1 && !isFullyEnded) {
-                if (!hasChoiceNode && !isMainEnded) {
-                    issueList.push(`마지막 이벤트인 [${event.title}]에 🎬엔딩이 없습니다. 플레이 중 게임이 멈추거나 튕길 수 있습니다.`);
-                } else if (hasChoiceNode) {
-                    if (!isOpt1Ended) issueList.push(`마지막 이벤트인 [${event.title}]의 선택지 A 루트에 🎬엔딩이 없습니다.`);
-                    if (!isOpt2Ended) issueList.push(`마지막 이벤트인 [${event.title}]의 선택지 B 루트에 🎬엔딩이 없습니다.`);
-                }
-            }
         });
 
-        // 4. 도달 불가능한 유령 이벤트 검사
+        // 도달 불가능한 유령 이벤트 검사
         if (fullyEndedEventIndex !== -1 && fullyEndedEventIndex < events.length - 1) {
             issueList.push(`[${events[fullyEndedEventIndex].title}]에서 이미 모든 스토리가 엔딩을 맞이했습니다. 그 이후에 있는 이벤트들은 게임에서 실행되지 않습니다.`);
         }
@@ -75,7 +88,7 @@ export default function StepCheck({ projectId }) {  // ⭐ projectId를 받아�
                         <div key={event.id} className="event-check-card">
                             <h3 className="event-check-title">📌 {event.title}</h3>
                             
-                            {/* 1. 메인 루트 */}
+                            {/* 1. 메인 루트 출력 */}
                             <div className="route-block main-route">
                                 {event.scenarios.map((sc, idx) => {
                                     if (sc.branch !== 'main') return null;
@@ -84,21 +97,20 @@ export default function StepCheck({ projectId }) {  // ⭐ projectId를 받아�
                                         return (
                                             <div key={idx} className="check-choice-node">
                                                 <strong>🔀 선택지 분기 발생</strong>
+                                                {/* ⭐ 다중 선택지 출력 */}
                                                 <div className="choice-options">
-                                                    <span>A: {sc.option1 || '(내용 없음)'}</span>
-                                                    <span>B: {sc.option2 || '(내용 없음)'}</span>
+                                                    {(sc.options || ['', '']).map((opt, i) => (
+                                                        <span key={i} style={{ color: OPTION_COLORS[i % 10] }}>
+                                                            {i + 1}번: {opt || '(내용 없음)'}
+                                                        </span>
+                                                    ))}
                                                 </div>
                                             </div>
                                         );
                                     }
 
-                                    if (sc.type === 'ending') {
-                                        return <div key={idx} className="check-ending">🎬 엔딩: {sc.text}</div>;
-                                    }
-
-                                    if (sc.type === 'cg_image') {
-                                        return <div key={idx} className="check-cg">🖼️ 컷 {idx + 1}: [CG 일러스트 연출]</div>;
-                                    }
+                                    if (sc.type === 'ending') return <div key={idx} className="check-ending">🎬 엔딩: {sc.text}</div>;
+                                    if (sc.type === 'cg_image') return <div key={idx} className="check-cg">🖼️ 컷 {idx + 1}: [CG 일러스트 연출]</div>;
 
                                     return (
                                         <div key={idx} className="check-dialog">
@@ -110,40 +122,35 @@ export default function StepCheck({ projectId }) {  // ⭐ projectId를 받아�
                                 })}
                             </div>
 
-                            {/* 2. 선택지 A / B 루트 */}
+                            {/* 2. 동적 다중 선택지 루트 출력 */}
                             {choiceNode && (
                                 <div className="branches-container">
-                                    <div className="route-block branch-a">
-                                        <div className="route-header opt1">🅰️ 선택지 A [{choiceNode.option1}] 선택 시</div>
-                                        {event.scenarios.map((sc, idx) => {
-                                            if (sc.branch !== 'option1') return null;
-                                            if (sc.type === 'ending') return <div key={idx} className="check-ending">🎬 엔딩: {sc.text}</div>;
-                                            if (sc.type === 'cg_image') return <div key={idx} className="check-cg">🖼️ 컷 {idx + 1}: [CG 일러스트 연출]</div>;
-                                            return (
-                                                <div key={idx} className="check-dialog">
-                                                    <span className="check-cut-num">컷 {idx + 1}</span>
-                                                    <span className="check-speaker">({getSpeakerName(sc.speaker)})</span>
-                                                    <span className="check-text">{sc.text}</span>
+                                    {(choiceNode.options || ['', '']).map((optText, optIdx) => {
+                                        const branchName = `option${optIdx + 1}`;
+                                        const branchColor = OPTION_COLORS[optIdx % 10];
+                                        
+                                        return (
+                                            <div key={optIdx} className="route-block" style={{ borderTop: `4px solid ${branchColor}` }}>
+                                                <div className="route-header" style={{ color: branchColor }}>
+                                                    {optIdx + 1}️⃣ 선택지 {optIdx + 1} [{optText}] 선택 시
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
-
-                                    <div className="route-block branch-b">
-                                        <div className="route-header opt2">🅱️ 선택지 B [{choiceNode.option2}] 선택 시</div>
-                                        {event.scenarios.map((sc, idx) => {
-                                            if (sc.branch !== 'option2') return null;
-                                            if (sc.type === 'ending') return <div key={idx} className="check-ending">🎬 엔딩: {sc.text}</div>;
-                                            if (sc.type === 'cg_image') return <div key={idx} className="check-cg">🖼️ 컷 {idx + 1}: [CG 일러스트 연출]</div>;
-                                            return (
-                                                <div key={idx} className="check-dialog">
-                                                    <span className="check-cut-num">컷 {idx + 1}</span>
-                                                    <span className="check-speaker">({getSpeakerName(sc.speaker)})</span>
-                                                    <span className="check-text">{sc.text}</span>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+                                                {event.scenarios.map((sc, idx) => {
+                                                    if (sc.branch !== branchName) return null;
+                                                    
+                                                    if (sc.type === 'ending') return <div key={idx} className="check-ending">🎬 엔딩: {sc.text}</div>;
+                                                    if (sc.type === 'cg_image') return <div key={idx} className="check-cg">🖼️ 컷 {idx + 1}: [CG 일러스트 연출]</div>;
+                                                    
+                                                    return (
+                                                        <div key={idx} className="check-dialog">
+                                                            <span className="check-cut-num">컷 {idx + 1}</span>
+                                                            <span className="check-speaker">({getSpeakerName(sc.speaker)})</span>
+                                                            <span className="check-text">{sc.text}</span>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
@@ -168,7 +175,7 @@ export default function StepCheck({ projectId }) {  // ⭐ projectId를 받아�
                 </div>
             )}
 
-            {/* ⭐ [추가됨] 최종 제출 및 추가 요청 안내 가이드 */}
+            {/* ⭐ 최종 제출 안내 배너 */}
             <div className="submission-guide-banner" style={{
                 backgroundColor: 'rgba(25, 113, 194, 0.1)', border: '2px solid #1971c2',
                 padding: '25px', borderRadius: '12px', marginTop: '30px', color: '#e0e0e0',
@@ -178,11 +185,10 @@ export default function StepCheck({ projectId }) {  // ⭐ projectId를 받아�
                     <span>💌</span> 커미션 신청 및 최종 제출 안내
                 </h3>
                 
-                    <div style={{ fontSize: '16px', lineHeight: '1.6', marginBottom: '20px' }}>
+                <div style={{ fontSize: '16px', lineHeight: '1.6', marginBottom: '20px' }}>
                     <span style={{ display: 'inline-block', backgroundColor: '#1971c2', color: 'white', padding: '4px 10px', borderRadius: '6px', fontWeight: 'bold', marginRight: '10px' }}>
                         현재 프로젝트 ID
                     </span>
-                    {/* ⭐ 여기에 전달받은 실제 projectId를 출력합니다! */}
                     <span style={{ color: '#a5d8ff', fontWeight: 'bold', borderBottom: '1px solid #a5d8ff', paddingBottom: '2px', fontSize: '18px' }}>
                         {projectId ? projectId : '(로그인/생성된 ID가 없습니다)'}
                     </span>
@@ -196,11 +202,10 @@ export default function StepCheck({ projectId }) {  // ⭐ projectId를 받아�
                     <ul style={{ margin: '10px 0 0 0', paddingLeft: '20px', fontSize: '14px', color: '#ced4da', lineHeight: '1.7' }}>
                         <li><strong>예시 1:</strong> "이벤트 3의 4번째 컷부터 000 BGM이 재생되게 해주세요."</li>
                         <li><strong>예시 2:</strong> "이벤트 5의 3번째 컷부터 이 캐릭터의 이름표가 '???'로 바뀌게 해주세요."</li>
-                        <li><strong>예시 3:</strong> "선택지 A를 눌렀을 때 화면이 흔들리며 붉어지는 연출을 넣어주세요."</li>
+                        <li><strong>예시 3:</strong> "선택지 1번을 눌렀을 때 화면이 흔들리며 붉어지는 연출을 넣어주세요."</li>
                     </ul>
                 </div>
             </div>
-
         </div>
     );
 }
