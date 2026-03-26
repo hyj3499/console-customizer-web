@@ -464,14 +464,12 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
         let newScenarios = [...scenarios];
         let newBranch = currentItem.branch;
 
-        // ⭐ 1. 엔딩 컷 추가 (여기서 반드시 return 해야 아래쪽 '복사' 로직으로 안 넘어갑니다!)
         if (type === 'ending') {
             newScenarios.splice(index + 1, 0, { type: 'ending', branch: newBranch, text: '' });
             updateActiveScenarios(newScenarios);
             return; 
         }
 
-        // 2. CG 추가 처리
         if (type === 'cg_image') {
             const cgItem = { type: 'cg_image', src: extraData.url, file: extraData.file, branch: newBranch };
             const dialogItem = { type: 'dialog', branch: newBranch, isCg: true, speaker: defaultSpeaker, protagonistImage: null, heroineImage: null, text: '', bgImage: extraData.url, file: extraData.file, bgType: 'custom_cg', dateOverride: null };
@@ -481,7 +479,6 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
             return;
         }
 
-        // 3. 선택지, 대사 추가 및 컷 복사 처리
         let newItem = {};
         if (type === 'choice') {
             if (hasChoiceNode) return alert("선택지 분기는 하나만 생성할 수 있습니다.");
@@ -494,13 +491,25 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                 newItem.dateOverride = { ...newItem.dateOverride };
             }
         } else {
-            // 일반 대사 (엔딩 블록에서 return이 없으면 이쪽으로 빠져서 컷이 복사된 것처럼 보입니다!)
-            newItem = { type: 'dialog', branch: newBranch, isCg: currentItem.isCg || currentItem.type === 'cg_image', speaker: defaultSpeaker, protagonistImage: null, heroineImage: null, text: '', bgImage: currentItem.bgImage, bgType: currentItem.bgType || PRESET_BACKGROUNDS[0]?.id, dateOverride: null };
+            // ⭐ 수정됨: '새로운 대사 추가' 시 이전 배경을 묻지도 따지지도 않고 무조건 디폴트 배경!
+            newItem = { 
+                type: 'dialog', 
+                branch: newBranch, 
+                isCg: false, 
+                speaker: defaultSpeaker, 
+                protagonistImage: null, 
+                heroineImage: null, 
+                text: '', 
+                bgImage: PRESET_BACKGROUNDS[0]?.url, 
+                bgType: PRESET_BACKGROUNDS[0]?.id, 
+                dateOverride: null 
+            };
         }
 
         newScenarios.splice(index + 1, 0, newItem);
         updateActiveScenarios(newScenarios);
     };
+    
     const handleInlineCgUpload = (e, index, currentItem) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -1022,14 +1031,29 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                                                 
                                                 {scenario.isCg ? (
                                                     !isNextAlsoCg && (
-                                                        <button onClick={(e) => {
-                                                            e.stopPropagation(); setIsCgMode(false);
-                                                            const lastBg = scenario.bgImage;
-                                                            const nextItem = { type: 'dialog', branch: scenario.branch, isCg: false, speaker: defaultSpeaker, protagonistImage: null, heroineImage: null, text: '', bgImage: lastBg, bgType: PRESET_BACKGROUNDS[0]?.id, dateOverride: null };
-                                                            const newScenarios = [...scenarios]; newScenarios.splice(index + 1, 0, nextItem); updateActiveScenarios(newScenarios);
-                                                        }} style={actionButtonStyle('rgba(55, 66, 250, 0.1)', '#3742fa', '💬 CG 모드 종료 일반 대사 시작')}>
-                                                            💬 CG 모드 종료 일반 대사 시작
-                                                        </button>
+<button onClick={(e) => {
+    e.stopPropagation(); 
+    setIsCgMode(false);
+    
+    // ⭐ 수정됨: 여기도 무조건 디폴트 배경으로 새 출발!
+    const nextItem = { 
+        type: 'dialog', 
+        branch: scenario.branch, 
+        isCg: false, 
+        speaker: defaultSpeaker, 
+        protagonistImage: null, 
+        heroineImage: null, 
+        text: '', 
+        bgImage: PRESET_BACKGROUNDS[0]?.url, 
+        bgType: PRESET_BACKGROUNDS[0]?.id, 
+        dateOverride: null 
+    };
+    const newScenarios = [...scenarios]; 
+    newScenarios.splice(index + 1, 0, nextItem); 
+    updateActiveScenarios(newScenarios);
+}} style={actionButtonStyle('rgba(55, 66, 250, 0.1)', '#3742fa', '💬 CG 모드 종료 일반 대사 시작')}>
+    💬 CG 모드 종료 일반 대사 시작
+</button>
                                                     )
                                                 ) : (
                                                     <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'dialog'); }} style={actionButtonStyle('rgba(51, 154, 240, 0.1)', '#1c7ed6', '💬 새로운 대사 추가')}>
@@ -1040,15 +1064,24 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
 
                                             <div style={{ width: '1px', height: '18px', backgroundColor: '#e2e8f0' }} />
                                             
-                                            {/* 그룹 2: 미디어 삽입 (보라색 스타일) */}
-                                            <div style={{ display: 'flex', gap: '6px' }}>
-                                                <label style={{ ...actionButtonStyle('rgba(132, 94, 247, 0.1)', '#6741d9', '🖼️ CG 삽입'), cursor: 'pointer' }}>
-                                                    🖼️ CG 삽입
-                                                    <input type="file" accept="image/*" onChange={(e) => handleInlineCgUpload(e, index, scenario)} style={{ display: 'none' }} onClick={(e) => e.stopPropagation()} />
-                                                </label>
-                                            </div>
+{!isNextAlsoCg && (
+    <>
+        <div style={{ display: 'flex', gap: '6px' }}>
+            <label 
+                style={{ 
+                    ...actionButtonStyle('rgba(132, 94, 247, 0.1)', '#6741d9', '🖼️ CG 삽입'), 
+                    cursor: 'pointer' 
+                }}
+            >
+                🖼️ CG 삽입
+                <input type="file" accept="image/*" onChange={(e) => handleInlineCgUpload(e, index, scenario)} style={{ display: 'none' }} onClick={(e) => e.stopPropagation()} />
+            </label>
+        </div>
 
-                                            <div style={{ width: '1px', height: '18px', backgroundColor: '#e2e8f0' }} />
+        {/* 그룹 2와 그룹 3 사이의 구분선도 조건부로 묶어줍니다. */}
+        <div style={{ width: '1px', height: '18px', backgroundColor: '#e2e8f0' }} />
+    </>
+)}
                                             
                                             {/* 그룹 3: 구조 변경 */}
                                             <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
