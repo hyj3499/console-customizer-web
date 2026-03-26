@@ -461,54 +461,78 @@ const addScenarioInput = () => {
     
     
 const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = null) => {
-        let newScenarios = [...scenarios];
-        let newBranch = currentItem.branch;
+    let newScenarios = [...scenarios];
+    let newBranch = currentItem.branch;
 
-        if (type === 'ending') {
-            newScenarios.splice(index + 1, 0, { type: 'ending', branch: newBranch, text: '' });
-            updateActiveScenarios(newScenarios);
-            return; 
-        }
-
-        if (type === 'cg_image') {
-            const cgItem = { type: 'cg_image', src: extraData.url, file: extraData.file, branch: newBranch };
-            const dialogItem = { type: 'dialog', branch: newBranch, isCg: true, speaker: defaultSpeaker, protagonistImage: null, heroineImage: null, text: '', bgImage: extraData.url, file: extraData.file, bgType: 'custom_cg', dateOverride: null };
-            newScenarios.splice(index + 1, 0, cgItem, dialogItem);
-            updateActiveScenarios(newScenarios);
-            setIsCgMode(true);
-            return;
-        }
-
-        let newItem = {};
-        if (type === 'choice') {
-            if (hasChoiceNode) return alert("선택지 분기는 하나만 생성할 수 있습니다.");
-            newItem = { type: 'choice', branch: newBranch, options: ['', ''] };
-            setIsCgMode(false);
-            setCurrentBranch('option1');
-        } else if (type === 'copy') {
-            newItem = { ...currentItem };
-            if (newItem.dateOverride) {
-                newItem.dateOverride = { ...newItem.dateOverride };
+    // ⭐ 수정됨: 엔딩 컷 추가 로직 (팝업 및 이후 대사 일괄 삭제)
+    if (type === 'ending') {
+        // 현재 인덱스(방금 버튼을 누른 컷) 이후에 같은 루트의 대사가 있는지 검사합니다.
+        const hasSubsequentCuts = newScenarios.slice(index + 1).some(s => s.branch === newBranch);
+        
+        if (hasSubsequentCuts) {
+            // 뒤에 대사가 있다면 경고 팝업을 띄웁니다.
+            if (!window.confirm("이 이후의 대사는 모두 삭제됩니다.\n정말 엔딩을 추가하시겠습니까?")) {
+                return; // 사용자가 '취소'를 누르면 아무 일도 일어나지 않고 종료됩니다.
             }
-        } else {
-            // ⭐ 수정됨: '새로운 대사 추가' 시 이전 배경을 묻지도 따지지도 않고 무조건 디폴트 배경!
-            newItem = { 
-                type: 'dialog', 
-                branch: newBranch, 
-                isCg: false, 
-                speaker: defaultSpeaker, 
-                protagonistImage: null, 
-                heroineImage: null, 
-                text: '', 
-                bgImage: PRESET_BACKGROUNDS[0]?.url, 
-                bgType: PRESET_BACKGROUNDS[0]?.id, 
-                dateOverride: null 
-            };
+            
+            // '확인'을 누르면, 현재 인덱스 이후에 있는 같은 루트의 대사들을 배열에서 싹 지웁니다.
+            newScenarios = newScenarios.filter((s, i) => {
+                if (i > index && s.branch === newBranch) return false;
+                return true;
+            });
+
+            // (추가 방어) 만약 '메인 루트'에서 엔딩이 났다면, 기존에 만들어둔 선택지 분기들도 의미가 없어지므로 함께 지워줍니다.
+            if (newBranch === 'main') {
+                newScenarios = newScenarios.filter(s => !s.branch?.startsWith('option'));
+            }
         }
 
-        newScenarios.splice(index + 1, 0, newItem);
+        // 찌꺼기 컷들을 다 지웠으니, 마음 편히 엔딩 컷을 삽입합니다.
+        newScenarios.splice(index + 1, 0, { type: 'ending', branch: newBranch, text: '' });
         updateActiveScenarios(newScenarios);
-    };
+        return; 
+    }
+
+    // --- 이 아래부터는 기존 코드와 동일합니다 ---
+    if (type === 'cg_image') {
+        const cgItem = { type: 'cg_image', src: extraData.url, file: extraData.file, branch: newBranch };
+        const dialogItem = { type: 'dialog', branch: newBranch, isCg: true, speaker: defaultSpeaker, protagonistImage: null, heroineImage: null, text: '', bgImage: extraData.url, file: extraData.file, bgType: 'custom_cg', dateOverride: null };
+        newScenarios.splice(index + 1, 0, cgItem, dialogItem);
+        updateActiveScenarios(newScenarios);
+        setIsCgMode(true);
+        return;
+    }
+
+    let newItem = {};
+    if (type === 'choice') {
+        if (hasChoiceNode) return alert("선택지 분기는 하나만 생성할 수 있습니다.");
+        newItem = { type: 'choice', branch: newBranch, options: ['', ''] };
+        setIsCgMode(false);
+        setCurrentBranch('option1');
+    } else if (type === 'copy') {
+        newItem = { ...currentItem };
+        if (newItem.dateOverride) {
+            newItem.dateOverride = { ...newItem.dateOverride };
+        }
+    } else {
+        // '새로운 대사 추가' 시 이전 배경을 무조건 디폴트 배경으로!
+        newItem = { 
+            type: 'dialog', 
+            branch: newBranch, 
+            isCg: false, 
+            speaker: defaultSpeaker, 
+            protagonistImage: null, 
+            heroineImage: null, 
+            text: '', 
+            bgImage: PRESET_BACKGROUNDS[0]?.url, 
+            bgType: PRESET_BACKGROUNDS[0]?.id, 
+            dateOverride: null 
+        };
+    }
+
+    newScenarios.splice(index + 1, 0, newItem);
+    updateActiveScenarios(newScenarios);
+};
     
     const handleInlineCgUpload = (e, index, currentItem) => {
         const file = e.target.files[0];
