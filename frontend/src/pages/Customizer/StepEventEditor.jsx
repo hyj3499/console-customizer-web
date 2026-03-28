@@ -51,98 +51,58 @@ const getColorId = (rgbaValue) => {
 const PRESET_BACKGROUNDS = SHARED_BACKGROUNDS;
 
 // ==========================================
-// 🌟 통합된 표정 선택기 컴포넌트 (주인공/등장인물 구분 제거)
+// 🌟 통합된 표정 선택기 컴포넌트 (모든 컷 갤러리 동기화 적용)
 // ==========================================
-// ==========================================
-// 🌟 통합된 표정 선택기 컴포넌트 (상태 복사 기능 추가)
-// ==========================================
-const ImageSelectorPanel = ({ title, type, characters, onSelect, selectedImage, uiState = {}, onUiStateChange }) => {
+const ImageSelectorPanel = ({ title, type, characters, onSelect, selectedImage, uiState = {}, onUiStateChange, globalGalleryMode, setGlobalGalleryMode }) => {
     const protagonist = characters.find(c => c.isProtagonist) || characters[0];
     
-    // ⭐ 부모(시나리오 데이터)로부터 UI 상태를 받아옵니다. (복사 기능을 위해)
-    const galleryMode = uiState.galleryMode || false;
+    // ⭐ 갤러리 모드는 '전역 상태(globalGalleryMode)'를 따르고, 캐릭터 콤보박스는 개별 상태 유지
+    const galleryMode = globalGalleryMode;
     const selectedChar = uiState.selectedChar || (protagonist ? protagonist.id.toString() : '');
 
     const imageKey = type === 'portrait' ? 'portraitImages' : 'standingImages';
 
     let displayImages = [];
     if (galleryMode) {
-        characters.forEach(c => {
-            const cImgs = c[imageKey] || [];
-            displayImages.push(...cImgs);
-        });
+        characters.forEach(c => displayImages.push(...(c[imageKey] || [])));
     } else {
         const c = characters.find(char => char.id.toString() === selectedChar);
         displayImages = c ? (c[imageKey] || []) : [];
     }
 
     return (
-        <div style={{ flex: 1, padding: '12px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+        <div className="img-selector-panel">
+            <div className="img-selector-header">
                 <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#495057' }}>{title}</span>
                 <label style={{ fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: '#1971c2', fontWeight: 'bold' }}>
-                    {/* ⭐ onChange를 부모 함수 호출로 변경 */}
-                    <input type="checkbox" checked={galleryMode} onChange={(e) => onUiStateChange({ ...uiState, galleryMode: e.target.checked, selectedChar })} style={{ cursor: 'pointer' }} />
+                    {/* ⭐ 체크 시 모든 컷의 갤러리 모드를 한 번에 변경! */}
+                    <input type="checkbox" checked={galleryMode} onChange={(e) => setGlobalGalleryMode(e.target.checked)} style={{ cursor: 'pointer' }} />
                     갤러리로 보기
                 </label>
             </div>
             
             {!galleryMode && (
-                <select 
-                    value={selectedChar} 
-                    onChange={(e) => onUiStateChange({ ...uiState, galleryMode, selectedChar: e.target.value })}
-                    className="input-base"
-                    style={{ width: '100%', marginBottom: '10px', padding: '6px', fontSize: '12px' }}
-                >
+                <select value={selectedChar} onChange={(e) => onUiStateChange({ ...uiState, selectedChar: e.target.value })} className="input-base" style={{ width: '100%', marginBottom: '10px', padding: '6px', fontSize: '12px' }}>
                     {characters.map(c => (
-                        <option key={c.id} value={c.id.toString()}>
-                            {c.isProtagonist ? '😎' : '🎭'} {c.name || '캐릭터'}
-                        </option>
+                        <option key={c.id} value={c.id.toString()}>{c.isProtagonist ? '😎' : '🎭'} {c.name || '캐릭터'}</option>
                     ))}
                 </select>
             )}
 
             <div className="face-list" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', maxHeight: '140px', overflowY: 'auto', padding: '4px' }}>
-                <div 
-                    onClick={(e) => { e.stopPropagation(); onSelect(null); }} 
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', fontSize: '18px', borderColor: selectedImage === null ? '#fa5252' : '#ccc', borderWidth: selectedImage === null ? '3px' : '1px', borderStyle: 'solid', cursor: 'pointer', width: '45px', height: '45px', borderRadius: '6px' }}
-                    title="이미지 제거"
-                >
-                    🚫
-                </div>
+                <div className="img-selector-clear" onClick={(e) => { e.stopPropagation(); onSelect(null); }} style={{ borderColor: selectedImage === null ? '#fa5252' : '#ccc', borderWidth: selectedImage === null ? '3px' : '1px' }} title="이미지 제거">🚫</div>
                 {displayImages.map((img, i) => {
                     const imgSrc = img.preview || img;
                     const isActive = selectedImage === imgSrc;
                     return (
-                        <img 
-                            key={i} src={imgSrc} alt="face" 
-                            onClick={(e) => { e.stopPropagation(); onSelect(imgSrc); }} 
-                            style={{ width: '45px', height: '45px', objectFit: 'cover', borderRadius: '6px', cursor: 'pointer', border: isActive ? '3px solid #1971c2' : '1px solid #ccc', boxSizing: 'border-box', transform: isActive ? 'scale(1.05)' : 'scale(1)', transition: '0.1s' }}
-                        />
+                        <img key={i} src={imgSrc} alt="face" onClick={(e) => { e.stopPropagation(); onSelect(imgSrc); }} className="img-selector-item" style={{ border: isActive ? '3px solid #1971c2' : '1px solid #ccc', transform: isActive ? 'scale(1.05)' : 'scale(1)' }} />
                     );
                 })}
             </div>
         </div>
     );
 };
-// ⭐ 바로 여기! 컴포넌트 정의 직전에 넣어주세요.
-const actionButtonStyle = (bgColor, textColor, label) => ({
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '7px 14px',
-    fontSize: '11px',
-    fontWeight: '700',
-    borderRadius: '6px',
-    border: 'none',
-    backgroundColor: bgColor,
-    color: textColor,
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    fontFamily: 'inherit',
-    minWidth: '80px',
-    boxShadow: bgColor === '#2f3542' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
-});
+
 export default function StepEventEditor() {
     const { 
         events, setEvents, activeEventId, setActiveEventId,
@@ -162,7 +122,9 @@ export default function StepEventEditor() {
     const [isCgMode, setIsCgMode] = useState(false);
     const [editingDateIndex, setEditingDateIndex] = useState(null); 
     const fileInputRefs = useRef({}); 
-
+    
+    // ⭐ 추가: 모든 컷을 일괄적으로 갤러리 모드로 묶어줄 전역 상태 변수
+    const [isGlobalGalleryMode, setIsGlobalGalleryMode] = useState(false);
     const activeEvent = events.find(ev => ev.id === activeEventId) || events[0];
     const scenarios = activeEvent.scenarios;
     const hasChoiceNode = scenarios.some(s => s.type === 'choice');
@@ -837,9 +799,9 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
             </div>
 
 <div className="editor-main-area">
-                <div className="config-panel" style={{ display: 'flex' }}>
+<div className="config-panel" style={{ display: 'flex' }}>
                     {/* BGM 설정 영역 */}
-                    <div style={{ flex: 1 }}>
+                    <div className="config-section">
                         <h4 className="config-title">🎵 {activeEvent.title} BGM 설정</h4>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                             <input type="file" accept="audio/*" onChange={handleEventBgmUpload} />
@@ -847,8 +809,8 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                         </div>
                     </div>
                     
-                    {/* 📅 상태창 설정 영역 (오른쪽에 나란히 배치) */}
-                    <div style={{ flex: 1, borderLeft: '1px dashed #dee2e6', paddingLeft: '20px' }}>
+                    {/* 📅 상태창 설정 영역 */}
+                    <div className="config-section divider">
                         <h4 className="config-title">📅 상태창 설정 (기본 설정)</h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -918,38 +880,34 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                                 
                                 {/* 1. 왼쪽 사이드바: 분기 설정이 아닐 때만 노출 */}
 {/* 1. 왼쪽 사이드바: 분기 설정이 아닐 때만 노출 */}
-                                <div className="scenario-sidebar">
+<div className="scenario-sidebar">
                                     {scenario.type !== 'choice' && (
                                         <>
-                                            {/* ⭐ 삭제됐던 미리보기 텍스트 복구 */}
-                                            <div style={{ fontSize: '10px', color: '#868e96', fontWeight: 'bold', marginBottom: '5px' }}>{effectiveDate.month}</div>
-                                            <div style={{ fontSize: '14px', color: '#495057', fontWeight: 'bold' }}>{effectiveDate.time}</div>
+                                            {/* 윗줄 텍스트 (기존 스타일 유지) */}
+                                            <div style={{ fontSize: '10px', color: '#868e96', fontWeight: 'bold', marginBottom: '2px' }}>
+                                                {effectiveDate.month}
+                                            </div>
                                             
+                                            {/* ⭐ 아랫줄 텍스트 (윗줄과 똑같이 스타일 수정) */}
+                                            <div style={{ fontSize: '10px', color: '#868e96', fontWeight: 'bold' }}>
+                                                {effectiveDate.time}
+                                            </div>
                                             {/* 버튼들을 너무 길지 않게 왼쪽 정렬(flex-start) */}
 {/* 버튼 영역 */}
-                                            <div style={{ marginTop: '10px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                                                
-                                                {/* ⭐ [버그 2 해결] 편집 모드일 때와 아닐 때의 버튼을 완벽히 분리! */}
+<div style={{ marginTop: '10px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                                                 {editingDateIndex === index ? (
                                                     <div style={{ display: 'flex', gap: '5px', width: '100%' }}>
-                                                        <button onClick={(e) => toggleDateEditMode(e, index, scenario, effectiveDate)} style={{ flex: 1, padding: '4px 0', fontSize: '10px', backgroundColor: '#2b8a3e', color: '#fff', border: '1px solid #2b8a3e', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-                                                            수정 완료
-                                                        </button>
-                                                        <button onClick={(e) => clearDateOverride(e, index)} style={{ flex: 1, padding: '4px 0', fontSize: '10px', backgroundColor: '#fa5252', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-                                                            초기화
-                                                        </button>
+                                                        <button onClick={(e) => toggleDateEditMode(e, index, scenario, effectiveDate)} className="sidebar-btn" style={{ backgroundColor: '#2b8a3e', color: '#fff' }}>수정 완료</button>
+                                                        <button onClick={(e) => clearDateOverride(e, index)} className="sidebar-btn" style={{ backgroundColor: '#fa5252', color: '#fff' }}>초기화</button>
                                                     </div>
                                                 ) : (
-                                                    <button onClick={(e) => toggleDateEditMode(e, index, scenario, effectiveDate)} style={{ padding: '4px 10px', fontSize: '10px', backgroundColor: '#f1f3f5', color: '#000', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-                                                        상태창 변경
-                                                    </button>
+                                                    <button onClick={(e) => toggleDateEditMode(e, index, scenario, effectiveDate)} className="sidebar-btn" style={{ backgroundColor: '#f1f3f5', color: '#000', border: '1px solid #ced4da' }}>상태창 변경</button>
                                                 )}
 
-                                                {/* 텍스트 입력칸 (수정 모드일 때만 나옴) */}
                                                 {editingDateIndex === index && scenario.dateOverride && (
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '5px', width: '100%' }}>
-                                                        <input type="text" placeholder="윗줄 텍스트" value={scenario.dateOverride.month} onChange={(e) => handleDateOverrideChange(index, 'month', e.target.value)} className="input-base" style={{ fontSize: '10px', padding: '4px', width: '100%', boxSizing: 'border-box' }} onClick={(e) => e.stopPropagation()} />
-                                                        <input type="text" placeholder="아랫줄 텍스트" value={scenario.dateOverride.time} onChange={(e) => handleDateOverrideChange(index, 'time', e.target.value)} className="input-base" style={{ fontSize: '10px', padding: '4px', width: '100%', boxSizing: 'border-box' }} onClick={(e) => e.stopPropagation()} />
+                                                        <input type="text" placeholder="윗줄 텍스트" value={scenario.dateOverride.month} onChange={(e) => handleDateOverrideChange(index, 'month', e.target.value)} className="input-base sidebar-input" onClick={(e) => e.stopPropagation()} />
+                                                        <input type="text" placeholder="아랫줄 텍스트" value={scenario.dateOverride.time} onChange={(e) => handleDateOverrideChange(index, 'time', e.target.value)} className="input-base sidebar-input" onClick={(e) => e.stopPropagation()} />
                                                     </div>
                                                 )}
                                             </div>
@@ -1063,21 +1021,26 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                                             </div>
 
 {!scenario.isCg && (
-                                                <div style={{ display: 'flex', gap: '20px', marginTop: '15px' }}>
-                                                    {/* ⭐ uiState 속성 연동 */}
+<div style={{ display: 'flex', gap: '20px', marginTop: '15px' }}>
+                                                    {/* ⭐ 전역 갤러리 모드 Props 추가 */}
                                                     <ImageSelectorPanel 
                                                         title="🖼️ 초상화 표정 선택" type="portrait" characters={characters} 
                                                         selectedImage={scenario.protagonistImage} 
                                                         onSelect={(imgUrl) => handleScenarioChange(index, 'protagonistImage', imgUrl)} 
                                                         uiState={scenario.portraitUiState}
                                                         onUiStateChange={(state) => handleScenarioChange(index, 'portraitUiState', state)}
+                                                        globalGalleryMode={isGlobalGalleryMode}
+                                                        setGlobalGalleryMode={setIsGlobalGalleryMode}
                                                     />
+                                                    {/* ⭐ 전역 갤러리 모드 Props 추가 */}
                                                     <ImageSelectorPanel 
                                                         title="🧍 스탠딩 표정 선택" type="standing" characters={characters} 
                                                         selectedImage={scenario.heroineImage} 
                                                         onSelect={(imgUrl) => handleScenarioChange(index, 'heroineImage', imgUrl)} 
                                                         uiState={scenario.standingUiState}
                                                         onUiStateChange={(state) => handleScenarioChange(index, 'standingUiState', state)}
+                                                        globalGalleryMode={isGlobalGalleryMode}
+                                                        setGlobalGalleryMode={setIsGlobalGalleryMode}
                                                     />
                                                 </div>
                                             )}
@@ -1089,72 +1052,78 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '16px', flexWrap: 'wrap', paddingTop: '12px', borderTop: '1px solid #edf2f7' }} onClick={(e) => e.stopPropagation()}>
                                             
                                             {/* 그룹 1: 흐름 복제 및 연장 */}
+{/* 그룹 1: 흐름 복제 및 연장 */}
                                             <div style={{ display: 'flex', gap: '6px' }}>
-                                                <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'copy'); }} style={actionButtonStyle('rgba(255, 107, 129, 0.1)', '#ff4757', '📋 대사 복사하기')}>
+                                                <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'copy'); }} className="action-btn" style={{ backgroundColor: 'rgba(255, 107, 129, 0.1)', color: '#ff4757' }}>
                                                     📋 대사 복사하기
                                                 </button>
                                                 
-                                                {scenario.isCg ? (
-                                                    !isNextAlsoCg && (
-<button onClick={(e) => {
-    e.stopPropagation(); 
-    setIsCgMode(false);
-    
-    // ⭐ 수정됨: 여기도 무조건 디폴트 배경으로 새 출발!
-    const nextItem = { 
-        type: 'dialog', 
-        branch: scenario.branch, 
-        isCg: false, 
-        speaker: defaultSpeaker, 
-        protagonistImage: null, 
-        heroineImage: null, 
-        text: '', 
-        bgImage: PRESET_BACKGROUNDS[0]?.url, 
-        bgType: PRESET_BACKGROUNDS[0]?.id, 
-        dateOverride: null 
-    };
-    const newScenarios = [...scenarios]; 
-    newScenarios.splice(index + 1, 0, nextItem); 
-    updateActiveScenarios(newScenarios);
-}} style={actionButtonStyle('rgba(55, 66, 250, 0.1)', '#3742fa', '💬 CG 모드 종료 일반 대사 시작')}>
-    💬 CG 모드 종료 일반 대사 시작
-</button>
-                                                    )
-                                                ) : (
-                                                    <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'dialog'); }} style={actionButtonStyle('rgba(51, 154, 240, 0.1)', '#1c7ed6', '💬 새로운 대사 추가')}>
-                                                        💬 새로운 대사 추가
-                                                    </button>
-                                                )}
+{scenario.isCg ? (
+    !isNextAlsoCg && (
+        <button 
+            onClick={(e) => { 
+                e.stopPropagation(); 
+                setIsCgMode(false); // 1. CG 모드 해제
+
+                // 2. 추가될 일반 대사 데이터 생성
+                const nextItem = { 
+                    type: 'dialog', 
+                    branch: scenario.branch, 
+                    isCg: false, 
+                    speaker: defaultSpeaker, 
+                    protagonistImage: null, 
+                    heroineImage: null, 
+                    text: '', 
+                    bgImage: PRESET_BACKGROUNDS[0]?.url, 
+                    bgType: PRESET_BACKGROUNDS[0]?.id, 
+                    dateOverride: null 
+                };
+
+                // 3. 현재 위치 다음에 삽입
+                const newScenarios = [...scenarios]; 
+                newScenarios.splice(index + 1, 0, nextItem); 
+                updateActiveScenarios(newScenarios);
+
+                // 4. (선택사항) 추가된 컷으로 미리보기 포커스 이동
+                if (showPreview) {
+                    setPreviewScenario({ ...nextItem, index: index + 1 });
+                }
+            }} 
+            className="action-btn" 
+            style={{ backgroundColor: 'rgba(55, 66, 250, 0.1)', color: '#3742fa' }}
+        >
+            💬 CG 모드 종료 일반 대사 시작
+        </button>
+    )
+) : (
+    /* ... 일반 대사 추가 버튼 로직 ... */
+    <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'dialog'); }} className="action-btn" style={{ backgroundColor: 'rgba(51, 154, 240, 0.1)', color: '#1c7ed6' }}>
+        💬 새로운 대사 추가
+    </button>
+)}
                                             </div>
 
                                             <div style={{ width: '1px', height: '18px', backgroundColor: '#e2e8f0' }} />
                                             
-{!isNextAlsoCg && (
-    <>
-        <div style={{ display: 'flex', gap: '6px' }}>
-            <label 
-                style={{ 
-                    ...actionButtonStyle('rgba(132, 94, 247, 0.1)', '#6741d9', '🖼️ CG 삽입'), 
-                    cursor: 'pointer' 
-                }}
-            >
-                🖼️ CG 삽입
-                <input type="file" accept="image/*" onChange={(e) => handleInlineCgUpload(e, index, scenario)} style={{ display: 'none' }} onClick={(e) => e.stopPropagation()} />
-            </label>
-        </div>
-
-        {/* 그룹 2와 그룹 3 사이의 구분선도 조건부로 묶어줍니다. */}
-        <div style={{ width: '1px', height: '18px', backgroundColor: '#e2e8f0' }} />
-    </>
-)}
+                                            {!isNextAlsoCg && (
+                                                <>
+                                                    <div style={{ display: 'flex', gap: '6px' }}>
+                                                        <label className="action-btn" style={{ backgroundColor: 'rgba(132, 94, 247, 0.1)', color: '#6741d9' }}>
+                                                            🖼️ CG 삽입
+                                                            <input type="file" accept="image/*" onChange={(e) => handleInlineCgUpload(e, index, scenario)} style={{ display: 'none' }} onClick={(e) => e.stopPropagation()} />
+                                                        </label>
+                                                    </div>
+                                                    <div style={{ width: '1px', height: '18px', backgroundColor: '#e2e8f0' }} />
+                                                </>
+                                            )}
                                             
                                             {/* 그룹 3: 구조 변경 */}
                                             <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
                                                 {!hasChoiceNode && scenario.branch === 'main' && (
-                                                    <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'choice'); }} style={actionButtonStyle('rgba(255, 165, 2, 0.1)', '#e67e22', '🔀 선택지 분기')}>🔀 선택지 분기</button>
+                                                    <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'choice'); }} className="action-btn" style={{ backgroundColor: 'rgba(255, 165, 2, 0.1)', color: '#e67e22' }}>🔀 선택지 분기</button>
                                                 )}
                                                 {!hasEndingInThisBranch && !(hasChoiceNode && scenario.branch === 'main') && (
-                                                    <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'ending'); }} style={actionButtonStyle('#2f3542', '#ffffff', '🎬 엔딩')}>🎬 엔딩</button>
+                                                    <button onClick={(e) => { e.stopPropagation(); insertScenarioAfter(index, scenario, 'ending'); }} className="action-btn" style={{ backgroundColor: '#2f3542', color: '#ffffff', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>🎬 엔딩</button>
                                                 )}
                                             </div>
                                         </div>
@@ -1167,6 +1136,7 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                 </div>
 
                 {/* 🌟 하단 작업 컨트롤러 (Action Bar) */}
+{/* 🌟 하단 작업 컨트롤러 (Action Bar) */}
                 <div className="controller-group" style={{ marginTop: '30px', padding: '20px', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #edf2f7', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {(() => {
                         const currentBranchScenarios = scenarios.filter(s => s.branch === currentBranch);
@@ -1178,18 +1148,41 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                             <>
                                 {currentBranchScenarios.length === 0 && !hasEndingInCurrentBranch && (
                                     <div style={{ display: 'flex', gap: '10px' }}>
-                                        <button onClick={addScenarioInput} style={{ ...actionButtonStyle(currentBranch === 'main' ? 'rgba(51, 154, 240, 0.1)' : `${OPTION_COLORS[(currentBranchNum - 1) % 10]}1A`, currentBranch === 'main' ? '#1c7ed6' : OPTION_COLORS[(currentBranchNum - 1) % 10]), flex: 1, height: '45px', fontSize: '13px' }}>
+                                        {/* ⭐ actionButtonStyle 대신 className="action-btn" 적용 */}
+                                        <button 
+                                            onClick={addScenarioInput} 
+                                            className="action-btn"
+                                            style={{ 
+                                                backgroundColor: currentBranch === 'main' ? 'rgba(51, 154, 240, 0.1)' : `${OPTION_COLORS[(currentBranchNum - 1) % 10]}1A`, 
+                                                color: currentBranch === 'main' ? '#1c7ed6' : OPTION_COLORS[(currentBranchNum - 1) % 10],
+                                                flex: 1, height: '45px', fontSize: '13px' 
+                                            }}
+                                        >
                                             {currentBranch === 'main' ? '✨ 일반 대사 시작하기' : `✨ 선택지 ${currentBranchNum}번 루트 시작`}
                                         </button>
-                                        <label style={{ ...actionButtonStyle('rgba(132, 94, 247, 0.1)', '#7048e8'), flex: 1, height: '45px', fontSize: '13px', cursor: 'pointer' }}>
+                                        
+                                        <label 
+                                            className="action-btn"
+                                            style={{ backgroundColor: 'rgba(132, 94, 247, 0.1)', color: '#7048e8', flex: 1, height: '45px', fontSize: '13px', cursor: 'pointer' }}
+                                        >
                                             🖼️ CG로 시작하기 <input type="file" accept="image/*" onChange={handleCgUpload} style={{ display: 'none' }} />
                                         </label>
                                     </div>
                                 )}
+                                
                                 {currentBranchScenarios.length > 0 && (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                         {currentBranch.startsWith('option') && currentBranchNum < currentTotalOpts && (
-                                            <button onClick={() => { setIsCgMode(false); setCurrentBranch(`option${currentBranchNum + 1}`); }} style={{ ...actionButtonStyle(`${OPTION_COLORS[currentBranchNum % 10]}1A`, OPTION_COLORS[currentBranchNum % 10]), width: '100%', height: '45px', fontSize: '13px', border: `1px dashed ${OPTION_COLORS[currentBranchNum % 10]}4D` }}>
+                                            <button 
+                                                onClick={() => { setIsCgMode(false); setCurrentBranch(`option${currentBranchNum + 1}`); }} 
+                                                className="action-btn"
+                                                style={{ 
+                                                    backgroundColor: `${OPTION_COLORS[currentBranchNum % 10]}1A`, 
+                                                    color: OPTION_COLORS[currentBranchNum % 10], 
+                                                    width: '100%', height: '45px', fontSize: '13px', 
+                                                    border: `1px dashed ${OPTION_COLORS[currentBranchNum % 10]}4D` 
+                                                }}
+                                            >
                                                 ✔️ {currentBranchNum}번 루트 완료 → 다음 선택지({currentBranchNum + 1}번) 편집하기
                                             </button>
                                         )}
@@ -1198,6 +1191,7 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                             </>
                         );
                     })()}
+                    {/* ... (이하 엔딩 안내 문구 로직은 동일) */}
                     {hasEndingInCurrentBranch && (
                         <div style={{ padding: '12px', backgroundColor: '#f8f9fa', color: '#718096', textAlign: 'center', borderRadius: '8px', fontSize: '12px', fontWeight: '600', border: '1px solid #e2e8f0' }}>
                             🔒 현재 분기({currentBranch === 'main' ? '일반 루트' : `루트 ${currentBranchNum}`})는 엔딩으로 마무리되었습니다.
