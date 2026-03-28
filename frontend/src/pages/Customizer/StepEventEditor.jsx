@@ -122,6 +122,46 @@ export default function StepEventEditor() {
     const [isCgMode, setIsCgMode] = useState(false);
     const [editingDateIndex, setEditingDateIndex] = useState(null); 
     const fileInputRefs = useRef({}); 
+
+    // ========================================================
+    // ⭐ 미리보기 창 드래그 기능 로직 ⭐
+    // ========================================================
+    const [previewPos, setPreviewPos] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const dragStartPos = useRef({ x: 0, y: 0 });
+
+    const handleDragStart = (e) => {
+        setIsDragging(true);
+        const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        dragStartPos.current = { x: clientX - previewPos.x, y: clientY - previewPos.y };
+    };
+
+    useEffect(() => {
+        const handleDragMove = (e) => {
+            if (!isDragging) return;
+            if (e.cancelable) e.preventDefault(); // 스크롤 방지
+            const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            setPreviewPos({ x: clientX - dragStartPos.current.x, y: clientY - dragStartPos.current.y });
+        };
+
+        const handleDragEnd = () => setIsDragging(false);
+
+        if (isDragging) {
+            window.addEventListener('mousemove', handleDragMove, { passive: false });
+            window.addEventListener('mouseup', handleDragEnd);
+            window.addEventListener('touchmove', handleDragMove, { passive: false });
+            window.addEventListener('touchend', handleDragEnd);
+        }
+        return () => {
+            window.removeEventListener('mousemove', handleDragMove);
+            window.removeEventListener('mouseup', handleDragEnd);
+            window.removeEventListener('touchmove', handleDragMove);
+            window.removeEventListener('touchend', handleDragEnd);
+        };
+    }, [isDragging]);
+    // ========================================================
     
     // ⭐ 추가: 모든 컷을 일괄적으로 갤러리 모드로 묶어줄 전역 상태 변수
     const [isGlobalGalleryMode, setIsGlobalGalleryMode] = useState(false);
@@ -702,32 +742,55 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
             {/* 🌸 분홍색 박스: 하단 액션 버튼 가이드 */}
             <div className="settings-tips-wrap pink">
                 <ul className="settings-tips">
-                     <li><strong style={{ color: '#e03131', fontSize: '14px' }}>📺 인게임 미리보기 모드 (ON/OFF):</strong> 우측 상단의 스위치를 <strong>[ON]</strong>으로 켜보세요! 작성 중인 컷을 클릭할 때마다 실제 인게임 화면과 똑같이 렌더링되어 즉시 확인할 수 있습니다.</li>
+                     <li><strong style={{ color: '#e03131', fontSize: '14px' }}>📺 인게임 미리보기 모드 (ON/OFF):</strong> 우측 상단의 스위치를 <strong>[ON]</strong>으로 켜보세요! 작성 중인 컷을 실제 인게임 화면으로 확인할 수 있습니다.</li>
                     <li><strong>📑 + 새 이벤트 및 🎵 BGM:</strong> 상단에서 이벤트를 추가해 챕터를 나누고, 리스트 맨 위에서 해당 이벤트의 배경음악(BGM)을 설정할 수 있습니다.</li>
-                    <li><strong>📅 상태창 변경:</strong> 컷 왼쪽의 [상태창 변경]을 눌러 시간/장소를 바꾸거나, 상단 [기본 설정]에서 모든 컷의 상태창을 한 번에 덮어씌울 수 있습니다.</li>                  
-                    <li><strong>📋 대사 복사하기:</strong> 현재 컷의 구도(배경, 캐릭터, 표정)를 그대로 복제합니다. 대사만 이어서 작성할 때 <strong>작업 시간을 확 줄여주는 필수 버튼</strong>입니다!</li>
-                    <li><strong>💬 새로운 대사 추가:</strong> 이전 컷의 배경만 유지한 채, 캐릭터와 대사 내용이 완전히 비어있는 기본 컷을 추가합니다.</li>
-                    <li><strong>🖼️ CG 삽입 & 모드:</strong> 화면 전체를 덮는 일러스트 연출을 켭니다. CG 연출이 끝났다면 <strong>[💬 CG 모드 종료]</strong> 버튼을 눌러 다시 일반 대사로 돌아오세요.</li>
+                    <li><strong>📅 상태창 변경:</strong> 컷 왼쪽의 [상태창 변경]을 눌러 설정을 바꾸거나, 상단 [기본 설정]에서 모든 컷의 상태창을 한 번에 덮어씌울 수 있습니다.</li>                  
+                    <li><strong>📋 대사 복사하기:</strong> 현재 컷의 구도(배경, 캐릭터, 표정)를 그대로 복제합니다.</li>
+                    <li><strong>💬 새로운 대사 추가:</strong> 캐릭터와 대사 내용이 비어있는 새로운 컷을 추가합니다.</li>
+                    <li><strong>🖼️ CG 삽입 & 모드:</strong> 화면 전체를 덮는 일러스트 연출을 켭니다. CG 연출이 끝났다면 <strong>[💬 CG 모드 종료]</strong> 버튼을 눌러 다시 일반 대사로 작성할 수 있습니다.</li>
                     <li><strong>🔀 선택지 분기:</strong> 플레이어의 선택에 따라 스토리가 나뉘는 갈림길을 만듭니다. (하나의 이벤트 안에는 하나의 분기만 만들 수 있습니다)</li>
                     <li><strong>🎬 엔딩:</strong> 각 선택지 루트의 이야기가 끝나는 지점입니다. 엔딩 시 검은 화면에 엔딩 이름이 뜨며 게임이 시작 메뉴로 돌아갑니다.</li>
                 </ul>
             </div>
-            <div className="preview-toggle-wrap">
-                <span style={{ fontWeight: 'bold' }}>📺 인게임 연출 미리보기 모드</span>
-                <label className="toggle-switch-label">
-                    <input type="checkbox" checked={showPreview} onChange={handleTogglePreview} style={{ opacity: 0, width: 0, height: 0 }} />
-                    <span className="toggle-switch-bg" style={{ backgroundColor: showPreview ? '#1971c2' : '#ccc' }}>
-                        <span className="toggle-switch-knob" style={{ left: showPreview ? '30px' : '4px' }} />
-                    </span>
-                </label>
-            </div>
+<div className="preview-toggle-wrap" style={{ marginTop: '10px', padding: '15px', backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #dee2e6', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontWeight: 'bold', fontSize: '15px', color: '#212529' }}>📺 인게임 연출 미리보기</span>
+            <span style={{ fontSize: '12px', color: '#868e96' }}>
+                미리보기 창의 상단바를 잡고 원하는 위치로 자유롭게 옮겨보세요!
+            </span>
+        </div>
+        <label className="toggle-switch-label">
+            <input type="checkbox" checked={showPreview} onChange={handleTogglePreview} style={{ opacity: 0, width: 0, height: 0 }} />
+            <span className="toggle-switch-bg" style={{ backgroundColor: showPreview ? '#1971c2' : '#ccc' }}>
+                <span className="toggle-switch-knob" style={{ left: showPreview ? '30px' : '4px' }} />
+            </span>
+        </label>
+    </div>
+</div>
 
-            {showPreview && previewScenario && (previewScenario.type === 'dialog' || previewScenario.type === 'ending') && (
-                <div className="sticky-win95-preview">
-                    <div className="win95-preview-title">
-                        <h5>📺 인게임 미리보기: 컷 {previewScenario.index + 1}</h5>
-                        <button className="win95-close-btn" onClick={() => { setShowPreview(false); setPreviewScenario(null); }}>X</button>
-                    </div>
+{showPreview && previewScenario && (previewScenario.type === 'dialog' || previewScenario.type === 'ending') && (
+    /* 여기서 주석을 삭제하거나 아래처럼 div 안으로 옮기세요 */
+    <div className="sticky-win95-preview" style={{ transform: `translate(${previewPos.x}px, ${previewPos.y}px)`, zIndex: isDragging ? 9999 : 1000 }}>
+        {/* ⭐ 주석을 여기(태그 안쪽)로 옮기면 에러가 나지 않습니다 */}
+        
+        <div 
+            className="win95-preview-title" 
+            onMouseDown={handleDragStart} 
+            onTouchStart={handleDragStart}
+            style={{ cursor: isDragging ? 'grabbing' : 'grab', touchAction: 'none' }}
+        >
+            <h5>📺 인게임 미리보기: 컷 {previewScenario.index + 1}</h5>
+            
+            <button 
+                className="win95-close-btn" 
+                onMouseDown={(e) => e.stopPropagation()} 
+                onTouchStart={(e) => e.stopPropagation()}
+                onClick={() => { setShowPreview(false); setPreviewScenario(null); setPreviewPos({ x: 0, y: 0 }); }}
+            >
+                X
+            </button>
+        </div>
                     
                     <div className={`win95-preview-monitor ${layoutClass}`}>
                         {previewScenario.type === 'ending' ? (
@@ -1260,6 +1323,24 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                     )}
                 </div>
             </div>
+            
+<div className="preview-toggle-wrap" style={{ marginTop: '10px', padding: '15px', backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #dee2e6', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontWeight: 'bold', fontSize: '15px', color: '#212529' }}>📺 인게임 연출 미리보기</span>
+            <span style={{ fontSize: '12px', color: '#868e96' }}>
+                미리보기 창의 상단바를 잡고 원하는 위치로 자유롭게 옮겨보세요!
+            </span>
+        </div>
+        <label className="toggle-switch-label">
+            <input type="checkbox" checked={showPreview} onChange={handleTogglePreview} style={{ opacity: 0, width: 0, height: 0 }} />
+            <span className="toggle-switch-bg" style={{ backgroundColor: showPreview ? '#1971c2' : '#ccc' }}>
+                <span className="toggle-switch-knob" style={{ left: showPreview ? '30px' : '4px' }} />
+            </span>
+        </label>
+    </div>
+</div>
+
         </div>
     );
 }
