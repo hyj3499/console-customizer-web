@@ -104,21 +104,21 @@ state.characters?.forEach(c => {
         console.log(`📡 1단계: 서버에 새 파일 ${filesToActuallyUpload.length}개의 업로드 권한 요청...`);
         
         // 이름이 겹치지 않게 클라우드에 '지문_이름' 형태로 안전하게 저장!
-        const filesInfo = filesToActuallyUpload.map(item => ({ 
-            name: `${item.fingerprint}_${item.originalName}`, 
-            type: item.file.type 
-        }));
+const filesInfo = filesToActuallyUpload.map(item => ({ 
+    name: item.fingerprint, // 👈 이렇게만 해도 충분히 안전합니다.
+    type: item.file.type 
+}));
         
         const urlResponse = await axios.post(`${API_URL}/presigned`, { projectId, filesInfo });
         const { urls } = urlResponse.data;
 
         console.log("🚀 2단계: R2 클라우드로 파일 다이렉트 업로드 시작!");
         const uploadPromises = urls.map(async (urlInfo) => {
-            const item = filesToActuallyUpload.find(f => `${f.fingerprint}_${f.originalName}` === urlInfo.originalName);
+            const item = filesToActuallyUpload.find(f => f.fingerprint === urlInfo.originalName);
             if (item) {
                 await axios.put(urlInfo.uploadUrl, item.file, { headers: { 'Content-Type': item.file.type } });
                 globalFingerprintCache[item.fingerprint] = urlInfo.finalUrl;
-                fingerprintToFinalUrl[item.fingerprint] = urlInfo.finalUrl; // 🎯 클라우드에 딱 1번 올리고 주소 발급
+                fingerprintToFinalUrl[item.fingerprint] = urlInfo.finalUrl;
             }
         });
         await Promise.all(uploadPromises);
@@ -133,27 +133,35 @@ state.characters?.forEach(c => {
     console.log("📄 3단계: JSON 데이터 조립...");
 
     // 💡 2. 가장 중요한 마법! 동일한 지문의 파일은 모두 같은 클라우드 URL로 배급!
-    const getCleanUrl = (img) => {
-        if (!img) return null;
-        
-        const blobUrl = img.preview || img.url || (typeof img === 'string' ? img : null);
-        
-        // 방금 올린 파일이라면 지문을 통해 클라우드 URL로 변환
-        if (blobUrl && blobUrl.startsWith('blob:')) {
-            const fp = blobToFingerprint[blobUrl];
+const getCleanUrl = (item) => {
+    if (!item) return null;
+
+    // A. 이미 순수 문자열(URL)인 경우
+    if (typeof item === 'string') {
+        if (item.includes('undefined')) return null;
+        if (item.startsWith('data:')) return null; // Base64 차단
+        return item;
+    }
+
+    // B. 객체 형태인 경우 ({ file, preview, url })
+    const url = item.preview || item.url;
+
+    if (url) {
+        // 1) 직접 업로드한 파일 (blob: 또는 data:) -> 클라우드 주소로 변환
+        if (url.startsWith('blob:') || url.startsWith('data:')) {
+            const fp = blobToFingerprint[url];
             if (fp && fingerprintToFinalUrl[fp]) {
-                // 🎯 주인공과 등장인물이 동일한 파일을 올렸다면, 여기서 똑같은 클라우드 주소가 배급됨!
                 return fingerprintToFinalUrl[fp]; 
             }
+            return null; // 아직 업로드 안됐거나 에러난 경우
         }
         
-        // 이미 옛날에 올려둔 URL(https://)이라면 그대로 유지
-        if (typeof img === 'string') {
-            if (img.includes('undefined')) return null;
-            return img;
-        }
-        return null;
-    };
+        // 2) 기본 제공 프리셋 경로 (/images/...) -> 경로 그대로 보존!
+        return url;
+    }
+
+    return null;
+};
 
     const eventsToSave = JSON.parse(JSON.stringify(state.events || []));
     eventsToSave.forEach(event => {

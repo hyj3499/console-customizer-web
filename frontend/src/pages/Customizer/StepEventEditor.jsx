@@ -742,7 +742,8 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
             {/* 🌸 분홍색 박스: 하단 액션 버튼 가이드 */}
             <div className="settings-tips-wrap pink">
                 <ul className="settings-tips">
-                     <li><strong style={{ color: '#e03131', fontSize: '14px' }}>📺 인게임 미리보기 모드 (ON/OFF):</strong> 우측 상단의 스위치를 <strong>[ON]</strong>으로 켜보세요! 작성 중인 컷을 실제 인게임 화면으로 확인할 수 있습니다.</li>
+                     <li><strong style={{ color: '#e03131', fontSize: '14px' }}>📺 인게임 미리보기 모드 (ON/OFF):</strong> 우측 상단의 스위치를 <strong>[ON]</strong>으로 켜보세요! 작성 중인 컷을 실제 인게임 화면으로 확인할 수 있습니다. 
+                     스위치를 켰는데도 인게임 화면이 보이지 않으면 대사를 클릭해보세요!</li>
                     <li><strong>📑 + 새 이벤트 및 🎵 BGM:</strong> 상단에서 이벤트를 추가해 챕터를 나누고, 리스트 맨 위에서 해당 이벤트의 배경음악(BGM)을 설정할 수 있습니다.</li>
                     <li><strong>📅 상태창 변경:</strong> 컷 왼쪽의 [상태창 변경]을 눌러 설정을 바꾸거나, 상단 [기본 설정]에서 모든 컷의 상태창을 한 번에 덮어씌울 수 있습니다.</li>                  
                     <li><strong>📋 대사 복사하기:</strong> 현재 컷의 구도(배경, 캐릭터, 표정)를 그대로 복제합니다.</li>
