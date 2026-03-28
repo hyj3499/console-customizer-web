@@ -677,9 +677,9 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
         <li>
             초상화와 스탠딩의 노출 여부를 조합하여 나만의 게임 스타일을 결정할 수 있습니다.
             <ul style={{ marginTop: '5px', listStyleType: 'circle', paddingLeft: '20px', color: '#495057' }}>
-                <li><strong>클래식 노벨 구조:</strong> 주인공은 '초상화'만, 상대방은 '스탠딩'만 표시해 보세요. 가장 대중적이고 몰입감 있는 표준 비주얼 노벨 구성이 됩니다.</li>
-                <li><strong>스타듀밸리 스타일:</strong> 모든 스탠딩을 제거(🚫)하고 '초상화'만 활용해 보세요. '스타듀밸리'나 클래식 RPG처럼 대화 상대의 얼굴에 집중하는 아기자기한 연출이 가능합니다.</li>
-                <li><strong>감성 텍스트 게임:</strong> 초상화와 스탠딩을 모두 제거(🚫)해 보세요. 오직 배경과 대사만 남겨, 독백이나 소설 같은 서정적인 분위기의 텍스트 어드벤처를 만들 수 있습니다.</li>
+                <li><strong>클래식 노벨 구조:</strong> 주인공은 '초상화'만, 상대방은 '스탠딩'만 상대해 보세요. 클래식한 몰입감 있는 비주얼 노벨 게임이 됩니다.</li>
+                <li><strong>스타듀밸리 스타일:</strong> 모든 스탠딩을 제거(🚫)하고 '초상화'만 활용해 보세요. '스타듀밸리'나 클래식 RPG처럼 대화 상대의 얼굴에 집중할 수 있는 게임이 됩니다.</li>
+                <li><strong>감성 텍스트 게임:</strong> 초상화와 스탠딩을 모두 제거(🚫)해 보세요. 오직 배경과 대사만 남겨, 독백이나 소설 같은 서정적인 분위기의 텍스트 게임을 만들 수 있습니다.</li>
             </ul>
         </li>
 
@@ -692,7 +692,10 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                 <li> HP 60/100 | MP ▰▰▰▰▱ </li>
             </ul>
             <em style={{ fontSize: '11px', color: '#868e96' }}>(※ 각 컷의 [상태창 변경] 버튼을 통해 대사마다 수치를 실시간으로 바꾸는 연출이 가능!)</em>
-        </li> {/* ← 닫는 태그 추가 */}
+        </li>
+                  <li style={{ color: '#e03131', fontWeight: 'bold' }}>
+      📱 휴대폰으로 '인게임 미리보기' 확인 시, 기기의 가로 폭이 좁아 레이아웃 배치가 어긋나거나 글씨 외곽선이 제대로 표시되지 않을 수 있습니다. 연출을 정확하게 확인하고 싶으시다면 기기를 [가로모드]로 전환하거나 PC 브라우저를 이용해 주세요.
+    </li> {/* ← 닫는 태그 추가 */}
     </ul> {/* ← 닫는 태그 추가 */}
 </div>
 
@@ -965,23 +968,30 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                                             {scenario.type === 'choice' ? (
                                                 <span style={{ backgroundColor: '#1971c2', color: 'white', padding: '4px 12px', borderRadius: '15px', fontWeight: '900', fontSize: '14px', letterSpacing: '1px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>🔀 분기 설정</span>
                                             ) : (
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', backgroundColor: '#343a40', color: 'white', borderRadius: '50%', fontWeight: 'bold', fontSize: '14px', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{index + 1}</span>
-                                                    <span style={{ fontWeight: 'bold', color: '#495057', fontSize: '15px' }}>번째 컷</span>
-                                                </div>
+<div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+    {/* 배경 없이 숫자만 깔끔하게 표시 */}
+    <span style={{ 
+        fontWeight: 'bold', 
+        fontSize: '15px', 
+        color: '#495057' 
+    }}>
+        {index + 1}
+    </span>
+    <span style={{ fontWeight: 'bold', color: '#495057', fontSize: '15px' }}>번째 컷</span>
+</div>
                                             )}
                                             <div style={{ display: 'flex', gap: '6px' }}>
                                                 {scenario.branch?.startsWith('option') && (
-                                                    <span className={`badge ${scenario.branch}`} style={{ fontSize: '12px', padding: '3px 8px', backgroundColor: OPTION_COLORS[(parseInt(scenario.branch.replace('option', '')) - 1) % 10] }}>
-                                                        루트 {String.fromCharCode(64 + parseInt(scenario.branch.replace('option', '')))} (선택지 {scenario.branch.replace('option', '')}번)
+                                                    <span className={`badge ${scenario.branch}`} style={{ fontSize: '10px', padding: '3px 8px', backgroundColor: OPTION_COLORS[(parseInt(scenario.branch.replace('option', '')) - 1) % 10] }}>
+                                                        선택지 {scenario.branch.replace('option', '')}번 루트
                                                     </span>
                                                 )}
-                                                {scenario.isCg && <span className="badge cg" style={{ fontSize: '12px', padding: '3px 8px' }}>🖼️ CG 모드</span>}
+                                                {scenario.isCg && <span className="badge cg" style={{ fontSize: '10px', padding: '3px 8px' }}>🖼️ CG 모드</span>}
                                             </div>
                                         </div>
                                         {!isFirstMainDialog && (
                                             <button onClick={(e) => { e.stopPropagation(); removeScenarioInput(index); }} 
-                                                style={{ backgroundColor: '#ffe3e3', color: '#e03131', border: '1px solid #ffc9c9', padding: '4px 10px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', transition: '0.2s' }}
+                                                style={{ fontFamily: 'inherit',fontSize: '10px',backgroundColor: '#ffe3e3', color: '#e03131', border: '1px solid #ffc9c9', padding: '3px 8px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', transition: '0.2s' }}
                                                 onMouseOver={(e) => e.target.style.backgroundColor = '#ffc9c9'}
                                                 onMouseOut={(e) => e.target.style.backgroundColor = '#ffe3e3'}>
                                                 🗑️ 컷 삭제

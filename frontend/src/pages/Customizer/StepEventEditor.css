@@ -1,7 +1,7 @@
 /* src/pages/Customizer/StepEventEditor.css */
 
 /* =========================================================
-   0. 스티키 킬러 방지 (전역 및 컨테이너)
+   0. 스티키 킬러 방지 및 전역 컨테이너 (PC 밀림 현상 완벽 해결)
    ========================================================= */
 div:has(> .editor-container) {
     overflow: visible !important;
@@ -10,15 +10,51 @@ div:has(> .editor-container) {
 .editor-container { 
     width: 100%; 
     max-width: 800px; 
-    margin: 0 auto; 
+    margin: 0 auto !important; /* PC 중앙 정렬 강제 */
     display: flex; 
     flex-direction: column; 
     gap: 20px; 
     overflow: visible !important; 
+    box-sizing: border-box;
+}
+
+.editor-header-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 /* =========================================================
-   1. 전체 레이아웃 & 토글
+   🌟 1. 꿀팁 안내문 박스 스타일 (파란색 & 분홍색)
+   ========================================================= */
+.settings-tips-wrap {
+    background-color: #e7f5ff; 
+    border-left: 4px solid #1971c2;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.settings-tips-wrap.pink {
+    background-color: #fff0f6; 
+    border-left: 4px solid #d6336c; 
+    margin-bottom: 20px; 
+}
+
+.settings-tips {
+    margin: 0;
+    padding-left: 22px;
+    color: #495057;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.settings-tips li { margin-bottom: 6px; }
+.settings-tips li:last-child { margin-bottom: 0; }
+
+
+/* =========================================================
+   2. 전체 레이아웃 & 미리보기 토글
    ========================================================= */
 .preview-toggle-wrap { display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding: 10px 0; }
 .toggle-switch-label { position: relative; display: inline-block; width: 50px; height: 24px; }
@@ -26,7 +62,7 @@ div:has(> .editor-container) {
 .toggle-switch-knob { position: absolute; height: 16px; width: 16px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
 
 /* =========================================================
-   2. 인게임 미리보기 윈도우 (Sticky 가동)
+   3. 인게임 미리보기 윈도우 (Sticky 가동)
    ========================================================= */
 .sticky-win95-preview {
     position: -webkit-sticky; 
@@ -40,7 +76,6 @@ div:has(> .editor-container) {
     border-right: 2px solid #000; border-bottom: 2px solid #000;
     box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
     width: 100%;
-    /* ⭐ 핵심: 패딩 때문에 상자가 커지는 것을 방지하여 Settings와 동일한 너비 유지 */
     box-sizing: border-box; 
     margin-bottom: 20px;
 }
@@ -52,9 +87,7 @@ div:has(> .editor-container) {
 }
 .win95-preview-title h5 { margin: 0; color: white; font-size: 14px; font-weight: bold; }
 .win95-close-btn {
-    background: #fa5252;
-    color: #fff;
-    font-size: 12px; cursor: pointer; font-weight: bold;
+    background: #fa5252; color: #fff; font-size: 12px; cursor: pointer; font-weight: bold;
     padding: 1px 6px; font-family: 'DOSGothic', sans-serif;
     border-top: 2px solid #fff; border-left: 2px solid #fff; border-right: 2px solid #000; border-bottom: 2px solid #000;
 }
@@ -68,7 +101,7 @@ div:has(> .editor-container) {
 }
 
 /* =========================================================
-   🌟 인게임 화면 내 절대좌표 위치 (StepSettings와 100% 동일)
+   🌟 인게임 화면 내 절대좌표 위치
    ========================================================= */
 .win95-preview-monitor .ig-calendar-group { position: absolute; left: 13.02%; top: 4.63%; display: flex; align-items: center; gap: 1.3cqw; z-index: 11; }
 .win95-preview-monitor .ig-calendar-box { width: 7.81cqw; height: 7.81cqw; display: flex; align-items: center; justify-content: center; background-size: 100% 100%; }
@@ -88,19 +121,17 @@ div:has(> .editor-container) {
 /* 🌟 [모드 A] 기본 띄움형 (layout-classic) */
 .win95-preview-monitor.layout-classic .ig-portrait-area { top: 72.22%; bottom: auto; }
 .win95-preview-monitor.layout-classic .ig-dialogbox { top: 72.22%; bottom: auto; }
-/* ⭐ 수정: 66.8% -> 66.3% (0.5% 위로 띄움) */
 .win95-preview-monitor.layout-classic .ig-namebox { top: 66.3%; bottom: auto; } 
 .win95-preview-monitor.layout-classic .ig-standing { bottom: 0; top: auto; height: 95cqh; }
 
 /* 🌟 [모드 B] 바닥 밀착형 (layout-bottom) */
 .win95-preview-monitor.layout-bottom .ig-portrait-area { top: auto !important; bottom: 0; }
 .win95-preview-monitor.layout-bottom .ig-dialogbox { top: auto !important; bottom: 0; }
-/* ⭐ 수정: 23.15% -> 23.65% (0.5% 위로 띄움) */
 .win95-preview-monitor.layout-bottom .ig-namebox { top: auto !important; bottom: 23.65%; }
 .win95-preview-monitor.layout-bottom .ig-standing { top: auto !important; bottom: 23.15%; height: 72cqh; }
 
 /* =========================================================
-   3. 이벤트 탭 네비게이션
+   4. 이벤트 탭 네비게이션
    ========================================================= */
 .event-tabs-wrap { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; border-bottom: 2px solid #eee; }
 .event-tab { position: relative; display: flex; }
@@ -111,16 +142,34 @@ div:has(> .editor-container) {
 .event-add-btn { padding: 10px 20px; border-radius: 8px 8px 0 0; border: 2px dashed #adb5bd; background-color: transparent; cursor: pointer; color: #495057; font-weight: bold; }
 
 /* =========================================================
-   6. 에디터 본문 및 공통 UI
+   5. 에디터 본문 및 공통 UI
    ========================================================= */
 .editor-main-area { background-color: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #dee2e6; border-top: none; }
 .config-panel { margin-bottom: 30px; padding: 20px; background-color: #fff; border-radius: 8px; border: 1px solid #ced4da; display: flex; flex-wrap: wrap; gap: 30px; }
 .config-title { margin: 0 0 10px 0; color: #495057; font-weight: bold; }
+.config-section { flex: 1; display: flex; flex-direction: column; }
+.config-section.divider { border-left: 1px dashed #dee2e6; padding-left: 20px; }
 
+/* =========================================================
+   ⭐⭐⭐ 6. 시나리오 카드 및 분기 루트 테마 (PC/모바일 공통) ⭐⭐⭐
+   ========================================================= */
 .scenario-list { display: flex; flex-direction: column; gap: 15px; }
-.scenario-card { padding: 15px; background-color: #fff; border-radius: 8px; display: flex; gap: 15px; border: 1px solid #ced4da; transition: all 0.2s; }
 
-/* 엔딩 전용 카드 스타일 */
+.scenario-card { 
+    padding: 15px; 
+    background-color: #fff; 
+    border-radius: 8px; 
+    display: flex; 
+    gap: 15px; 
+    border: 1px solid #ced4da; 
+    transition: all 0.2s; 
+    box-sizing: border-box;
+}
+
+.scenario-card.is-cg { border: 2px solid #845ef7; }
+.scenario-card.preview-active { border: 3px solid #ff6b6b; box-shadow: 0 0 10px rgba(255,107,107,0.4); cursor: pointer; }
+
+/* 엔딩 전용 카드 */
 .scenario-card.type-ending {
     background-color: #1a1b1e !important; 
     border: 3px double #ffd43b !important; 
@@ -132,75 +181,82 @@ div:has(> .editor-container) {
 .scenario-card.type-ending input { background-color: #2b2c31 !important; border: 1px solid #ffd43b !important; color: #ffd43b !important; letter-spacing: 1px; }
 .scenario-card.type-ending p { color: #adb5bd !important; font-style: italic; }
 
-.scenario-card.branch-option1 { margin-left: 20px; }
-.scenario-card.branch-option2 { margin-left: 40px; }
-.scenario-card.is-cg { border: 2px solid #845ef7; }
-.scenario-card.preview-active { border: 3px solid #ff6b6b; box-shadow: 0 0 10px rgba(255,107,107,0.4); cursor: pointer; }
+/* 분기별 테두리 및 계단식 들여쓰기 (PC 기준 설정) */
+.scenario-card[class*="branch-option"] {
+    border-left-width: 6px !important;
+    border-left-style: solid !important;
+    margin-left: 0 !important;
+}
 
+/* ⭐ 아래쪽의 margin-left 속성을 전부 지워주세요! */
+.scenario-card.branch-option1 { border-left-color: #ffafee !important; }
+.scenario-card.branch-option2 { border-left-color: #84ccff !important; }
+.scenario-card.branch-option3 { border-left-color: #1971c2 !important; }
+.scenario-card.branch-option4 { border-left-color: #e64980 !important; }
+.scenario-card.branch-option5 { border-left-color: #7950f2 !important; }
+.scenario-card.branch-option6 { border-left-color: #12b886 !important; }
+.scenario-card.branch-option7 { border-left-color: #fcc419 !important; }
+.scenario-card.branch-option8 { border-left-color: #20c997 !important; }
+.scenario-card.branch-option9 { border-left-color: #ff8787 !important; }
+.scenario-card.branch-option10{ border-left-color: #5c940d !important; }
+
+/* =========================================================
+   7. 카드 내부 레이아웃 (사이드바, 헤더, 배지 등)
+   ========================================================= */
 .scenario-sidebar { width: 90px; border-right: 1px dashed #dee2e6; padding-right: 10px; display: flex; flex-direction: column; align-items: center; }
 .scenario-main { flex: 1; display: flex; flex-direction: column; gap: 10px; }
 .scenario-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
 
 .badge { font-size: 11px; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-.badge.opt1 { background: #40c057; }
-.badge.opt2 { background: #fd7e14; }
 .badge.cg { background: #845ef7; }
 .btn-text-del { background: none; border: none; color: #fa5252; cursor: pointer; font-weight: bold; }
 
+.sidebar-btn { padding: 4px 10px; font-size: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; box-sizing: border-box; border: none; margin-top: 5px; }
+.sidebar-input { font-size: 10px; padding: 4px; width: 100%; box-sizing: border-box; margin-top: 3px; }
 .input-base { padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;}
-.face-panel { flex: 1; padding: 10px; background-color: #f1f3f5; border-radius: 6px; border: 1px solid #dee2e6; }
-.face-list { display: flex; gap: 5px; overflow-x: auto; padding: 5px 0; }
-.face-img { width: 44px; height: 44px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid #ccc; background-color: #fff; }
-.face-img.active-p { border-color: #1971c2; }
-.face-img.active-h { border-color: #d6336c; }
 
-.controller-group { display: flex; gap: 10px; margin-top: 20px; }
-.btn-large { flex: 1; padding: 12px; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-align: center; font-family: 'DOSGothic'; transition: transform 0.1s; }
-.btn-large:active { transform: scale(0.98); }
-
-.bg-blue { background-color: #339af0; box-shadow: 0 4px 0 #1c7ed6; }
-.bg-green { background-color: #40c057; box-shadow: 0 4px 0 #2b8a3e; }
-.bg-orange { background-color: #fd7e14; box-shadow: 0 4px 0 #e67700; }
-.bg-purple { background-color: #845ef7; box-shadow: 0 4px 0 #6741d9; }
-.bg-indigo { background-color: #5c7cfa; box-shadow: 0 4px 0 #3b5bdb; }
-.bg-gray { background-color: #adb5bd; box-shadow: 0 4px 0 #868e96; }
-
-.btn-ending { flex: 1; padding: 12px; background-color: #000 !important; color: #ffd43b !important; border: 2px solid #ffd43b !important; border-radius: 8px; font-weight: bold; cursor: pointer; font-family: 'DOSGothic'; text-shadow: 0 0 5px rgba(255, 212, 59, 0.5); box-shadow: 0 4px 0 #5c4d15; }
-
-/* 표정 선택기 패널 */
+/* =========================================================
+   8. 이미지 표정 선택 패널
+   ========================================================= */
 .img-selector-panel { flex: 1; padding: 12px; background-color: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; }
 .img-selector-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .img-selector-clear { display: flex; align-items: center; justify-content: center; background-color: #fff; font-size: 18px; border-style: solid; cursor: pointer; width: 45px; height: 45px; border-radius: 6px; }
 .img-selector-item { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; cursor: pointer; box-sizing: border-box; transition: 0.1s; }
 
-/* 공통 액션 버튼 (툴바, 컨트롤러) */
+/* =========================================================
+   9. 하단 버튼 컨트롤러
+   ========================================================= */
+.controller-group { display: flex; gap: 10px; margin-top: 20px; }
+.btn-large { flex: 1; padding: 12px; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-align: center; font-family: 'DOSGothic'; transition: transform 0.1s; }
+.btn-large:active { transform: scale(0.98); }
+.bg-purple { background-color: #845ef7; box-shadow: 0 4px 0 #6741d9; }
+
 .action-btn { display: inline-flex; align-items: center; justify-content: center; padding: 7px 14px; font-size: 11px; font-weight: 700; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s ease; font-family: inherit; min-width: 80px; }
 .action-btn:hover { filter: brightness(0.95); }
 
-/* 설정 패널 영역 */
-.config-section { flex: 1; display: flex; flex-direction: column; }
-.config-section.divider { border-left: 1px dashed #dee2e6; padding-left: 20px; }
-
-/* 개별 컷 사이드바 버튼 & 입력창 */
-.sidebar-btn { padding: 4px 10px; font-size: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; box-sizing: border-box; border: none; margin-top: 5px; }
-.sidebar-input { font-size: 10px; padding: 4px; width: 100%; box-sizing: border-box; margin-top: 3px; }
 
 /* =========================================================
-   6. 모바일 세로 화면 정밀 보정 (종합)
+   📱 10. 모바일 세로 화면 정밀 보정 (768px 이하)
    ========================================================= */
 @media screen and (max-width: 768px) and (orientation: portrait) {
-    /* 스티키 헤더 위치 보정 */
+    /* 전체 여백 초기화 및 스티키 헤더 보정 */
+    .editor-container { padding: 10px; }
     .sticky-win95-preview { top: 50px !important; }
     
-    /* 상단 설정 패널 (BGM & 상태창) 가로분할 -> 세로분할 */
+    /* 상단 설정 패널 보정 */
     .config-panel { flex-direction: column !important; gap: 15px !important; padding: 15px !important; }
     .config-panel > div, .config-section { width: 100% !important; }
     .config-section.divider { border-left: none !important; padding-left: 0 !important; border-top: 1px dashed #dee2e6 !important; padding-top: 15px !important; margin-top: 15px !important; }
 
-    /* 개별 컷 카드 레이아웃: 가로 분할 -> 세로 분할 */
+    /* ⭐ 모바일에서 들여쓰기 제거 (화면 너비 꽉 채움) */
+    .scenario-card[class*="branch-option"] {
+        margin-left: 0 !important;
+    }
+
+    /* 개별 컷 카드 레이아웃 보정 */
     .scenario-card { flex-direction: column !important; padding: 12px !important; }
     
-    /* 1. 사이드바 (시간 표시 및 상태창 변경 버튼) */
+    /* 사이드바 보정 */
     .scenario-sidebar { 
         width: 100% !important; 
         border-right: none !important; border-bottom: 1px dashed #dee2e6 !important; 
@@ -210,78 +266,35 @@ div:has(> .editor-container) {
     .scenario-sidebar > div:last-child { margin-top: 0 !important; width: auto !important; display: flex; flex-direction: row; gap: 5px; align-items: center; }
     .scenario-sidebar button { width: auto !important; padding: 6px 12px !important; font-size: 11px !important; margin-top: 0 !important; }
 
-    /* 2. 시나리오 메인 입력 영역 보정 */
     .scenario-main { width: 100% !important; }
     
-    /* ⭐ 배경 선택 콤보박스 반으로 줄이기 */
-    .scenario-main > div:has(label:contains("배경")) { 
-        flex-direction: row !important; flex-wrap: nowrap !important; 
-        align-items: center !important; justify-content: flex-start !important;
-    }
-    .scenario-main > div:has(label:contains("배경")) select {
-        flex: none !important; /* 꽉 차는 성질 제거 */
-        width: 40% !important; /* 화면의 40%만 차지하게 팍 줄임 */
-        min-width: 100px !important; 
-        font-size: 12px !important;
-    }
+    /* 콤보박스 반으로 줄이기 */
+    .scenario-main > div:has(label:contains("배경")) { flex-direction: row !important; flex-wrap: nowrap !important; align-items: center !important; justify-content: flex-start !important; }
+    .scenario-main > div:has(label:contains("배경")) select { flex: none !important; width: 40% !important; min-width: 100px !important; font-size: 12px !important; }
 
-    /* ⭐ 화자 콤보박스를 대사칸 위로 올리고 크기 줄이기 */
-    .scenario-main > div:has(input[placeholder*="대사를"]) { 
-        flex-direction: column !important; 
-        align-items: flex-start !important; 
-        gap: 6px !important; 
-    }
-    .scenario-main select[style*="width: 130px"] { 
-        flex: none !important;
-        width: 40% !important; /* 화면의 40%만 차지하게 팍 줄임 */
-        min-width: 100px !important; 
-        padding: 6px !important; 
-        font-size: 12px !important; 
-    }
-    
-    /* 대사 쓰는 칸을 100%로 늘려서 가로로 길게 사용 */
-    .scenario-main input[placeholder*="대사를"] { 
-        width: 100% !important; 
-        box-sizing: border-box !important;
-        padding: 10px !important; 
-    }
+    .scenario-main > div:has(input[placeholder*="대사를"]) { flex-direction: column !important; align-items: flex-start !important; gap: 6px !important; }
+    .scenario-main select[style*="width: 130px"] { flex: none !important; width: 40% !important; min-width: 100px !important; padding: 6px !important; font-size: 12px !important; }
+    .scenario-main input[placeholder*="대사를"] { width: 100% !important; box-sizing: border-box !important; padding: 10px !important; }
 
-    /* 3. 표정 선택 패널 (세로 깨짐 방지 및 콤보박스 줄이기) */
-    .scenario-main > div:has(.img-selector-panel) { 
-        flex-direction: column !important; gap: 15px !important; 
-    }
-    .img-selector-panel { 
-        width: 100% !important; box-sizing: border-box !important; margin-bottom: 0 !important;
-    }
-    /* ⭐ 표정 선택기 내의 캐릭터 콤보박스 반으로 줄이기 */
-    .img-selector-panel select {
-        width: 40% !important; /* 절반 이하로 줄임 */
-        min-width: 100px !important; 
-        margin-bottom: 10px !important;
-    }
+    /* 표정 선택 패널 보정 */
+    .scenario-main > div:has(.img-selector-panel) { flex-direction: column !important; gap: 15px !important; }
+    .img-selector-panel { width: 100% !important; box-sizing: border-box !important; margin-bottom: 0 !important; }
+    .img-selector-panel select { width: 40% !important; min-width: 100px !important; margin-bottom: 10px !important; }
     .img-selector-header { flex-wrap: nowrap !important; gap: 5px !important; }
-    .img-selector-header span { white-space: nowrap !important; font-size: 12px !important; }
-    .img-selector-header label { white-space: nowrap !important; }
+    .img-selector-header span, .img-selector-header label { white-space: nowrap !important; font-size: 12px !important; }
 
-    /* 4. 인라인 하단 버튼들 (가로 길이 통일 및 정렬) */
-    .scenario-main > div:has(.action-btn) { 
-        flex-direction: row !important; flex-wrap: wrap !important; justify-content: stretch !important; gap: 8px !important;
-    }
-    .scenario-main .action-btn { 
-        flex: 1 1 45% !important; 
-        padding: 10px 5px !important; font-size: 11px !important; white-space: nowrap !important;
-        margin: 0 !important;
-    }
+    /* 하단 인라인 액션 버튼 보정 */
+    .scenario-main > div:has(.action-btn) { flex-direction: row !important; flex-wrap: wrap !important; justify-content: stretch !important; gap: 8px !important; }
+    .scenario-main .action-btn { flex: 1 1 45% !important; padding: 10px 5px !important; font-size: 11px !important; white-space: nowrap !important; margin: 0 !important; }
 
-    /* 이벤트 탭 */
+    /* 탭 및 컨트롤러 보정 */
     .event-tabs-wrap { flex-wrap: wrap !important; }
     .event-tab-btn { flex: 1 1 auto !important; font-size: 12px !important; padding: 8px 15px !important; }
     .event-add-btn { flex: 1 1 100% !important; }
-    
     .controller-group { flex-direction: column !important; }
     .btn-large, .btn-ending { width: 100% !important; box-shadow: none !important; }
 
-    /* ⭐ 미리보기 모바일 보정 (StepSettings와 100% 일치) */
+    /* 미리보기 윈도우 보정 */
     .win95-preview-monitor { aspect-ratio: 16 / 9 !important; height: auto !important; }
     .win95-preview-monitor .ig-namebox { height: 6cqh !important; min-width: 20cqw !important; padding: 0 2cqw !important; display: flex !important; align-items: center !important; justify-content: center !important; }
     .win95-preview-monitor .ig-namebox span { font-size: 3cqh !important; line-height: 1 !important; display: block !important; transform: translateY(-0.2cqh); }
@@ -297,14 +310,6 @@ div:has(> .editor-container) {
 }
 
 @media screen and (max-width: 600px) {
-    /* ⭐ 오디오 파일 업로드/재생 시 모바일에서 UI 짤림 방지 */
-    .config-panel > div:first-child > div {
-        flex-direction: column !important; /* 모바일에선 파일 업로드버튼과 재생버튼을 세로로 배치 */
-        align-items: stretch !important;
-        gap: 10px !important;
-    }
-    .config-panel audio { 
-        width: 100% !important; /* 세로로 내린 후 넓게 쓰도록 변경 */
-        height: 40px !important;
-    }
+    .config-panel > div:first-child > div { flex-direction: column !important; align-items: stretch !important; gap: 10px !important; }
+    .config-panel audio { width: 100% !important; height: 40px !important; }
 }
