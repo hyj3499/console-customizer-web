@@ -53,18 +53,15 @@ const PRESET_BACKGROUNDS = SHARED_BACKGROUNDS;
 // ==========================================
 // 🌟 통합된 표정 선택기 컴포넌트 (주인공/등장인물 구분 제거)
 // ==========================================
-const ImageSelectorPanel = ({ title, type, characters, onSelect, selectedImage }) => {
-    const [galleryMode, setGalleryMode] = useState(false);
-    
+// ==========================================
+// 🌟 통합된 표정 선택기 컴포넌트 (상태 복사 기능 추가)
+// ==========================================
+const ImageSelectorPanel = ({ title, type, characters, onSelect, selectedImage, uiState = {}, onUiStateChange }) => {
     const protagonist = characters.find(c => c.isProtagonist) || characters[0];
-    const [selectedChar, setSelectedChar] = useState('');
-
-    // 초기값으로 주인공이 자동 선택되도록 설정
-    useEffect(() => {
-        if (!selectedChar && protagonist) {
-            setSelectedChar(protagonist.id.toString());
-        }
-    }, [characters, protagonist, selectedChar]);
+    
+    // ⭐ 부모(시나리오 데이터)로부터 UI 상태를 받아옵니다. (복사 기능을 위해)
+    const galleryMode = uiState.galleryMode || false;
+    const selectedChar = uiState.selectedChar || (protagonist ? protagonist.id.toString() : '');
 
     const imageKey = type === 'portrait' ? 'portraitImages' : 'standingImages';
 
@@ -84,7 +81,8 @@ const ImageSelectorPanel = ({ title, type, characters, onSelect, selectedImage }
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#495057' }}>{title}</span>
                 <label style={{ fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: '#1971c2', fontWeight: 'bold' }}>
-                    <input type="checkbox" checked={galleryMode} onChange={(e) => setGalleryMode(e.target.checked)} style={{ cursor: 'pointer' }} />
+                    {/* ⭐ onChange를 부모 함수 호출로 변경 */}
+                    <input type="checkbox" checked={galleryMode} onChange={(e) => onUiStateChange({ ...uiState, galleryMode: e.target.checked, selectedChar })} style={{ cursor: 'pointer' }} />
                     갤러리로 보기
                 </label>
             </div>
@@ -92,11 +90,10 @@ const ImageSelectorPanel = ({ title, type, characters, onSelect, selectedImage }
             {!galleryMode && (
                 <select 
                     value={selectedChar} 
-                    onChange={(e) => setSelectedChar(e.target.value)}
+                    onChange={(e) => onUiStateChange({ ...uiState, galleryMode, selectedChar: e.target.value })}
                     className="input-base"
                     style={{ width: '100%', marginBottom: '10px', padding: '6px', fontSize: '12px' }}
                 >
-                    {/* 통합 배열 순회 출력 */}
                     {characters.map(c => (
                         <option key={c.id} value={c.id.toString()}>
                             {c.isProtagonist ? '😎' : '🎭'} {c.name || '캐릭터'}
@@ -118,9 +115,7 @@ const ImageSelectorPanel = ({ title, type, characters, onSelect, selectedImage }
                     const isActive = selectedImage === imgSrc;
                     return (
                         <img 
-                            key={i} 
-                            src={imgSrc} 
-                            alt="face" 
+                            key={i} src={imgSrc} alt="face" 
                             onClick={(e) => { e.stopPropagation(); onSelect(imgSrc); }} 
                             style={{ width: '45px', height: '45px', objectFit: 'cover', borderRadius: '6px', cursor: 'pointer', border: isActive ? '3px solid #1971c2' : '1px solid #ccc', boxSizing: 'border-box', transform: isActive ? 'scale(1.05)' : 'scale(1)', transition: '0.1s' }}
                         />
@@ -218,20 +213,14 @@ export default function StepEventEditor() {
     const currentBranchNum = currentBranch.startsWith('option') ? parseInt(currentBranch.replace('option', '')) : 0;
     const defaultSpeaker = 'PROTAGONIST'; 
     const displayProtagonistName = protagonist.name || '주인공';
-
+// ⭐ [버그 1 해결] 이전 컷 상속 로직 제거 -> 없으면 무조건 '기본 설정' 따름
     const getEffectiveDateForIndex = (targetIndex) => {
-        let currentDate = { ...activeEvent.baseDate };
         const targetScenario = scenarios[targetIndex];
         
-        for (let i = 0; i <= targetIndex; i++) {
-            const sc = scenarios[i];
-            if (sc.branch === 'main' || sc.branch === targetScenario?.branch) {
-                if (sc.dateOverride) {
-                    currentDate = { ...sc.dateOverride };
-                }
-            }
+        if (targetScenario && targetScenario.dateOverride) {
+            return { ...targetScenario.dateOverride };
         }
-        return currentDate;
+        return { ...activeEvent.baseDate };
     };
 
     const updateActiveEvent = (updates) => {
@@ -308,15 +297,30 @@ export default function StepEventEditor() {
         }
     };
 
+// ⭐ [버그 1 해결] 깊은 복사(Deep Copy)를 적용하여 다른 컷에 영향 주지 않음
     const handleDateOverrideChange = (index, field, value) => {
         const newScenarios = [...scenarios];
-        const currentOverride = newScenarios[index].dateOverride || { ...getEffectiveDateForIndex(index) };
+        // 중요: 완전히 새로운 객체로 복사해서 참조 끊기
+        const currentOverride = newScenarios[index].dateOverride 
+            ? { ...newScenarios[index].dateOverride } 
+            : { ...getEffectiveDateForIndex(index) };
+            
         currentOverride[field] = value;
         newScenarios[index].dateOverride = currentOverride;
         updateActiveScenarios(newScenarios);
 
         if (showPreview) {
             setPreviewScenario({ ...newScenarios[index], index });
+        }
+    };
+
+    // ⭐ [편의성 1 추가] 모든 컷의 상태창 덮어쓰기 초기화 함수
+    const handleApplyBaseDateToAll = () => {
+        if (window.confirm("현재 설정한 [상태창 기본 설정]으로 이 이벤트의 모든 컷을 통일하시겠습니까?\n(각 컷마다 설정했던 개별 시간 변경은 모두 삭제됩니다.)")) {
+            // 모든 시나리오 컷의 dateOverride를 null로 밀어버려서 무조건 기본 설정을 따르게 만듦
+            const newScenarios = scenarios.map(sc => ({ ...sc, dateOverride: null }));
+            updateActiveScenarios(newScenarios);
+            setEditingDateIndex(null); // 열려있는 편집창도 닫음
         }
     };
 
@@ -832,8 +836,9 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                 <button onClick={addNewEvent} className="event-add-btn">+ 새 이벤트</button>
             </div>
 
-            <div className="editor-main-area">
-                <div className="config-panel">
+<div className="editor-main-area">
+                <div className="config-panel" style={{ display: 'flex' }}>
+                    {/* BGM 설정 영역 */}
                     <div style={{ flex: 1 }}>
                         <h4 className="config-title">🎵 {activeEvent.title} BGM 설정</h4>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -842,8 +847,9 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                         </div>
                     </div>
                     
+                    {/* 📅 상태창 설정 영역 (오른쪽에 나란히 배치) */}
                     <div style={{ flex: 1, borderLeft: '1px dashed #dee2e6', paddingLeft: '20px' }}>
-                        <h4 className="config-title">📅 상태창 설정</h4>
+                        <h4 className="config-title">📅 상태창 설정 (기본 설정)</h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#495057' }}>윗줄 텍스트</span>
@@ -853,10 +859,15 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                                 <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#495057' }}>아랫줄 텍스트</span>
                                 <input type="text" className="input-base" placeholder="예: EPISODE 1 | 첫 만남" value={activeEvent.baseDate.time} onChange={(e) => handleBaseDateChange('time', e.target.value)} />
                             </div>
+                            {/* ⭐ 일괄 적용 버튼 (윗줄/아랫줄 바로 아래 위치) */}
+                            <button onClick={handleApplyBaseDateToAll} style={{ padding: '8px', marginTop: '5px', backgroundColor: '#e7f5ff', color: '#1971c2', border: '1px solid #74c0fc', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>
+                                🔄 이 설정으로 모든 컷의 상태창 통일하기
+                            </button>
                         </div>
                     </div>
                 </div>
-<div className="scenario-list">
+
+                <div className="scenario-list">
                     {scenarios.map((scenario, index) => {
                         const isSelected = previewScenario?.index === index;
                         const effectiveDate = getEffectiveDateForIndex(index); 
@@ -906,22 +917,39 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                             <div key={index} onClick={() => { if(showPreview) setPreviewScenario({ ...scenario, index }); }} className={cardClasses}>
                                 
                                 {/* 1. 왼쪽 사이드바: 분기 설정이 아닐 때만 노출 */}
+{/* 1. 왼쪽 사이드바: 분기 설정이 아닐 때만 노출 */}
                                 <div className="scenario-sidebar">
                                     {scenario.type !== 'choice' && (
                                         <>
+                                            {/* ⭐ 삭제됐던 미리보기 텍스트 복구 */}
                                             <div style={{ fontSize: '10px', color: '#868e96', fontWeight: 'bold', marginBottom: '5px' }}>{effectiveDate.month}</div>
                                             <div style={{ fontSize: '14px', color: '#495057', fontWeight: 'bold' }}>{effectiveDate.time}</div>
-                                            <div style={{ marginTop: '10px', width: '100%' }}>
-                                                <button onClick={(e) => toggleDateEditMode(e, index, scenario, effectiveDate)} style={{ width: '100%', padding: '4px 0', fontSize: '10px', backgroundColor: editingDateIndex === index ? '#2b8a3e' : '#f1f3f5', color: editingDateIndex === index ? '#fff' : '#000', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-                                                    {editingDateIndex === index ? '수정 완료' : '상태창 변경'}
-                                                </button>
-                                                {scenario.dateOverride && editingDateIndex !== index && (
-                                                    <button onClick={(e) => clearDateOverride(e, index)} style={{ width: '100%', marginTop: '5px', padding: '2px 0', fontSize: '10px', backgroundColor: '#fa5252', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>초기화</button>
+                                            
+                                            {/* 버튼들을 너무 길지 않게 왼쪽 정렬(flex-start) */}
+{/* 버튼 영역 */}
+                                            <div style={{ marginTop: '10px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                                
+                                                {/* ⭐ [버그 2 해결] 편집 모드일 때와 아닐 때의 버튼을 완벽히 분리! */}
+                                                {editingDateIndex === index ? (
+                                                    <div style={{ display: 'flex', gap: '5px', width: '100%' }}>
+                                                        <button onClick={(e) => toggleDateEditMode(e, index, scenario, effectiveDate)} style={{ flex: 1, padding: '4px 0', fontSize: '10px', backgroundColor: '#2b8a3e', color: '#fff', border: '1px solid #2b8a3e', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+                                                            수정 완료
+                                                        </button>
+                                                        <button onClick={(e) => clearDateOverride(e, index)} style={{ flex: 1, padding: '4px 0', fontSize: '10px', backgroundColor: '#fa5252', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+                                                            초기화
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <button onClick={(e) => toggleDateEditMode(e, index, scenario, effectiveDate)} style={{ padding: '4px 10px', fontSize: '10px', backgroundColor: '#f1f3f5', color: '#000', border: '1px solid #ced4da', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+                                                        상태창 변경
+                                                    </button>
                                                 )}
+
+                                                {/* 텍스트 입력칸 (수정 모드일 때만 나옴) */}
                                                 {editingDateIndex === index && scenario.dateOverride && (
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '5px' }}>
-                                                        <input type="text" placeholder="윗줄 텍스트" value={scenario.dateOverride.month} onChange={(e) => handleDateOverrideChange(index, 'month', e.target.value)} className="input-base" style={{ fontSize: '10px', padding: '4px' }} onClick={(e) => e.stopPropagation()} />
-                                                        <input type="text" placeholder="아랫줄 텍스트" value={scenario.dateOverride.time} onChange={(e) => handleDateOverrideChange(index, 'time', e.target.value)} className="input-base" style={{ fontSize: '10px', padding: '4px' }} onClick={(e) => e.stopPropagation()} />
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '5px', width: '100%' }}>
+                                                        <input type="text" placeholder="윗줄 텍스트" value={scenario.dateOverride.month} onChange={(e) => handleDateOverrideChange(index, 'month', e.target.value)} className="input-base" style={{ fontSize: '10px', padding: '4px', width: '100%', boxSizing: 'border-box' }} onClick={(e) => e.stopPropagation()} />
+                                                        <input type="text" placeholder="아랫줄 텍스트" value={scenario.dateOverride.time} onChange={(e) => handleDateOverrideChange(index, 'time', e.target.value)} className="input-base" style={{ fontSize: '10px', padding: '4px', width: '100%', boxSizing: 'border-box' }} onClick={(e) => e.stopPropagation()} />
                                                     </div>
                                                 )}
                                             </div>
@@ -1034,10 +1062,23 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                                                 <input type="text" placeholder="대사를 입력하세요..." value={scenario.text} onChange={(e) => handleScenarioChange(index, 'text', e.target.value)} className="input-base" style={{ flex: 1 }} />
                                             </div>
 
-                                            {!scenario.isCg && (
+{!scenario.isCg && (
                                                 <div style={{ display: 'flex', gap: '20px', marginTop: '15px' }}>
-                                                    <ImageSelectorPanel title="🖼️ 초상화 표정 선택" type="portrait" characters={characters} selectedImage={scenario.protagonistImage} onSelect={(imgUrl) => handleScenarioChange(index, 'protagonistImage', imgUrl)} />
-                                                    <ImageSelectorPanel title="🧍 스탠딩 표정 선택" type="standing" characters={characters} selectedImage={scenario.heroineImage} onSelect={(imgUrl) => handleScenarioChange(index, 'heroineImage', imgUrl)} />
+                                                    {/* ⭐ uiState 속성 연동 */}
+                                                    <ImageSelectorPanel 
+                                                        title="🖼️ 초상화 표정 선택" type="portrait" characters={characters} 
+                                                        selectedImage={scenario.protagonistImage} 
+                                                        onSelect={(imgUrl) => handleScenarioChange(index, 'protagonistImage', imgUrl)} 
+                                                        uiState={scenario.portraitUiState}
+                                                        onUiStateChange={(state) => handleScenarioChange(index, 'portraitUiState', state)}
+                                                    />
+                                                    <ImageSelectorPanel 
+                                                        title="🧍 스탠딩 표정 선택" type="standing" characters={characters} 
+                                                        selectedImage={scenario.heroineImage} 
+                                                        onSelect={(imgUrl) => handleScenarioChange(index, 'heroineImage', imgUrl)} 
+                                                        uiState={scenario.standingUiState}
+                                                        onUiStateChange={(state) => handleScenarioChange(index, 'standingUiState', state)}
+                                                    />
                                                 </div>
                                             )}
                                         </>
