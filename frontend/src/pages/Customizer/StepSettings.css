@@ -55,6 +55,46 @@
 }
 
 /* =========================================================
+   🌟 상단 꿀팁 안내문 스타일
+   ========================================================= */
+.title-divider {
+    border: none;
+    border-top: 1px solid #dee2e6;
+    margin: 15px 0;
+}
+
+.settings-tips-wrap {
+    background-color: #e7f5ff; /* 연한 파란색 배경으로 시선 집중 */
+    border-left: 4px solid #1971c2; /* 강조용 왼쪽 띠 */
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 25px; /* 아래 미리보기 창과의 간격 */
+}
+
+/* ⭐ 새로 추가: 분홍색 기능 가이드 박스 */
+.settings-tips-wrap.pink {
+    background-color: #fff0f6; /* 연한 분홍색 배경 */
+    border-left: 4px solid #d6336c; /* 진한 분홍색 띠 */
+    margin-bottom: 25px; /* 아래 미리보기 창과의 간격 */
+}
+.settings-tips {
+    margin: 0;
+    padding-left: 22px;
+    color: #495057;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.settings-tips li {
+    margin-bottom: 6px;
+}
+
+.settings-tips li:last-child {
+    margin-bottom: 0;
+}
+
+
+/* =========================================================
    3. 인게임 화면 내 절대좌표 위치 (레이아웃 모드 분기)
    ========================================================= */
 .ig-calendar-group { position: absolute; left: 13.02%; top: 4.63%; display: flex; align-items: center; gap: 1.3cqw; z-index: 11; }
@@ -125,7 +165,7 @@
 .theme-list-wrap { display: flex; flex-direction: column; gap: 20px; }
 .theme-block { padding: 20px; border-radius: 8px; margin-bottom: 15px; }
 
-/* [메뉴 2] 😎 주인공 전용 스타일 (핑크색 계열로 변경) */
+/* [메뉴 2] ❤️ 주인공 전용 스타일 (핑크색 계열로 변경) */
 .theme-block.protagonist { 
     background-color: #fff0f6; 
     border: 1px solid #ffdeeb; 
@@ -143,7 +183,7 @@
 .char-card-title.narration { color: #f08c00; margin-top: 0; }
 .theme-block.narration .theme-divider { border-top: 1px dashed #ffe066; }
 
-/* [메뉴 4] 🎭 등장인물 전용 스타일 (시원한 하늘색 계열로 변경) */
+/* [메뉴 4] ⭐️ 등장인물 전용 스타일 (시원한 하늘색 계열로 변경) */
 .theme-block.character { 
     background-color: #e7f5ff; 
     border: 1px solid #a5d8ff; 

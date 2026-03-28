@@ -84,7 +84,7 @@ const ImageSelectorPanel = ({ title, type, characters, onSelect, selectedImage, 
             {!galleryMode && (
                 <select value={selectedChar} onChange={(e) => onUiStateChange({ ...uiState, selectedChar: e.target.value })} className="input-base" style={{ width: '100%', marginBottom: '10px', padding: '6px', fontSize: '12px' }}>
                     {characters.map(c => (
-                        <option key={c.id} value={c.id.toString()}>{c.isProtagonist ? '😎' : '🎭'} {c.name || '캐릭터'}</option>
+                        <option key={c.id} value={c.id.toString()}>{c.isProtagonist ? '❤️' : '⭐️'} {c.name || '캐릭터'}</option>
                     ))}
                 </select>
             )}
@@ -665,6 +665,50 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
 
     return (
         <div className="editor-container">
+<div className="editor-header-group">
+        <h2 className="section-title">시나리오 및 스토리 전개 설정</h2>
+        <p className="section-desc">장면에 따른 대사와 연출, 이야기의 흐름을 결정하는 선택지와 분기를 구성해 주세요.</p>
+    </div>
+{/* 🔵 파란색 박스: 뷰어 강조 및 기본 셋팅 가이드 */}
+{/* 🔵 파란색 박스: 뷰어 강조 및 연출 꿀팁 */}
+<div className="settings-tips-wrap" style={{ marginTop: '15px' }}>
+    <ul className="settings-tips">                    
+        {/* 1. 이미지 제거 활용 팁 */}
+        <li>
+            초상화와 스탠딩의 노출 여부를 조합하여 나만의 게임 스타일을 결정할 수 있습니다.
+            <ul style={{ marginTop: '5px', listStyleType: 'circle', paddingLeft: '20px', color: '#495057' }}>
+                <li><strong>클래식 노벨 구조:</strong> 주인공은 '초상화'만, 상대방은 '스탠딩'만 표시해 보세요. 가장 대중적이고 몰입감 있는 표준 비주얼 노벨 구성이 됩니다.</li>
+                <li><strong>스타듀밸리 스타일:</strong> 모든 스탠딩을 제거(🚫)하고 '초상화'만 활용해 보세요. '스타듀밸리'나 클래식 RPG처럼 대화 상대의 얼굴에 집중하는 아기자기한 연출이 가능합니다.</li>
+                <li><strong>감성 텍스트 게임:</strong> 초상화와 스탠딩을 모두 제거(🚫)해 보세요. 오직 배경과 대사만 남겨, 독백이나 소설 같은 서정적인 분위기의 텍스트 어드벤처를 만들 수 있습니다.</li>
+            </ul>
+        </li>
+
+        {/* 2. 상태창 활용 팁 */}
+        <li>
+            상단 [상태창 설정]은 날짜뿐만 아니라 다양한 설정으로 활용할 수 있습니다.
+            <ul style={{ marginTop: '5px', listStyleType: 'none', paddingLeft: '10px', color: '#495057', fontSize: '12px' }}>
+                <li>✦ 메인 목표: 최애로운생활을 공략하기</li>
+                <li>TARGET ━━▶︎ 최애로운생활 | 호감도: ♥♥♡♡♡</li>
+                <li> HP 60/100 | MP ▰▰▰▰▱ </li>
+            </ul>
+            <em style={{ fontSize: '11px', color: '#868e96' }}>(※ 각 컷의 [상태창 변경] 버튼을 통해 대사마다 수치를 실시간으로 바꾸는 연출이 가능!)</em>
+        </li> {/* ← 닫는 태그 추가 */}
+    </ul> {/* ← 닫는 태그 추가 */}
+</div>
+
+            {/* 🌸 분홍색 박스: 하단 액션 버튼 가이드 */}
+            <div className="settings-tips-wrap pink">
+                <ul className="settings-tips">
+                     <li><strong style={{ color: '#e03131', fontSize: '14px' }}>📺 인게임 미리보기 모드 (ON/OFF):</strong> 우측 상단의 스위치를 <strong>[ON]</strong>으로 켜보세요! 작성 중인 컷을 클릭할 때마다 실제 인게임 화면과 똑같이 렌더링되어 즉시 확인할 수 있습니다.</li>
+                    <li><strong>📑 + 새 이벤트 및 🎵 BGM:</strong> 상단에서 이벤트를 추가해 챕터를 나누고, 리스트 맨 위에서 해당 이벤트의 배경음악(BGM)을 설정할 수 있습니다.</li>
+                    <li><strong>📅 상태창 변경:</strong> 컷 왼쪽의 [상태창 변경]을 눌러 시간/장소를 바꾸거나, 상단 [기본 설정]에서 모든 컷의 상태창을 한 번에 덮어씌울 수 있습니다.</li>                  
+                    <li><strong>📋 대사 복사하기:</strong> 현재 컷의 구도(배경, 캐릭터, 표정)를 그대로 복제합니다. 대사만 이어서 작성할 때 <strong>작업 시간을 확 줄여주는 필수 버튼</strong>입니다!</li>
+                    <li><strong>💬 새로운 대사 추가:</strong> 이전 컷의 배경만 유지한 채, 캐릭터와 대사 내용이 완전히 비어있는 기본 컷을 추가합니다.</li>
+                    <li><strong>🖼️ CG 삽입 & 모드:</strong> 화면 전체를 덮는 일러스트 연출을 켭니다. CG 연출이 끝났다면 <strong>[💬 CG 모드 종료]</strong> 버튼을 눌러 다시 일반 대사로 돌아오세요.</li>
+                    <li><strong>🔀 선택지 분기:</strong> 플레이어의 선택에 따라 스토리가 나뉘는 갈림길을 만듭니다. (하나의 이벤트 안에는 하나의 분기만 만들 수 있습니다)</li>
+                    <li><strong>🎬 엔딩:</strong> 각 선택지 루트의 이야기가 끝나는 지점입니다. 엔딩 시 검은 화면에 엔딩 이름이 뜨며 게임이 시작 메뉴로 돌아갑니다.</li>
+                </ul>
+            </div>
             <div className="preview-toggle-wrap">
                 <span style={{ fontWeight: 'bold' }}>📺 인게임 연출 미리보기 모드</span>
                 <label className="toggle-switch-label">
@@ -950,7 +994,7 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                             <div style={{ padding: '12px', backgroundColor: '#e7f5ff', borderLeft: '4px solid #1971c2', borderRadius: '4px', fontSize: '13px', color: '#1864ab', lineHeight: '1.5' }}>
                                                 <strong>💡 화면에 표시될 선택지들을 입력해 주세요. (최대 10개)</strong><br/>
-                                                선택지를 삭제하면 해당 번호로 작성된 컷들도 함께 삭제되며 번호가 당겨집니다.
+                                                각 선택지에 따라 스토리가 루트로 나뉩니다. 🎬엔딩을 넣지 않은 루트들은 자연스럽게 다음 이벤트로 넘어갑니다.
                                             </div>
                                             
                                             {(scenario.options || ['', '']).map((optText, optIdx) => (
@@ -1010,11 +1054,11 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                                             )}
                                             <div style={{ display: 'flex', gap: '10px' }}>
                                                 <select value={scenario.speaker} onChange={(e) => handleScenarioChange(index, 'speaker', e.target.value)} className="input-base" style={{ width: '130px' }}>
-                                                    <option value="PROTAGONIST">😎 {displayProtagonistName}</option>
+                                                    <option value="PROTAGONIST">❤️ {displayProtagonistName}</option>
                                                     <option value="나레이션">📢 나레이션</option>
                                                     {characters.filter(c => !c.isProtagonist).map((c, charIdx) => {
                                                         const defaultName = `등장인물 ${charIdx + 1}`;
-                                                        return <option key={c.id} value={c.name || defaultName}>🎭 {c.name || defaultName}</option>;
+                                                        return <option key={c.id} value={c.name || defaultName}>⭐️ {c.name || defaultName}</option>;
                                                     })}
                                                 </select>
                                                 <input type="text" placeholder="대사를 입력하세요..." value={scenario.text} onChange={(e) => handleScenarioChange(index, 'text', e.target.value)} className="input-base" style={{ flex: 1 }} />

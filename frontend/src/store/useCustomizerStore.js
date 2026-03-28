@@ -8,7 +8,7 @@ const getInitialState = () => ({
     isEditing: false,
     color: '',
     
-// 🎭 모든 등장인물 (0번 인덱스는 항상 주인공으로 고정)
+// ⭐️ 모든 등장인물 (0번 인덱스는 항상 주인공으로 고정)
     characters: [
         { 
             id: 'protagonist', 

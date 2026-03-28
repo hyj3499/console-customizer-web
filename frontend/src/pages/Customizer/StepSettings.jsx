@@ -156,7 +156,7 @@ const MiniPreview = ({ type, frameKey, color, borderColor }) => {
 const CharacterForm = ({ charData, onUpdate, onImageUpload, onRemoveImage, onRemoveChar, totalCount, onImageClick }) => {
   // ⭐ 통합된 characters 배열 안에서 isProtagonist 여부에 따라 알아서 렌더링!
   const isProtagonist = charData.isProtagonist;
-  const typeText = isProtagonist ? '😎 주인공 (Player)' : `🎭 등장인물`;
+  const typeText = isProtagonist ? '❤️ 주인공 (Player)' : `⭐️ 등장인물`;
   const themeClass = isProtagonist ? 'protagonist' : 'character';
 
   const portraits = charData?.portraitImages || [];
@@ -536,6 +536,34 @@ export default function StepSettings() {
       <h2 className="section-title">등장인물 및 스타일 설정</h2>
       <p className="section-desc">주인공과 등장인물의 이름, 일러스트, 폰트 및 UI 디자인을 설정해 주세요.</p>
 
+      <div className="settings-tips-wrap">
+        <ul className="settings-tips">
+                  <li>
+            초상화와 스탠딩의 이미지 사용 여부를 조합하여 나만의 게임 스타일을 결정할 수 있습니다.
+            <ul style={{ marginTop: '5px', listStyleType: 'circle', paddingLeft: '20px', color: '#495057' }}>
+                <li><strong>클래식 노벨 구조:</strong> 주인공은 '초상화'만, 상대방은 '스탠딩'만 사용해 보세요. 클래식한 몰입감 있는 표준 비주얼 노벨 구성이 됩니다.</li>
+                <li><strong>스타듀밸리 스타일:</strong> 주인공/등장인물 모두 '초상화'만 사용해 보세요. '스타듀밸리'나 클래식 RPG처럼 대화 상대의 얼굴에 집중하는 아기자기한 연출이 가능합니다.</li>
+                <li><strong>감성 텍스트 게임:</strong> 주인공/등장인물 모두 이미지를 사용하지 않고 오직 배경과 대사만 남겨, 독백이나 소설 같은 서정적인 분위기의 텍스트 어드벤처를 만들 수 있습니다.</li>
+            </ul>
+        </li>
+          <li>업로드한 스탠딩 이미지는 원본 비율을 유지한 채 높이가 900px에 맞춰 자동으로 조정됩니다.</li>
+          <li>캐릭터의 '이름' 칸을 공백으로 비워두면 이름표 없이 나레이션처럼 출력됩니다. 이를 활용해 사물이나 배경 요소를 대화창 위에 띄우는 등 다양하게 응용해 보세요!</li>
+        </ul>
+      </div>
+
+<div className="settings-tips-wrap pink">
+        <ul className="settings-tips">
+                  <li><strong>➕ 등장인물 추가하기:</strong> [➕ 등장인물 추가하기] 버튼을 눌러 이야기를 함께 이끌어갈 조연들을 최대 10명까지 만들 수 있습니다.</li>
+          <li><strong>🖼️ 초상화 사진 업로드:</strong> 대화창에 표시될 캐릭터의 얼굴(1:1 정사각형)을 업로드하세요. 미리보기 화면에서 프레임과 함께 적용된 모습을 볼 수 있습니다.</li>
+          <li><strong>🧍 스탠딩 사진 업로드:</strong> 화면 중앙에 표시될 캐릭터의 전신/반신 이미지를 업로드하세요. 업로드된 이미지를 클릭하여 미리보기 화면에 즉시 적용할 수 있습니다.</li>
+          <li><strong>📺 미리보기 시점 탭:</strong> 각 캐릭터 탭을 누르면, 하단에서 설정한 전용 폰트와 UI 색상이 적용된 모습을 즉시 확인할 수 있습니다.</li>
+          <li><strong>📐 화면 레이아웃 배치:</strong> '기본 띄움형'은 반신 일러스트에, '바닥 밀착형'은 두상/상반신 일러스트에 잘 어울립니다. 미리보기를 보며 비교해 보세요!</li>
+          <li><strong>➕ 커스텀 폰트 추가:</strong> PC에 저장된 나만의 폰트 파일(.ttf, .otf)을 업로드하여 캐릭터마다 고유한 글씨체를 지정할 수 있습니다.</li>
+          <li><strong>🎵 타이핑 효과음:</strong> [▶️ 듣기] 버튼을 눌러 대사가 출력될 때 나는 소리를 미리 들어보고 캐릭터 성격에 맞게 지정해 보세요.</li>
+  
+        </ul>
+      </div>
+
       {/* 📺 1. 인게임 미리보기 섹션 */}
       <div className="preview-section">
         <div className="preview-header">
@@ -553,7 +581,7 @@ export default function StepSettings() {
               className={`tab-btn ${!isNarration && previewTarget === char.id ? (char.isProtagonist ? 'active-p' : 'active-c') : 'inactive'}`} 
               onClick={() => setPreviewTarget(char.id)}
             >
-              {char.isProtagonist ? '😎' : '🎭'} {char.name || '캐릭터'} 시점
+              {char.isProtagonist ? '❤️' : '⭐️'} {char.name || '캐릭터'} 시점
             </button>
           ))}
         </div>
@@ -679,7 +707,7 @@ export default function StepSettings() {
         {characters.map((char) => (
           <ThemeSettingsBlock 
             key={char.id} 
-            title={`${char.isProtagonist ? '😎' : '🎭'} ${char.name || '캐릭터'} 전용 스타일`} 
+            title={`${char.isProtagonist ? '❤️' : '⭐️'} ${char.name || '캐릭터'} 전용 스타일`} 
             themeClass={char.isProtagonist ? "protagonist" : "character"} 
             fontStyle={char.fontStyle} 
             fontOptions={fontOptions} 
