@@ -1261,16 +1261,20 @@ const getSpeakerName = (speakerId) => {
                                                 <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                     <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#1971c2', backgroundColor: '#e7f5ff', padding: '4px 8px', borderRadius: '4px' }}>🖼️ 이 컷의 배경</label>
                                                     <select value={scenario.bgType || PRESET_BACKGROUNDS[0]?.id} onChange={(e) => handleBgSelectChange(index, e.target.value)} className="input-base" style={{ fontSize: '12px', padding: '6px' }}>
-                                                        <optgroup label="기본 제공 배경">
-                                                            {PRESET_BACKGROUNDS.map(bg => <option key={bg.id} value={bg.id}>{bg.name}</option>)}
+                                                        {/* ⭐ '새로 추가하기'를 맨 위로 올림 */}
+                                                        <optgroup label="새로 추가하기">
+                                                            <option value="custom_new">+ 직접 파일 업로드...</option>
                                                         </optgroup>
+
                                                         {customBackgrounds.length > 0 && (
                                                             <optgroup label="나의 배경 보관함">
                                                                 {customBackgrounds.map(bg => <option key={bg.id} value={bg.id}>{bg.name}</option>)}
                                                             </optgroup>
                                                         )}
-                                                        <optgroup label="새로 추가하기">
-                                                            <option value="custom_new">+ 직접 파일 업로드...</option>
+
+                                                        {/* 기본 제공 배경을 맨 아래로 내림 */}
+                                                        <optgroup label="기본 제공 배경">
+                                                            {PRESET_BACKGROUNDS.map(bg => <option key={bg.id} value={bg.id}>{bg.name}</option>)}
                                                         </optgroup>
                                                     </select>
                                                     <input type="file" accept="image/*" ref={el => fileInputRefs.current[index] = el} onChange={(e) => handleBgUpload(e, index)} style={{ display: 'none' }} />

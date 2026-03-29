@@ -288,20 +288,22 @@ export default function StepStartMenu() {
                                     }}
                                     style={{ flex: 1 }}
                                 >
-                                    <optgroup label="기본 제공 배경">
-                                        {SHARED_BACKGROUNDS.map(bg => (
-                                            <option key={bg.id} value={bg.id}>{bg.name}</option>
-                                        ))}
-                                    </optgroup>
-                                    
-                                    {customBackgrounds.length > 0 && (
-                                        <optgroup label="나의 배경 보관함">
-                                            {customBackgrounds.map(bg => (
-                                                <option key={bg.id} value={bg.id}>📁 {bg.name}</option>
-                                            ))}
-                                        </optgroup>
-                                    )}
-                                </select>
+{/* ⭐ 1. 나의 배경 보관함 (위로 이동) */}
+            {customBackgrounds.length > 0 && (
+                <optgroup label="나의 배경 보관함">
+                    {customBackgrounds.map(bg => (
+                        <option key={bg.id} value={bg.id}>📁 {bg.name}</option>
+                    ))}
+                </optgroup>
+            )}
+
+            {/* ⭐ 2. 기본 제공 배경 (아래로 이동) */}
+            <optgroup label="기본 제공 배경">
+                {SHARED_BACKGROUNDS.map(bg => (
+                    <option key={bg.id} value={bg.id}>{bg.name}</option>
+                ))}
+            </optgroup>
+        </select>
 
                                 <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} style={{ display: 'none' }} />
                                 <button 
