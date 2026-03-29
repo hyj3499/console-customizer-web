@@ -391,21 +391,38 @@ export default function StepEventEditor() {
         }
     };
 
-    const handleBgUpload = (e, index) => {
+const handleBgUpload = (e, index) => {
         const file = e.target.files[0];
-        if (file) {
-            const url = URL.createObjectURL(file);
-            const newId = `custom_bg_${Date.now()}`;
-            const newName = file.name; 
-            addCustomBackground({ id: newId, name: newName, url, file });
+        if (!file) return;
 
-            const newScenarios = [...scenarios];
-            newScenarios[index].bgType = newId;
-            newScenarios[index].bgImage = url;
-            updateActiveScenarios(newScenarios);
-            
-            if (showPreview) setPreviewScenario({ ...newScenarios[index], index });
-        }
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 1920; canvas.height = 1080;
+                const ctx = canvas.getContext('2d');
+                // 16:9 도화지에 강제로 가득 채워 그리기 (늘리기)
+                ctx.drawImage(img, 0, 0, 1920, 1080);
+                
+                canvas.toBlob((blob) => {
+                    const resizedFile = new File([blob], file.name, { type: 'image/jpeg' });
+                    const url = URL.createObjectURL(resizedFile);
+                    const newId = `custom_bg_${Date.now()}`;
+                    
+                    addCustomBackground({ id: newId, name: file.name, url, file: resizedFile });
+
+                    const newScenarios = [...scenarios];
+                    newScenarios[index].bgType = newId;
+                    newScenarios[index].bgImage = url;
+                    updateActiveScenarios(newScenarios);
+                    
+                    if (showPreview) setPreviewScenario({ ...newScenarios[index], index });
+                }, 'image/jpeg', 0.8);
+            };
+        };
+        reader.readAsDataURL(file);
         e.target.value = '';
     };
 
@@ -472,43 +489,52 @@ const addScenarioInput = () => {
     ]);
 };
 
-// 🚨 여기에 아래 함수를 추가해 주세요! 🚨
-    const handleCgUpload = (e) => {
+const handleCgUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        
-        // 1. 임시 URL 생성
-        const objectUrl = URL.createObjectURL(file);
-        
-        // 2. CG 모드 활성화
-        setIsCgMode(true);
-        
-        // 3. 시나리오 데이터 구성 (배너 + 첫 대사)
-        const newScenarios = [...scenarios, 
-            { 
-                type: 'cg_image', 
-                src: objectUrl, 
-                file: file, 
-                branch: currentBranch 
-            },
-            { 
-                type: 'dialog', 
-                branch: currentBranch, 
-                isCg: true, 
-                speaker: defaultSpeaker, 
-                protagonistImage: null, 
-                heroineImage: null, 
-                text: '', 
-                bgImage: objectUrl, 
-                file: file, 
-                bgType: 'custom_cg', 
-                dateOverride: null 
-            }
-        ];
-        
-        updateActiveScenarios(newScenarios);
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 1920; canvas.height = 1080;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, 1920, 1080);
+                
+                canvas.toBlob((blob) => {
+                    const resizedFile = new File([blob], file.name, { type: 'image/jpeg' });
+                    const objectUrl = URL.createObjectURL(resizedFile);
+                    
+                    setIsCgMode(true);
+                    const newScenarios = [...scenarios, 
+                        { 
+                            type: 'cg_image', 
+                            src: objectUrl, 
+                            file: resizedFile, 
+                            branch: currentBranch 
+                        },
+                        { 
+                            type: 'dialog', 
+                            branch: currentBranch, 
+                            isCg: true, 
+                            speaker: defaultSpeaker, 
+                            protagonistImage: null, 
+                            heroineImage: null, 
+                            text: '', 
+                            bgImage: objectUrl, 
+                            file: resizedFile, 
+                            bgType: 'custom_cg', 
+                            dateOverride: null 
+                        }
+                    ];
+                    updateActiveScenarios(newScenarios);
+                }, 'image/jpeg', 0.8);
+            };
+        };
+        reader.readAsDataURL(file);
     };
-    
     
 const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = null) => {
     let newScenarios = [...scenarios];
@@ -584,11 +610,28 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
     updateActiveScenarios(newScenarios);
 };
     
-    const handleInlineCgUpload = (e, index, currentItem) => {
+const handleInlineCgUpload = (e, index, currentItem) => {
         const file = e.target.files[0];
         if (!file) return;
-        const url = URL.createObjectURL(file);
-        insertScenarioAfter(index, currentItem, 'cg_image', { file, url });
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 1920; canvas.height = 1080;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, 1920, 1080);
+                
+                canvas.toBlob((blob) => {
+                    const resizedFile = new File([blob], file.name, { type: 'image/jpeg' });
+                    const url = URL.createObjectURL(resizedFile);
+                    insertScenarioAfter(index, currentItem, 'cg_image', { file: resizedFile, url });
+                }, 'image/jpeg', 0.8);
+            };
+        };
+        reader.readAsDataURL(file);
         e.target.value = '';
     };
 
@@ -777,6 +820,12 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
             </ul>
             <em style={{ fontSize: '11px', color: '#868e96' }}>(※ 각 컷의 [상태창 변경] 버튼을 통해 대사마다 수치를 실시간으로 바꾸는 연출이 가능!)</em>
         </li>
+                            <li>
+                        <p style={{ marginTop: '4px', color: '#495057', fontSize: '12px' }}>
+                            업로드된 CG일러 및 배경 이미지는 <strong>1920x1080(16:9)</strong>으로 자동 조정됩니다. 이미지가 좌우로 늘어나거나 찌그러져 보인다면, 16:9 비율로 이미지를 미리 편집하여 업로드해 주세요!
+                        </p>
+                    </li>
+
                   <li style={{ color: '#e03131', fontWeight: 'bold' }}>
       📱 휴대폰으로 '인게임 미리보기' 확인 시, 기기의 가로 폭이 좁아 레이아웃 배치가 어긋나거나 글씨 외곽선이 제대로 표시되지 않을 수 있습니다. 연출을 정확하게 확인하고 싶으시다면 기기를 [가로모드]로 전환하거나 PC 브라우저를 이용해 주세요.
     </li> {/* ← 닫는 태그 추가 */}

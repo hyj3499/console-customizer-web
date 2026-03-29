@@ -159,7 +159,35 @@ export default function StepStartMenu() {
                 <h2 className="section-title">타이틀 화면 (시작 메뉴) 디자인</h2>
                 <p className="section-desc">게임 접속 시 가장 먼저 보이는 화면을 꾸며주세요.</p>
             </div>
+            {/* 🔵 파란색 박스: 타이틀 화면 연출 꿀팁 */}
+            <div className="settings-tips-wrap" style={{ marginBottom: '15px' }}>
+                <ul className="settings-tips">
+                    <li>
+                        <strong>✨ 게임 로고가 그려진 예쁜 배경 이미지가 있다면?</strong>
+                        <p style={{ marginTop: '4px', color: '#495057', fontSize: '12px' }}>
+                            [제목 텍스트] 칸을 완전히 비워보세요! 내가 직접 만든 예쁜 타이틀 로고 이미지를 배경으로 사용할 수 있습니다.
+                        </p>
+                    </li>
+                    <li>
+                        <p style={{ marginTop: '4px', color: '#495057', fontSize: '12px' }}>
+                            업로드된 배경 이미지는 <strong>1920x1080(16:9)</strong>으로 자동 조정됩니다. 이미지가 좌우로 늘어나거나 찌그러져 보인다면, 16:9 비율로 이미지를 미리 편집하여 업로드해 주세요!
+                        </p>
+                    </li>
 
+                    <li style={{ marginTop: '8px', color: '#e03131', fontWeight: 'bold' }}>
+                        📱 미리보기 화면은 실제 게임 화면(16:9 비율)을 축소해서 보여줍니다. 폰트 크기나 여백이 완벽해 보여도 PC나 모바일 기기 크기에 따라 미세한 차이가 있을 수 있습니다.
+                    </li>
+                </ul>
+            </div>
+
+            {/* 🌸 분홍색 박스: 하단 액션 버튼 및 설정 가이드 */}
+            <div className="settings-tips-wrap pink" style={{ marginBottom: '25px' }}>
+                <ul className="settings-tips">
+                    <li><strong>🖼️ 직접 업로드 & 🗑️ 삭제:</strong> 내 PC에 있는 배경 이미지나 BGM을 직접 올릴 수 있습니다. 사용하지 않는 배경은 [🗑️ 배경 삭제] 버튼을 눌러 보관함에서 지울 수 있습니다.</li>
+                    <li><strong>🎯 정중앙 고정:</strong> 위치가 (X: 50%, Y: 50%)로 즉시 고정됩니다.</li>
+                    <li><strong>💬 메뉴 버튼 문구 변경:</strong> 'NEW GAME', 'LOAD' 같은 영문 버튼이 식상하다면 '새로운 모험', '기억 불러오기' 등 게임 컨셉에 맞는 문구로 바꿀 수 있습니다.</li>
+                </ul>
+            </div>
             {/* 📺 미리보기 모니터 */}
             <div className="win95-monitor-wrap">
                 <div className="win95-title-bar">
