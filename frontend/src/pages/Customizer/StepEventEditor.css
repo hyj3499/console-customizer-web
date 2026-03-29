@@ -130,6 +130,42 @@ div:has(> .editor-container) {
 .win95-preview-monitor.layout-bottom .ig-namebox { top: auto !important; bottom: 23.65%; }
 .win95-preview-monitor.layout-bottom .ig-standing { top: auto !important; bottom: 23.15%; height: 72cqh; }
 
+/* ⭐ [모드 C] 중앙 집중형 (layout-center) - 대화창 기준 완벽 중앙 */
+
+/* 1. 초상화 영역 가로 위치 조절 */
+.win95-preview-monitor.layout-center .ig-portrait-area,
+.preview-container.layout-center .ig-portrait-area { 
+    top: 55%; 
+    transform: translateY(-50%); 
+    left: 11%; /* ⬅️ 이 숫자를 줄이면 더 왼쪽으로 갑니다 (기본값은 약 13%) */
+    bottom: auto; 
+}
+
+/* 2. 대화창 영역 가로 위치 조절 */
+.win95-preview-monitor.layout-center .ig-dialogbox,
+.preview-container.layout-center .ig-dialogbox { 
+    top: 55%; 
+    transform: translateY(-50%); 
+    left: 25%; /* ⬅️ 이 숫자를 줄이면 더 왼쪽으로 갑니다 (기본값은 약 27%) */
+    bottom: auto; 
+}
+
+/* 3. 네임박스 위치 수정 (보통 대화창의 left 시작점과 맞춥니다) */
+.win95-preview-monitor.layout-center .ig-namebox,
+.preview-container.layout-center .ig-namebox { 
+    top: calc(55% - 11.5cqh - 5.4cqh); 
+    left: 25%; /* ⬅️ 대화창(ig-dialogbox)의 left 값과 똑같이 맞추는 걸 추천합니다 */
+    bottom: auto; 
+}
+
+/* 4. 스탠딩: 기존처럼 바닥에 고정 */
+.win95-preview-monitor.layout-center .ig-standing,
+.preview-container.layout-center .ig-standing { 
+    bottom: 0 !important; 
+    top: auto !important; 
+    height: 95cqh !important; 
+}
+
 /* =========================================================
    4. 이벤트 탭 네비게이션
    ========================================================= */

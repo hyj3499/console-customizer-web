@@ -377,7 +377,11 @@ const InGamePreview = ({ previewBg, standingImg, portraitImg, currentGlobalUi, t
   const dialogBoxStyle = { backgroundColor: dAsset.type === 'image' ? 'transparent' : activeStyle.dialogColor, backgroundImage: dAsset.type === 'image' ? `url(${dAsset.src})` : 'none', border: dAsset.type === 'css' ? finalDialogBorder : 'none', borderRadius: dAsset.type === 'css' ? dAsset.borderRadius : '0' };
 
   return (
-    <div className={`preview-container ${currentGlobalUi.layoutMode === 'bottom' ? 'layout-bottom' : 'layout-classic'}`} style={containerStyle}>
+    <div className={`preview-container ${
+    currentGlobalUi.layoutMode === 'bottom' ? 'layout-bottom' : 
+    currentGlobalUi.layoutMode === 'center' ? 'layout-center' : 
+    'layout-classic'
+}`} style={containerStyle}>
       {!isNarration && standingImg && <img src={standingImg} alt="standing" className="ig-standing" />}
 
       <div className="ig-calendar-group">
@@ -678,16 +682,25 @@ const [showTips, setShowTips] = useState(false);
         <div className="layout-toggle-container">
           <label className="input-label">📐 화면 레이아웃 배치</label>
           <div className="layout-card-group">
-            <div className={`layout-card ${currentGlobalUi.layoutMode !== 'bottom' ? 'active' : ''}`} onClick={() => safeSetGlobalUi({ layoutMode: 'classic' })}>
+            {/* 1. 기본 띄움형 */}
+            <div className={`layout-card ${currentGlobalUi.layoutMode !== 'bottom' && currentGlobalUi.layoutMode !== 'center' ? 'active' : ''}`} onClick={() => safeSetGlobalUi({ layoutMode: 'classic' })}>
               <h5>기본 띄움형 (클래식)</h5>
               <p>반신 스탠딩 일러스트에 적합합니다!<br/>캐릭터 이미지가 화면의 맨 아래부터 올라갑니다.</p>
             </div>
+
+            {/* 2. 바닥 밀착형 */}
             <div className={`layout-card ${currentGlobalUi.layoutMode === 'bottom' ? 'active' : ''}`} onClick={() => safeSetGlobalUi({ layoutMode: 'bottom' })}>
               <h5>바닥 밀착형</h5>
-              <p>두상/상반신 일러스트에 적합합니다!<br/>캐릭터 이미지가 대화박스의 맨 위부터 올라갑니다.</p>
+              <p>두상 일러스트를 스탠딩으로 사용할때 적합합니다!<br/>캐릭터 이미지가 대화박스의 맨 위부터 올라갑니다.</p>
+            </div>
+
+            {/* ⭐ 3. 중앙 집중형 (새로 추가) */}
+            <div className={`layout-card ${currentGlobalUi.layoutMode === 'center' ? 'active' : ''}`} onClick={() => safeSetGlobalUi({ layoutMode: 'center' })}>
+              <h5>중앙 집중형</h5>
+              <p>화면 중앙에 대화창이 위치하여 스탠딩 일러를 사용하지 않을때 적합합니다!<br/>스탠딩 일러를 사용할 시 이미지는 화면의 맨 아래부터 올라갑니다.</p>
             </div>
           </div>
-        </div>
+</div>
 
         <div className="global-ui-row">
           <div className="global-ui-col">

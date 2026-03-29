@@ -815,7 +815,9 @@ const getSpeakerName = (speakerId) => {
     
     const previewDate = previewScenario ? getEffectiveDateForIndex(previewScenario.index) : activeEvent.baseDate;
     const isNarration = previewScenario?.speaker === '나레이션';
-    const layoutClass = currentGlobalUi.layoutMode === 'bottom' ? 'layout-bottom' : 'layout-classic';
+    const layoutClass = currentGlobalUi.layoutMode === 'bottom' ? 'layout-bottom' 
+                            : currentGlobalUi.layoutMode === 'center' ? 'layout-center' 
+                            : 'layout-classic';
 
     const currentSpeakerName = previewScenario ? getSpeakerName(previewScenario.speaker) : '';
     const showPreviewNamebox = previewScenario && previewScenario.speaker && !isNarration && currentSpeakerName.trim().length > 0;
