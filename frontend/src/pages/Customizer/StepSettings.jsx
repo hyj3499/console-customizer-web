@@ -329,10 +329,13 @@ const ThemeSettingsBlock = ({ title, themeClass, fontStyle, onUpdate, fontOption
 };
 
 const InGamePreview = ({ previewBg, standingImg, portraitImg, currentGlobalUi, textShadowStr, isNarration, pAsset, nAsset, dAsset, cAsset, activeStyle, renderFontFamily, activeChar }) => {
-  const charName = isNarration ? '' : (activeChar?.name || '알 수 없음');
+  const charName = isNarration ? '' : (activeChar?.name !== undefined ? activeChar.name : '');
+  const showNamebox = !isNarration && charName.trim().length > 0; // 공백이 아닐 때만 true
+
+  // ⭐ 수정됨: 이름이 공백이더라도 대사 출력 문구를 하나로 통일 (' '로 표시되도록 처리)
   const fullText = isNarration 
     ? `나레이션의 대사가 이곳에 출력됩니다. 배경 설명이나 상황을 묘사할 때 네임칸 없이 화면에 깔끔하게 대사만 출력되는 것을 확인할 수 있습니다.` 
-    : `현재 선택된 '${charName}' 캐릭터의 대사가 이곳에 출력됩니다. 초상화 프레임과 스탠딩 일러스트가 동시에 적용된 모습을 확인해 보세요.`;
+    : `현재 선택된 '${charName || ' '}' 캐릭터의 대사가 이곳에 출력됩니다. 초상화 프레임과 스탠딩 일러스트가 동시에 적용된 모습을 확인해 보세요.`;
   
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(true);
@@ -398,7 +401,8 @@ const InGamePreview = ({ previewBg, standingImg, portraitImg, currentGlobalUi, t
         </div>
       )}
 
-      {!isNarration && (
+      {/* 네임박스는 이름이 있을 때만 렌더링 */}
+      {showNamebox && (
         <div className="ig-namebox" style={nameBoxStyle}>
           <span style={{ fontFamily: renderFontFamily, color: activeStyle.color, textShadow: charTextShadowStr }}>{charName}</span>
         </div>
@@ -416,7 +420,6 @@ const InGamePreview = ({ previewBg, standingImg, portraitImg, currentGlobalUi, t
     </div>
   );
 };
-
 // ==============================================================================
 // 3. 메인 부모 컴포넌트
 // ==============================================================================
@@ -553,6 +556,8 @@ export default function StepSettings() {
                     </li>
           <li>업로드한 스탠딩 이미지는 원본 비율을 유지한 채 높이가 900px에 맞춰 자동으로 조정됩니다.</li>
           <li>캐릭터의 '이름' 칸을 공백으로 비워두면 이름표 없이 나레이션처럼 출력됩니다. 이를 활용해 사물이나 배경 요소를 대화창 위에 띄우는 등 다양하게 응용 가능합니다!</li>
+          <li>초상화 레이아웃을 사용하지 않으려면 [기본 사각형] 으로 설정한 후 불투명도를 0%로 바꿔보세요!</li>
+
           <li style={{ color: '#e03131', fontWeight: 'bold' }}>
       📱 휴대폰으로 '인게임 미리보기' 확인 시, 기기의 가로 폭이 좁아 레이아웃 배치가 어긋나거나 글씨 외곽선이 제대로 표시되지 않을 수 있습니다. 연출을 정확하게 확인하고 싶으시다면 기기를 [가로모드]로 전환하거나 PC 브라우저를 이용해 주세요.
     </li>

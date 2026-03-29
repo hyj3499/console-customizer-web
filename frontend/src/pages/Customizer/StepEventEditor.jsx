@@ -82,11 +82,14 @@ const ImageSelectorPanel = ({ title, type, characters, onSelect, selectedImage, 
             </div>
             
             {!galleryMode && (
-                <select value={selectedChar} onChange={(e) => onUiStateChange({ ...uiState, selectedChar: e.target.value })} className="input-base" style={{ width: '100%', marginBottom: '10px', padding: '6px', fontSize: '12px' }}>
-                    {characters.map(c => (
-                        <option key={c.id} value={c.id.toString()}>{c.isProtagonist ? '❤️' : '⭐️'} {c.name || '캐릭터'}</option>
-                    ))}
-                </select>
+<select value={selectedChar} onChange={(e) => onUiStateChange({ ...uiState, selectedChar: e.target.value })} className="input-base" style={{ width: '100%', marginBottom: '10px', padding: '6px', fontSize: '12px' }}>
+    {characters.map(c => {
+        const isBlank = c.name === "";
+        const fallback = c.isProtagonist ? '주인공' : '캐릭터';
+        const displayName = isBlank ? '(이름 공백)' : (c.name || fallback);
+        return <option key={c.id} value={c.id.toString()}>{c.isProtagonist ? '❤️' : '⭐️'} {displayName}</option>;
+    })}
+</select>
             )}
 
             <div className="face-list" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', maxHeight: '140px', overflowY: 'auto', padding: '4px' }}>
@@ -214,8 +217,7 @@ export default function StepEventEditor() {
 
     const currentBranchNum = currentBranch.startsWith('option') ? parseInt(currentBranch.replace('option', '')) : 0;
     const defaultSpeaker = 'PROTAGONIST'; 
-    const displayProtagonistName = protagonist.name || '주인공';
-// ⭐ [버그 1 해결] 이전 컷 상속 로직 제거 -> 없으면 무조건 '기본 설정' 따름
+const displayProtagonistName = protagonist.name === "" ? "(이름 공백)" : (protagonist.name || '주인공');// ⭐ [버그 1 해결] 이전 컷 상속 로직 제거 -> 없으면 무조건 '기본 설정' 따름
     const getEffectiveDateForIndex = (targetIndex) => {
         const targetScenario = scenarios[targetIndex];
         
@@ -761,9 +763,10 @@ const handleInlineCgUpload = (e, index, currentItem) => {
         return char ? char.fontStyle : pFontStyle;
     };
 
-    const getSpeakerName = (speakerId) => {
+const getSpeakerName = (speakerId) => {
         if (!speakerId) return '';
-        if (speakerId === 'PROTAGONIST') return protagonist.name || '주인공';
+        // ⭐ 공백("")을 값으로 인정하도록 !== undefined 검사로 변경
+        if (speakerId === 'PROTAGONIST') return protagonist.name !== undefined ? protagonist.name : '주인공';
         return speakerId; 
     };
 
@@ -789,6 +792,9 @@ const handleInlineCgUpload = (e, index, currentItem) => {
     const previewDate = previewScenario ? getEffectiveDateForIndex(previewScenario.index) : activeEvent.baseDate;
     const isNarration = previewScenario?.speaker === '나레이션';
     const layoutClass = currentGlobalUi.layoutMode === 'bottom' ? 'layout-bottom' : 'layout-classic';
+
+    const currentSpeakerName = previewScenario ? getSpeakerName(previewScenario.speaker) : '';
+    const showPreviewNamebox = previewScenario && previewScenario.speaker && !isNarration && currentSpeakerName.trim().length > 0;
 
     return (
         <div className="editor-container">
@@ -949,18 +955,18 @@ const handleInlineCgUpload = (e, index, currentItem) => {
                                     </div>
                                 )}
                                 
-                                {previewScenario.speaker && !isNarration && (
-                                    <div className="ig-namebox" style={{
-                                        backgroundColor: nAsset.type === 'image' ? 'transparent' : (activeStyle?.nameColor || 'rgba(0,0,0,0.8)'), 
-                                        backgroundImage: nAsset.type === 'image' ? `url(${nAsset.src})` : 'none', 
-                                        border: nAsset.type === 'css' ? finalNameBorder : 'none', 
-                                        borderRadius: nAsset.type === 'css' ? nAsset.borderRadius : '0'
-                                    }}>
-                                        <span style={{ fontFamily: renderFontFamily, color: activeStyle?.color || '#fff', textShadow: activeStyle?.useOutline ? `-1px -1px 0 ${activeStyle.outline}, 1px -1px 0 ${activeStyle.outline}, -1px 1px 0 ${activeStyle.outline}, 1px 1px 0 ${activeStyle.outline}` : 'none', fontSize: '3cqh'}}>
-                                            {getSpeakerName(previewScenario.speaker)}
-                                        </span>
-                                    </div>
-                                )}
+{showPreviewNamebox && (
+        <div className="ig-namebox" style={{
+            backgroundColor: nAsset.type === 'image' ? 'transparent' : (activeStyle?.nameColor || 'rgba(0,0,0,0.8)'), 
+            backgroundImage: nAsset.type === 'image' ? `url(${nAsset.src})` : 'none', 
+            border: nAsset.type === 'css' ? finalNameBorder : 'none', 
+            borderRadius: nAsset.type === 'css' ? nAsset.borderRadius : '0'
+        }}>
+            <span style={{ fontFamily: renderFontFamily, color: activeStyle?.color || '#fff', textShadow: activeStyle?.useOutline ? `-1px -1px 0 ${activeStyle.outline}, 1px -1px 0 ${activeStyle.outline}, -1px 1px 0 ${activeStyle.outline}, 1px 1px 0 ${activeStyle.outline}` : 'none', fontSize: '3cqh'}}>
+                {currentSpeakerName}
+            </span>
+        </div>
+    )}
 
                                 <div className="ig-dialogbox" style={{
                                     backgroundColor: dAsset.type === 'image' ? 'transparent' : (activeStyle?.dialogColor || 'rgba(0,0,0,0.8)'), backgroundImage: dAsset.type === 'image' ? `url(${dAsset.src})` : 'none',
@@ -1249,14 +1255,16 @@ const handleInlineCgUpload = (e, index, currentItem) => {
                                                 </div>
                                             )}
                                             <div style={{ display: 'flex', gap: '10px' }}>
-                                                <select value={scenario.speaker} onChange={(e) => handleScenarioChange(index, 'speaker', e.target.value)} className="input-base" style={{ width: '130px' }}>
-                                                    <option value="PROTAGONIST">❤️ {displayProtagonistName}</option>
-                                                    <option value="나레이션">📢 나레이션</option>
-                                                    {characters.filter(c => !c.isProtagonist).map((c, charIdx) => {
-                                                        const defaultName = `등장인물 ${charIdx + 1}`;
-                                                        return <option key={c.id} value={c.name || defaultName}>⭐️ {c.name || defaultName}</option>;
-                                                    })}
-                                                </select>
+<select value={scenario.speaker} onChange={(e) => handleScenarioChange(index, 'speaker', e.target.value)} className="input-base" style={{ width: '130px' }}>
+        <option value="PROTAGONIST">❤️ {displayProtagonistName}</option>
+        <option value="나레이션">📢 나레이션</option>
+        {characters.filter(c => !c.isProtagonist).map((c, charIdx) => {
+            const defaultName = `등장인물 ${charIdx + 1}`;
+            const actualValue = c.name !== undefined ? c.name : defaultName;
+            const displayName = actualValue === "" ? "(이름 공백)" : actualValue;
+            return <option key={c.id} value={actualValue}>⭐️ {displayName}</option>;
+        })}
+    </select>
                                                 <input type="text" placeholder="대사를 입력하세요..." value={scenario.text} onChange={(e) => handleScenarioChange(index, 'text', e.target.value)} className="input-base" style={{ flex: 1 }} />
                                             </div>
 

@@ -95,7 +95,7 @@ export const generateScriptRpy = (data) => {
 
 // ⭐ 수정: characters 배열에서 주인공을 찾아 이름과 스타일을 가져옵니다.
     const protagonist = (data.characters || []).find(c => c.isProtagonist) || {};
-    const pName = protagonist.name || '주인공';
+    const pName = protagonist.name !== undefined ? protagonist.name : '주인공';
     const pStyle = protagonist.fontStyle || {};
 
     // 1. 주인공 생성 (추출한 pStyle 적용)
@@ -106,10 +106,11 @@ export const generateScriptRpy = (data) => {
     const safeNarrationStyle = data.narrationFontStyle || pStyle;
     script += buildCharacterDef("narration", null, safeNarrationStyle, false);
 
-    // 3. 기타 등장인물 생성 (⭐ 주의: 주인공은 위에서 만들었으므로 필터링해서 제외해야 중복 에러가 안 납니다!)
+// 3. 기타 등장인물 생성
     if (data.characters) {
         data.characters.filter(c => !c.isProtagonist).forEach(char => {
-            if (char.name) {
+            // ⭐ 이름이 공백("")이어도 통과되도록 !== undefined 로 변경
+            if (char.name !== undefined) {
                 script += buildCharacterDef(`char_${char.id}`, char.name, char.fontStyle, false);
             }
         });
