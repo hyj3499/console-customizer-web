@@ -107,7 +107,7 @@ export default function StepEventEditor() {
     const { 
         events, setEvents, activeEventId, setActiveEventId,
         showPreview, setShowPreview, previewScenario, setPreviewScenario,
-        characters, globalUi, customBackgrounds, addCustomBackground,
+        characters, globalUi, customBackgrounds, addCustomBackground,removeCustomBackground,
         narrationFontStyle
     } = useCustomizerStore();
 
@@ -396,7 +396,7 @@ export default function StepEventEditor() {
         if (file) {
             const url = URL.createObjectURL(file);
             const newId = `custom_bg_${Date.now()}`;
-            const newName = `내 배경 ${customBackgrounds.length + 1}`;
+            const newName = file.name; 
             addCustomBackground({ id: newId, name: newName, url, file });
 
             const newScenarios = [...scenarios];
@@ -409,6 +409,28 @@ export default function StepEventEditor() {
         e.target.value = '';
     };
 
+    // ⭐ 커스텀 배경 삭제 핸들러
+    const handleDeleteCustomBg = (bgIdToRemove) => {
+        if (!window.confirm("이 배경을 보관함에서 완전히 삭제하시겠습니까?\n(이 배경을 삭제하면 해당 배경을 사용 중인 모든 대사(시작 메뉴 포함)의 배경 설정이 초기화됩니다.)")) return;
+
+        // 1. 보관함에서 삭제
+        removeCustomBackground(bgIdToRemove);
+
+        // 2. 현재 이벤트 내에서 이 배경을 쓰던 컷들을 기본 배경으로 초기화
+        const newScenarios = scenarios.map(sc => {
+            if (sc.bgType === bgIdToRemove) {
+                return { ...sc, bgType: PRESET_BACKGROUNDS[0]?.id, bgImage: PRESET_BACKGROUNDS[0]?.url };
+            }
+            return sc;
+        });
+        updateActiveScenarios(newScenarios);
+
+        // 3. 미리보기 창이 열려있다면 미리보기 창도 업데이트
+        if (showPreview && previewScenario?.bgType === bgIdToRemove) {
+            setPreviewScenario({ ...previewScenario, bgType: PRESET_BACKGROUNDS[0]?.id, bgImage: PRESET_BACKGROUNDS[0]?.url });
+        }
+    };
+    
 const addScenarioInput = () => {
     // 1. 기본값 준비 (에셋 리스트의 첫 번째)
     const defaultBgId = PRESET_BACKGROUNDS[0]?.id;
@@ -1165,6 +1187,15 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                                                         </optgroup>
                                                     </select>
                                                     <input type="file" accept="image/*" ref={el => fileInputRefs.current[index] = el} onChange={(e) => handleBgUpload(e, index)} style={{ display: 'none' }} />
+                                                    {scenario.bgType?.startsWith('custom_bg_') && (
+            <button 
+                onClick={(e) => { e.stopPropagation(); handleDeleteCustomBg(scenario.bgType); }}
+                style={{ backgroundColor: '#ffe3e3', color: '#e03131', border: '1px solid #ffc9c9', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+                title="이 배경을 보관함에서 삭제합니다"
+            >
+                🗑️ 배경 삭제
+            </button>
+        )}
                                                     {scenario.bgImage && scenario.bgType !== 'custom_new' && <span style={{ fontSize: '12px', color: 'green' }}>✓ 적용됨</span>}
                                                 </div>
                                             )}

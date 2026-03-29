@@ -168,6 +168,9 @@ loadProjectData: (loadedData) => set((state) => ({
     
     setGlobalUi: (ui) => set((state) => ({ globalUi: { ...state.globalUi, ...ui } })),
     addCustomBackground: (bg) => set((state) => ({ customBackgrounds: [...state.customBackgrounds, bg] })),
+    removeCustomBackground: (idToRemove) => set((state) => ({
+      customBackgrounds: state.customBackgrounds.filter(bg => bg.id !== idToRemove)
+  })),
     setCharacters: (chars) => set({ characters: chars }),
     
     addCustomFont: (fontName, url, file) => set((state) => {

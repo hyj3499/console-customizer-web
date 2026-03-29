@@ -343,9 +343,11 @@ screen main_menu():
     tag menu
     add "${startBgUrl}" xysize (1920, 1080)
     
-    text "${t.text || "최애로운 생활"}":
-        font "${safeFont(t.font)}" size ${tSize} color "${rgbaToHex(t.color)}" ${t.useOutline ? `outlines [(2, "${rgbaToHex(t.outlineColor)}", 0, 0)]` : ""}
-        pos (${tX}, ${tY}) anchor (0.5, 0.5) text_align 0.5
+    ${(t.text !== undefined ? t.text : "최애로운 생활") !== "" ? `
+        text "${t.text !== undefined ? t.text : "최애로운 생활"}":
+            font "${safeFont(t.font)}" size ${tSize} color "${rgbaToHex(t.color)}" ${t.useOutline ? `outlines [(2, "${rgbaToHex(t.outlineColor)}", 0, 0)]` : ""}
+            pos (${tX}, ${tY}) anchor (0.5, 0.5) text_align 0.5
+        ` : ""}
         
     frame:
         style "start_menu_frame" 

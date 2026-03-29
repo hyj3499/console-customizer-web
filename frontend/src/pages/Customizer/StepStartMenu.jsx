@@ -5,7 +5,7 @@ import { SHARED_BACKGROUNDS, SHARED_FONT } from '../../assets/assets';
 import './StepStartMenu.css';
 
 export default function StepStartMenu() {
-    const { startMenu, setStartMenu, customFonts } = useCustomizerStore();
+    const { startMenu, setStartMenu, customFonts, customBackgrounds, addCustomBackground, removeCustomBackground} = useCustomizerStore();
     const fileInputRef = useRef(null);
     const bgmInputRef = useRef(null); 
     
@@ -65,7 +65,7 @@ export default function StepStartMenu() {
         updateMenu({ buttons: newButtons });
     };
 
-    // 🖼️ 배경 이미지 업로드 핸들러
+// 🖼️ 배경 이미지 업로드 핸들러
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -82,7 +82,11 @@ export default function StepStartMenu() {
                 canvas.toBlob((blob) => {
                     const resizedFile = new File([blob], file.name, { type: 'image/jpeg' });
                     const previewUrl = URL.createObjectURL(resizedFile);
-                    // ⭐ 수정됨: bgImageName 추가
+                    
+                    // ⭐ 수정 2: 업로드한 이미지를 '나의 배경 보관함' 전역 스토어에도 저장!
+                    const newId = `custom_bg_${Date.now()}`;
+                    addCustomBackground({ id: newId, name: file.name, url: previewUrl, file: resizedFile });
+                    
                     setStartMenu({ bgImage: { file: resizedFile, preview: previewUrl }, bgImageName: file.name });
                 }, 'image/jpeg', 0.8);
             };
@@ -132,6 +136,22 @@ export default function StepStartMenu() {
             else updateMenu({ x: 50, y: 50 });
         }
     };
+    // ⭐ 현재 선택된 배경의 ID를 계산 (콤보박스 및 삭제 버튼 표시에 사용)
+    const selectedBgId = SHARED_BACKGROUNDS.find(bg => bg.url === currentBgUrl)?.id || customBackgrounds.find(bg => bg.url === currentBgUrl)?.id || 'custom';
+
+    // ⭐ 커스텀 배경 삭제 핸들러
+    const handleDeleteCustomBg = (bgIdToRemove) => {
+        if (!window.confirm("이 배경을 보관함에서 완전히 삭제하시겠습니까?\n(이 배경을 삭제하면 해당 배경을 사용 중인 시작 메뉴(대사 포함)의 배경 설정이 초기화됩니다.)")) return;
+
+        // 1. 보관함에서 삭제
+        removeCustomBackground(bgIdToRemove);
+
+        // 2. 만약 현재 시작 메뉴에 적용된 배경이 방금 삭제한 배경이라면 기본 배경으로 롤백
+        if (selectedBgId === bgIdToRemove) {
+            setStartMenu({ bgImage: { file: null, preview: SHARED_BACKGROUNDS[0]?.url }, bgImageName: '' });
+            setUploadedFileName(''); // 로컬 텍스트 상태 초기화
+        }
+    };
 
     return (
         <div className="startmenu-container">
@@ -148,7 +168,7 @@ export default function StepStartMenu() {
                 <div className="monitor-screen">
                     <img src={currentBgUrl} alt="bg" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     <div style={{ position: 'absolute', left: `${title.x}%`, top: `${title.y}%`, transform: 'translate(-50%, -50%)', fontFamily: getFontFamily(title.font), fontSize: `${title.fontSize}cqh`, color: title.color, textShadow: getTextShadow(title.useOutline, title.outlineColor), fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'center', zIndex: 10 }}>
-                        {title.text || "타이틀을 입력하세요"}
+                        {title.text !== undefined ? title.text : "최애로운 생활"}
                     </div>
                     <div style={{ position: 'absolute', left: `${menu.x}%`, top: `${menu.y}%`, transform: 'translate(-50%, -50%)', backgroundColor: hexToRgba(menu.bgColor, menu.bgOpacity), padding: `${menu.padding / 10}cqw`, borderRadius: `0px`, display: 'flex', flexDirection: 'column', gap: '2cqh', alignItems: 'center', border: menu.useBorder ? `2px solid ${menu.borderColor || '#ffffff'}` : 'none', zIndex: 10 }}>
                         {menuButtons.map((text, idx) => (
@@ -170,15 +190,23 @@ export default function StepStartMenu() {
                         {/* ⭐ 배경 선택: 콤보박스 영역 ⭐ */}
                         <div className="form-group" style={{ flex: 1.5 }}>
                             <label className="form-label">배경 이미지 선택</label>
-                            <div style={{ display: 'flex', gap: '10px' }}>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                 <select 
                                     className="form-input" 
-                                    value={SHARED_BACKGROUNDS.find(bg => bg.url === currentBgUrl)?.id || 'custom'}
+                                    value={selectedBgId}
                                     onChange={(e) => {
-                                        const selected = SHARED_BACKGROUNDS.find(bg => bg.id === e.target.value);
-                                        if (selected) {
-                                            setStartMenu({ bgImage: { file: null, preview: selected.url } });
-                                            setUploadedFileName('');
+                                        const val = e.target.value;
+                                        setUploadedFileName(''); 
+                                        
+                                        const preset = SHARED_BACKGROUNDS.find(bg => bg.id === val);
+                                        if (preset) {
+                                            setStartMenu({ bgImage: { file: null, preview: preset.url }, bgImageName: preset.name });
+                                            return;
+                                        }
+                                        
+                                        const custom = customBackgrounds.find(bg => bg.id === val);
+                                        if (custom) {
+                                            setStartMenu({ bgImage: { file: custom.file, preview: custom.url }, bgImageName: custom.name });
                                         }
                                     }}
                                     style={{ flex: 1 }}
@@ -188,7 +216,14 @@ export default function StepStartMenu() {
                                             <option key={bg.id} value={bg.id}>{bg.name}</option>
                                         ))}
                                     </optgroup>
-                                    {uploadedFileName && <option value="custom">📎 업로드됨: {uploadedFileName}</option>}
+                                    
+                                    {customBackgrounds.length > 0 && (
+                                        <optgroup label="나의 배경 보관함">
+                                            {customBackgrounds.map(bg => (
+                                                <option key={bg.id} value={bg.id}>📁 {bg.name}</option>
+                                            ))}
+                                        </optgroup>
+                                    )}
                                 </select>
 
                                 <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} style={{ display: 'none' }} />
@@ -199,11 +234,22 @@ export default function StepStartMenu() {
                                 >
                                     + 직접 업로드
                                 </button>
+
+                                {/* ⭐ 커스텀 배경을 선택했을 때만 나타나는 삭제 버튼 */}
+                                {selectedBgId.startsWith('custom_bg_') && (
+                                    <button 
+                                        onClick={() => handleDeleteCustomBg(selectedBgId)}
+                                        style={{ backgroundColor: '#ffe3e3', color: '#e03131', border: '1px solid #ffc9c9', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap' }}
+                                        title="이 배경을 보관함에서 삭제합니다"
+                                    >
+                                        🗑️ 배경 삭제
+                                    </button>
+                                )}
                             </div>
 
-                            {(uploadedFileName || (typeof startMenu.bgImage === 'string' && startMenu.bgImage.length > 50)) && 
+                            {displayBgName && 
                                 <div className="uploaded-file-name" style={{ marginTop: '5px', fontSize: '12px', color: '#1971c2' }}>
-                                    📎 적용된 이미지: {uploadedFileName || "저장된 배경"}
+                                    📎 적용된 이미지: {displayBgName}
                                 </div>
                             }
                         </div>
@@ -244,20 +290,48 @@ export default function StepStartMenu() {
                     </div>
                 </div>
 
-                {/* 2. 타이틀 설정 */}
+{/* 2. 타이틀 설정 */}
+{/* 2. 타이틀 설정 */}
                 <div className="control-card">
-                    <div className="control-card-title">
-                        <span>✨ 타이틀 (게임 제목) 설정</span>
-                        <label className="checkbox-label"><input type="checkbox" checked={title.x === 50 && title.y === 50} onChange={(e) => handleCenterCheck(true, e.target.checked)} /> 🎯 정중앙</label>
-                    </div>
+                    <div className="control-card-title">✨ 타이틀 (게임 제목) 설정</div>
+                    
+                    {/* 1. 내용 입력 */}
                     <div className="form-row">
-                        <div className="form-group" style={{ flex: 2 }}><label className="form-label">제목 텍스트</label><input type="text" className="form-input" value={title.text} onChange={(e) => updateTitle({ text: e.target.value })} /></div>
-                        <div className="form-group"><label className="form-label">폰트</label><select className="form-input" value={title.font} onChange={(e) => updateTitle({ font: e.target.value })}>{fontOptions.map((opt, i) => <option key={i} value={opt.value}>{opt.name}</option>)}</select></div>
-                        <div className="form-group"><label className="form-label">크기 ({title.fontSize})</label><input type="range" min="2" max="20" step="0.5" value={title.fontSize} onChange={(e) => updateTitle({ fontSize: Number(e.target.value) })} /></div>
+                        <div className="form-group" style={{ flex: 1 }}>
+                            <label className="form-label">제목 텍스트</label>
+                            <input type="text" className="form-input" placeholder="비워두면 화면에 제목이 표시되지 않습니다." value={title.text} onChange={(e) => updateTitle({ text: e.target.value })} />
+                        </div>
                     </div>
+
+                    {/* 2. 폰트 및 색상 */}
                     <div className="form-row form-divider">
-                        <div className="form-group" style={{ flex: 'unset', width: '80px' }}><label className="form-label">색상</label><input type="color" className="color-circle" value={title.color} onChange={(e) => updateTitle({ color: e.target.value })} /></div>
-                        <div className="form-group" style={{ flex: 'unset', width: '180px' }}><label className="checkbox-label"><input type="checkbox" checked={title.useOutline} onChange={(e) => updateTitle({ useOutline: e.target.checked })} /> 글자 외곽선</label>{title.useOutline && <input type="color" className="color-circle" value={title.outlineColor} onChange={(e) => updateTitle({ outlineColor: e.target.value })} />}</div>
+                        <div className="form-group" style={{ flex: 2 }}>
+                            <label className="form-label">폰트</label>
+                            <select className="form-input" value={title.font} onChange={(e) => updateTitle({ font: e.target.value })}>
+                                {fontOptions.map((opt, i) => <option key={i} value={opt.value}>{opt.name}</option>)}
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">크기 ({title.fontSize})</label>
+                            <input type="range" min="2" max="20" step="0.5" value={title.fontSize} onChange={(e) => updateTitle({ fontSize: Number(e.target.value) })} />
+                        </div>
+                        <div className="form-group" style={{ flex: 'unset', width: '80px' }}>
+                            <label className="form-label">글자색</label>
+                            <input type="color" className="color-circle" value={title.color} onChange={(e) => updateTitle({ color: e.target.value })} />
+                        </div>
+                        <div className="form-group" style={{ flex: 'unset', width: '150px' }}>
+                            <label className="checkbox-label"><input type="checkbox" checked={title.useOutline} onChange={(e) => updateTitle({ useOutline: e.target.checked })} /> 글자 외곽선</label>
+                            {title.useOutline && <input type="color" className="color-circle" value={title.outlineColor} onChange={(e) => updateTitle({ outlineColor: e.target.value })} />}
+                        </div>
+                    </div>
+
+                    {/* 3. 위치 조정 (⭐ 정중앙 버튼 이동) */}
+                    <div className="form-row form-divider" style={{ alignItems: 'flex-end' }}>
+                        <div className="form-group" style={{ flex: 'unset', marginRight: '20px', paddingBottom: '8px' }}>
+                            <label className="checkbox-label" style={{ cursor: 'pointer', fontWeight: 'bold', color: '#1971c2' }}>
+                                <input type="checkbox" checked={title.x === 50 && title.y === 50} onChange={(e) => handleCenterCheck(true, e.target.checked)} /> 🎯 정중앙 고정
+                            </label>
+                        </div>
                         <div className="form-group"><label className="form-label">위치 X ({title.x}%)</label><input type="range" min="0" max="100" value={title.x} onChange={(e) => updateTitle({ x: Number(e.target.value) })} /></div>
                         <div className="form-group"><label className="form-label">위치 Y ({title.y}%)</label><input type="range" min="0" max="100" value={title.y} onChange={(e) => updateTitle({ y: Number(e.target.value) })} /></div>
                     </div>
@@ -265,36 +339,63 @@ export default function StepStartMenu() {
 
                 {/* 3. 메뉴 디자인 */}
                 <div className="control-card">
-                    <div className="control-card-title menu-color">
-                        <span>🕹️ 메뉴 (버튼) 디자인</span>
-                        <label className="checkbox-label"><input type="checkbox" checked={menu.x === 50 && menu.y === 50} onChange={(e) => handleCenterCheck(false, e.target.checked)} /> 🎯 정중앙</label>
+                    <div className="control-card-title menu-color">🕹️ 메뉴 (버튼) 디자인</div>
+
+                {/* 1. 내용 입력 */}
+                <div className="form-row">
+                    {["게임 시작", "불러오기", "환경 설정", "게임 종료"].map((label, i) => (
+                        <div key={i} className="form-group" style={{ flex: 1 }}>
+                            <label className="form-label" style={{ color: '#1971c2', fontWeight: 'bold' }}>
+                                {label} 문구
+                            </label>
+                            <input 
+                                type="text" 
+                                className="form-input" 
+                                placeholder={`예: ${label}`}
+                                value={menuButtons[i]} 
+                                onChange={(e) => updateMenuButton(i, e.target.value)} 
+                            />
+                        </div>
+                    ))}
+                </div>
+
+                    {/* 2. 폰트 및 색상 */}
+                    <div className="form-row form-divider">
+                        <div className="form-group" style={{ flex: 2 }}>
+                            <label className="form-label">버튼 폰트</label>
+                            <select className="form-input" value={menu.font} onChange={(e) => updateMenu({ font: e.target.value })}>
+                                {fontOptions.map((opt, i) => <option key={i} value={opt.value}>{opt.name}</option>)}
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">글자 크기 ({menu.fontSize})</label>
+                            <input type="range" min="1" max="10" step="0.5" value={menu.fontSize} onChange={(e) => updateMenu({ fontSize: Number(e.target.value) })} />
+                        </div>
+                        <div className="form-group" style={{ flex: 'unset', width: '80px' }}>
+                            <label className="form-label">글자색</label>
+                            <input type="color" className="color-circle" value={menu.color} onChange={(e) => updateMenu({ color: e.target.value })} />
+                        </div>
+                        <div className="form-group" style={{ flex: 'unset', width: '150px' }}>
+                            <label className="checkbox-label"><input type="checkbox" checked={menu.useOutline} onChange={(e) => updateMenu({ useOutline: e.target.checked })} /> 글자 외곽선</label>
+                            {menu.useOutline && <input type="color" className="color-circle" value={menu.outlineColor} onChange={(e) => updateMenu({ outlineColor: e.target.value })} />}
+                        </div>
                     </div>
-                    <div className="form-row">
-                        <div className="form-group" style={{ flex: 2 }}><label className="form-label">버튼 폰트</label><select className="form-input" value={menu.font} onChange={(e) => updateMenu({ font: e.target.value })}>{fontOptions.map((opt, i) => <option key={i} value={opt.value}>{opt.name}</option>)}</select></div>
-                        <div className="form-group"><label className="form-label">글자 크기 ({menu.fontSize})</label><input type="range" min="1" max="10" step="0.5" value={menu.fontSize} onChange={(e) => updateMenu({ fontSize: Number(e.target.value) })} /></div>
-                        <div className="form-group" style={{ flex: 'unset', width: '80px' }}><label className="form-label">글자색</label><input type="color" className="color-circle" value={menu.color} onChange={(e) => updateMenu({ color: e.target.value })} /></div>
-                        <div className="form-group" style={{ flex: 'unset', width: '150px' }}><label className="checkbox-label"><input type="checkbox" checked={menu.useOutline} onChange={(e) => updateMenu({ useOutline: e.target.checked })} /> 글자 외곽선</label>{menu.useOutline && <input type="color" className="color-circle" value={menu.outlineColor} onChange={(e) => updateMenu({ outlineColor: e.target.value })} />}</div>
-                    </div>
+
+                    {/* 3. 메뉴 전용 박스 디자인 */}
                     <div className="form-row form-divider">
                         <div className="form-group" style={{ flex: 'unset', width: '80px' }}><label className="form-label">배경색</label><input type="color" className="color-circle" value={menu.bgColor} onChange={(e) => updateMenu({ bgColor: e.target.value })} /></div>
                         <div className="form-group"><label className="form-label">불투명도 ({(menu.bgOpacity * 100).toFixed(0)}%)</label><input type="range" min="0" max="1" step="0.05" value={menu.bgOpacity} onChange={(e) => updateMenu({ bgOpacity: Number(e.target.value) })} /></div>
                         <div className="form-group" style={{ flex: 'unset', width: '150px', borderLeft: '1px dashed #dee2e6', paddingLeft: '15px' }}><label className="checkbox-label"><input type="checkbox" checked={menu.useBorder} onChange={(e) => updateMenu({ useBorder: e.target.checked })} /> 박스 테두리</label>{menu.useBorder && <input type="color" className="color-circle" value={menu.borderColor || '#ffffff'} onChange={(e) => updateMenu({ borderColor: e.target.value })} />}</div>
                         <div className="form-group"><label className="form-label">박스 여백 ({menu.padding})</label><input type="range" min="0" max="100" value={menu.padding} onChange={(e) => updateMenu({ padding: Number(e.target.value) })} /></div>
                     </div>
-                    <div className="form-row form-divider">
-                        {[1, 2, 3, 4].map((num, i) => (
-                            <div key={i} className="form-group" style={{ flex: 1 }}>
-                                <label className="form-label">버튼 {num} 텍스트</label>
-                                <input 
-                                    type="text" 
-                                    className="form-input" 
-                                    value={menuButtons[i]} 
-                                    onChange={(e) => updateMenuButton(i, e.target.value)} 
-                                />
-                            </div>
-                        ))}
-                    </div>
-                    <div className="form-row form-divider">
+
+                    {/* 4. 위치 조정 (⭐ 정중앙 버튼 이동) */}
+                    <div className="form-row form-divider" style={{ alignItems: 'flex-end' }}>
+                        <div className="form-group" style={{ flex: 'unset', marginRight: '20px', paddingBottom: '8px' }}>
+                            <label className="checkbox-label" style={{ cursor: 'pointer', fontWeight: 'bold', color: '#1971c2' }}>
+                                <input type="checkbox" checked={menu.x === 50 && menu.y === 50} onChange={(e) => handleCenterCheck(false, e.target.checked)} /> 🎯 정중앙 고정
+                            </label>
+                        </div>
                         <div className="form-group"><label className="form-label">위치 X ({menu.x}%)</label><input type="range" min="0" max="100" value={menu.x} onChange={(e) => updateMenu({ x: Number(e.target.value) })} /></div>
                         <div className="form-group"><label className="form-label">위치 Y ({menu.y}%)</label><input type="range" min="0" max="100" value={menu.y} onChange={(e) => updateMenu({ y: Number(e.target.value) })} /></div>
                     </div>

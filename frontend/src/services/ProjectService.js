@@ -132,19 +132,23 @@ const filesInfo = filesToActuallyUpload.map(item => ({
     // ==============================================================================
     console.log("📄 3단계: JSON 데이터 조립...");
 
-// 💡 2. 가장 중요한 마법! 동일한 지문의 파일은 모두 같은 클라우드 URL로 배급!
-    const getCleanUrl = (item) => {
-        if (!item) return null;
+    // 💡 2. 가장 중요한 마법! 동일한 지문의 파일은 모두 같은 클라우드 URL로 배급!
+const getCleanUrl = (item) => {
+    if (!item) return null;
 
-        // URL 추출 (순수 문자열이거나 객체 안의 preview/url 둘 다 지원)
-        const url = typeof item === 'string' ? item : (item.preview || item.url);
+    // A. 이미 순수 문자열(URL)인 경우
+    if (typeof item === 'string') {
+        if (item.includes('undefined')) return null;
+        if (item.startsWith('data:')) return null; // Base64 차단
+        return item;
+    }
 
-        if (!url) return null;
-        if (url.includes('undefined')) return null;
-        if (url.startsWith('data:')) return null; // Base64 텍스트 찌꺼기 차단
+    // B. 객체 형태인 경우 ({ file, preview, url })
+    const url = item.preview || item.url;
 
-        // 1) 직접 업로드한 파일 (blob:) -> 클라우드 주소로 변환
-        if (url.startsWith('blob:')) {
+    if (url) {
+        // 1) 직접 업로드한 파일 (blob: 또는 data:) -> 클라우드 주소로 변환
+        if (url.startsWith('blob:') || url.startsWith('data:')) {
             const fp = blobToFingerprint[url];
             if (fp && fingerprintToFinalUrl[fp]) {
                 return fingerprintToFinalUrl[fp]; 
@@ -152,10 +156,13 @@ const filesInfo = filesToActuallyUpload.map(item => ({
             return null; // 아직 업로드 안됐거나 에러난 경우
         }
         
-        // 2) 기본 제공 프리셋 경로나 이미 업로드된 클라우드 주소 (https://...) -> 경로 그대로 보존!
+        // 2) 기본 제공 프리셋 경로 (/images/...) -> 경로 그대로 보존!
         return url;
-    };
-    
+    }
+
+    return null;
+};
+
     const eventsToSave = JSON.parse(JSON.stringify(state.events || []));
     eventsToSave.forEach(event => {
         event.bgm = getCleanUrl(event.bgm); 
