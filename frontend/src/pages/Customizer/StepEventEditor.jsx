@@ -115,6 +115,8 @@ export default function StepEventEditor() {
     } = useCustomizerStore();
 
     // 🌟 분리된 구조 통합 처리
+    const [showTips, setShowTips] = useState(false);
+    const [showGuide, setShowGuide] = useState(false);
     const protagonist = characters.find(c => c.isProtagonist) || characters[0] || {};
     const pFontStyle = protagonist.fontStyle || {};
 
@@ -802,55 +804,85 @@ const getSpeakerName = (speakerId) => {
         <h2 className="section-title">시나리오 및 스토리 전개 설정</h2>
         <p className="section-desc">장면에 따른 대사와 연출, 이야기의 흐름을 결정하는 선택지와 분기를 구성해 주세요.</p>
     </div>
-{/* 🔵 파란색 박스: 뷰어 강조 및 기본 셋팅 가이드 */}
-{/* 🔵 파란색 박스: 뷰어 강조 및 연출 꿀팁 */}
-<div className="settings-tips-wrap" style={{ marginTop: '15px' }}>
-    <ul className="settings-tips">                    
-        {/* 1. 이미지 제거 활용 팁 */}
-        <li>
-            초상화와 스탠딩의 노출 여부를 조합하여 나만의 게임 스타일을 결정할 수 있습니다.
-            <ul style={{ marginTop: '5px', listStyleType: 'circle', paddingLeft: '20px', color: '#495057' }}>
-                <li><strong>클래식 노벨 구조:</strong> 주인공은 '초상화'만, 상대방은 '스탠딩'만 상대해 보세요. 클래식한 몰입감 있는 비주얼 노벨 게임이 됩니다.</li>
-                <li><strong>스타듀밸리 스타일:</strong> 모든 스탠딩을 제거(🚫)하고 '초상화'만 활용해 보세요. '스타듀밸리'나 클래식 RPG처럼 대화 상대의 얼굴에 집중할 수 있는 게임이 됩니다.</li>
-                <li><strong>감성 텍스트 게임:</strong> 초상화와 스탠딩을 모두 제거(🚫)해 보세요. 오직 배경과 대사만 남겨, 독백이나 소설 같은 서정적인 분위기의 텍스트 게임을 만들 수 있습니다.</li>
-            </ul>
-        </li>
+{/* 🔵 파란색 박스: 유용한 팁 (접기/펼치기) */}
+            <div 
+                className="settings-tips-wrap" 
+                style={{ padding: showTips ? '15px' : '12px 15px', cursor: showTips ? 'default' : 'pointer', transition: '0.2s', marginTop: '15px' }} 
+                onClick={() => !showTips && setShowTips(true)}
+            >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 'bold', color: '#1971c2', fontSize: '14px' }}>
+                        💡 유용한 연출 팁 보기
+                    </span>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setShowTips(!showTips); }} 
+                        style={{ background: 'none', border: 'none', color: '#1971c2', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', padding: '4px 8px', borderRadius: '4px', backgroundColor: showTips ? 'transparent' : '#e7f5ff' }}
+                    >
+                        {showTips ? '접기 ▲' : '펼치기 ▼'}
+                    </button>
+                </div>
 
-        {/* 2. 상태창 활용 팁 */}
-        <li>
-            상단 [상태창 설정]은 날짜뿐만 아니라 다양한 설정으로 활용할 수 있습니다.
-            <ul style={{ marginTop: '5px', listStyleType: 'none', paddingLeft: '10px', color: '#495057', fontSize: '12px' }}>
-                <li>✦ 메인 목표: 최애로운생활을 공략하기</li>
-                <li>TARGET ━━▶︎ 최애로운생활 | 호감도: ♥♥♡♡♡</li>
-                <li> HP 60/100 | MP ▰▰▰▰▱ </li>
-            </ul>
-            <em style={{ fontSize: '11px', color: '#868e96' }}>(※ 각 컷의 [상태창 변경] 버튼을 통해 대사마다 수치를 실시간으로 바꾸는 연출이 가능!)</em>
-        </li>
-            <li>
-                <p style={{ marginTop: '4px', color: '#495057', fontSize: '12px', lineHeight: '1.5' }}>
-                    업로드된 CG일러 및 배경 이미지는 <strong>1920x1080(16:9)</strong>으로 자동 조정됩니다. 이미지가 좌우로 늘어나거나 찌그러져 보인다면, 상단바의 <strong style={{ color: '#1971c2' }}>[✂️ 이미지 자르기]</strong> 메뉴를 이용해 16:9 비율로 쉽게 편집한 후 업로드해 보세요!
-                </p>
-            </li>
+                {showTips && (
+                    <ul className="settings-tips" style={{ marginTop: '12px', borderTop: '1px dashed #a5d8ff', paddingTop: '12px' }}>
+                        <li>
+                            초상화와 스탠딩의 노출 여부를 조합하여 나만의 게임 스타일을 결정할 수 있습니다.
+                            <ul style={{ marginTop: '5px', listStyleType: 'circle', paddingLeft: '20px', color: '#495057' }}>
+                                <li><strong>클래식 노벨 구조:</strong> 주인공은 '초상화'만, 상대방은 '스탠딩'만 상대해 보세요. 클래식한 몰입감 있는 비주얼 노벨 게임이 됩니다.</li>
+                                <li><strong>스타듀밸리 스타일:</strong> 모든 스탠딩을 제거(🚫)하고 '초상화'만 활용해 보세요. '스타듀밸리'나 클래식 RPG처럼 대화 상대의 얼굴에 집중할 수 있는 게임이 됩니다.</li>
+                                <li><strong>감성 텍스트 게임:</strong> 초상화와 스탠딩을 모두 제거(🚫)해 보세요. 오직 배경과 대사만 남겨, 독백이나 소설 같은 서정적인 분위기의 텍스트 게임을 만들 수 있습니다.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            상단 [상태창 설정]은 날짜뿐만 아니라 다양한 설정으로 활용할 수 있습니다.
+                            <ul style={{ marginTop: '5px', listStyleType: 'none', paddingLeft: '10px', color: '#495057', fontSize: '12px' }}>
+                                <li>✦ 메인 목표: 최애로운생활을 공략하기</li>
+                                <li>TARGET ━━▶︎ 최애로운생활 | 호감도: ♥♥♡♡♡</li>
+                                <li> HP 60/100 | MP ▰▰▰▰▱ </li>
+                            </ul>
+                            <em style={{ fontSize: '11px', color: '#868e96' }}>(※ 각 컷의 [상태창 변경] 버튼을 통해 대사마다 수치를 실시간으로 바꾸는 연출이 가능!)</em>
+                        </li>
+                        <li>
+                            <p style={{ marginTop: '4px', color: '#495057', fontSize: '12px', lineHeight: '1.5' }}>
+                                업로드된 CG일러 및 배경 이미지는 <strong>1920x1080(16:9)</strong>으로 자동 조정됩니다. 이미지가 좌우로 늘어나거나 찌그러져 보인다면, 상단바의 <strong style={{ color: '#1971c2' }}>[✂️ 이미지 자르기]</strong> 메뉴를 이용해 16:9 비율로 쉽게 편집한 후 업로드해 보세요!
+                            </p>
+                        </li>
+                        <li style={{ color: '#e03131', fontWeight: 'bold' }}>
+                            📱 휴대폰으로 '인게임 미리보기' 확인 시, 기기의 가로 폭이 좁아 레이아웃 배치가 어긋나거나 글씨 외곽선이 제대로 표시되지 않을 수 있습니다. 연출을 정확하게 확인하고 싶으시다면 기기를 [가로모드]로 전환하거나 PC 브라우저를 이용해 주세요.
+                        </li>
+                    </ul>
+                )}
+            </div>
 
-                  <li style={{ color: '#e03131', fontWeight: 'bold' }}>
-      📱 휴대폰으로 '인게임 미리보기' 확인 시, 기기의 가로 폭이 좁아 레이아웃 배치가 어긋나거나 글씨 외곽선이 제대로 표시되지 않을 수 있습니다. 연출을 정확하게 확인하고 싶으시다면 기기를 [가로모드]로 전환하거나 PC 브라우저를 이용해 주세요.
-    </li> {/* ← 닫는 태그 추가 */}
-    </ul> {/* ← 닫는 태그 추가 */}
-</div>
+            {/* 🌸 분홍색 박스: 버튼 설명 (접기/펼치기) */}
+            <div 
+                className="settings-tips-wrap pink" 
+                style={{ padding: showGuide ? '15px' : '12px 15px', cursor: showGuide ? 'default' : 'pointer', transition: '0.2s', marginTop: '10px' }} 
+                onClick={() => !showGuide && setShowGuide(true)}
+            >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 'bold', color: '#d6336c', fontSize: '14px' }}>
+                        🕹️ 에디터 버튼 및 기능 설명
+                    </span>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setShowGuide(!showGuide); }} 
+                        style={{ background: 'none', border: 'none', color: '#d6336c', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', padding: '4px 8px', borderRadius: '4px', backgroundColor: showGuide ? 'transparent' : '#fff0f6' }}
+                    >
+                        {showGuide ? '접기 ▲' : '펼치기 ▼'}
+                    </button>
+                </div>
 
-            {/* 🌸 분홍색 박스: 하단 액션 버튼 가이드 */}
-            <div className="settings-tips-wrap pink">
-                <ul className="settings-tips">
-                     <li><strong style={{ color: '#e03131', fontSize: '14px' }}>📺 인게임 미리보기 모드 (ON/OFF):</strong> 우측 상단의 스위치를 <strong>[ON]</strong>으로 켜보세요! 작성 중인 컷을 실제 인게임 화면으로 확인할 수 있습니다. 
-                     스위치를 켰는데도 인게임 화면이 보이지 않으면 대사를 클릭해보세요!</li>
-                    <li><strong>📑 + 새 이벤트 및 🎵 BGM:</strong> 상단에서 이벤트를 추가해 챕터를 나누고, 리스트 맨 위에서 해당 이벤트의 배경음악(BGM)을 설정할 수 있습니다.</li>
-                    <li><strong>📅 상태창 변경:</strong> 컷 왼쪽의 [상태창 변경]을 눌러 설정을 바꾸거나, 상단 [기본 설정]에서 모든 컷의 상태창을 한 번에 덮어씌울 수 있습니다.</li>                  
-                    <li><strong>📋 대사 복사하기:</strong> 현재 컷의 구도(배경, 캐릭터, 표정)를 그대로 복제합니다.</li>
-                    <li><strong>💬 새로운 대사 추가:</strong> 캐릭터와 대사 내용이 비어있는 새로운 컷을 추가합니다.</li>
-                    <li><strong>🖼️ CG 삽입 & 모드:</strong> 화면 전체를 덮는 일러스트 연출을 켭니다. CG 연출이 끝났다면 <strong>[💬 CG 모드 종료]</strong> 버튼을 눌러 다시 일반 대사로 작성할 수 있습니다.</li>
-                    <li><strong>🔀 선택지 분기:</strong> 플레이어의 선택에 따라 스토리가 나뉘는 갈림길을 만듭니다. (하나의 이벤트 안에는 하나의 분기만 만들 수 있습니다)</li>
-                    <li><strong>🎬 엔딩:</strong> 각 선택지 루트의 이야기가 끝나는 지점입니다. 엔딩 시 검은 화면에 엔딩 이름이 뜨며 게임이 시작 메뉴로 돌아갑니다.</li>
-                </ul>
+                {showGuide && (
+                    <ul className="settings-tips" style={{ marginTop: '0', borderTop: '1px dashed #ffc9c9', paddingTop: '12px' }}>
+                        <li><strong style={{ color: '#e03131', fontSize: '14px' }}>📺 인게임 미리보기 모드 (ON/OFF):</strong> 우측 상단의 스위치를 <strong>[ON]</strong>으로 켜보세요! 작성 중인 컷을 실제 인게임 화면으로 확인할 수 있습니다. 스위치를 켰는데도 인게임 화면이 보이지 않으면 대사를 클릭해보세요!</li>
+                        <li><strong>📑 + 새 이벤트 및 🎵 BGM:</strong> 상단에서 이벤트를 추가해 챕터를 나누고, 리스트 맨 위에서 해당 이벤트의 배경음악(BGM)을 설정할 수 있습니다.</li>
+                        <li><strong>📅 상태창 변경:</strong> 컷 왼쪽의 [상태창 변경]을 눌러 설정을 바꾸거나, 상단 [기본 설정]에서 모든 컷의 상태창을 한 번에 덮어씌울 수 있습니다.</li>
+                        <li><strong>📋 대사 복사하기:</strong> 현재 컷의 구도(배경, 캐릭터, 표정)를 그대로 복제합니다.</li>
+                        <li><strong>💬 새로운 대사 추가:</strong> 캐릭터와 대사 내용이 비어있는 새로운 컷을 추가합니다.</li>
+                        <li><strong>🖼️ CG 삽입 & 모드:</strong> 화면 전체를 덮는 일러스트 연출을 켭니다. CG 연출이 끝났다면 <strong>[💬 CG 모드 종료]</strong> 버튼을 눌러 다시 일반 대사로 작성할 수 있습니다.</li>
+                        <li><strong>🔀 선택지 분기:</strong> 플레이어의 선택에 따라 스토리가 나뉘는 갈림길을 만듭니다. (하나의 이벤트 안에는 하나의 분기만 만들 수 있습니다)</li>
+                        <li><strong>🎬 엔딩:</strong> 각 선택지 루트의 이야기가 끝나는 지점입니다. 엔딩 시 검은 화면에 엔딩 이름이 뜨며 게임이 시작 메뉴로 돌아갑니다.</li>
+                    </ul>
+                )}
             </div>
 <div className="preview-toggle-wrap" style={{ marginTop: '10px', padding: '15px', backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #dee2e6', display: 'flex', flexDirection: 'column', gap: '8px' }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
