@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Home from './pages/Home';
+import ImageCropperPage from './pages/ImageCropperPage';
 
 import Customizer from "./pages/Customizer";
 
@@ -14,6 +15,7 @@ export default function App() {
         
         {/* ⭐ 이제 주소창이 /customizer 로 바뀌면 이 페이지를 보여줍니다 */}
         <Route path="/customizer" element={<Customizer />} />
+        <Route path="/cropper" element={<ImageCropperPage />} />
       </Routes>
     </BrowserRouter>
   );

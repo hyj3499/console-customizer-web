@@ -546,6 +546,11 @@ export default function StepSettings() {
                 <li><strong>감성 텍스트 게임:</strong> 주인공/등장인물 모두 이미지를 사용하지 않고 오직 배경과 대사만 남겨, 독백이나 소설 같은 서정적인 분위기의 텍스트 게임을 만들 수 있습니다.</li>
             </ul>
         </li>
+                      <li>
+                        <p style={{ marginTop: '4px', color: '#495057', fontSize: '12px', lineHeight: '1.5' }}>
+                            초상화 이미지는 <strong>정사각형(1:1)</strong>이미지여야 합니다. 상단바의 <strong style={{ color: '#1971c2' }}>[✂️ 이미지 자르기]</strong> 메뉴를 이용해 1:1 비율로 쉽게 편집한 후 업로드해 보세요!
+                        </p>
+                    </li>
           <li>업로드한 스탠딩 이미지는 원본 비율을 유지한 채 높이가 900px에 맞춰 자동으로 조정됩니다.</li>
           <li>캐릭터의 '이름' 칸을 공백으로 비워두면 이름표 없이 나레이션처럼 출력됩니다. 이를 활용해 사물이나 배경 요소를 대화창 위에 띄우는 등 다양하게 응용 가능합니다!</li>
           <li style={{ color: '#e03131', fontWeight: 'bold' }}>

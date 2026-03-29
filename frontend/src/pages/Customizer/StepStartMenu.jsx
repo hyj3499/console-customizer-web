@@ -169,8 +169,8 @@ export default function StepStartMenu() {
                         </p>
                     </li>
                     <li>
-                        <p style={{ marginTop: '4px', color: '#495057', fontSize: '12px' }}>
-                            업로드된 배경 이미지는 <strong>1920x1080(16:9)</strong>으로 자동 조정됩니다. 이미지가 좌우로 늘어나거나 찌그러져 보인다면, 16:9 비율로 이미지를 미리 편집하여 업로드해 주세요!
+                        <p style={{ marginTop: '4px', color: '#495057', fontSize: '12px', lineHeight: '1.5' }}>
+                            업로드된 배경 이미지는 <strong>1920x1080(16:9)</strong>으로 자동 조정됩니다. 이미지가 좌우로 늘어나거나 찌그러져 보인다면, 상단바의 <strong style={{ color: '#1971c2' }}>[✂️ 이미지 자르기]</strong> 메뉴를 이용해 16:9 비율로 쉽게 편집한 후 업로드해 보세요!
                         </p>
                     </li>
 

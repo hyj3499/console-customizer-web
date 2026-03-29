@@ -89,7 +89,7 @@ export default function Header() {
             }}>
                 {/* ⭐ 모든 Link에 onClick={handleNavClick} 추가 */}
                 <Link to="/about" onClick={handleNavClick} style={win95ButtonStyle} className="win95-nav-btn">소개</Link>
-                <Link to="/faq" onClick={handleNavClick} style={win95ButtonStyle} className="win95-nav-btn">FAQ</Link>
+                <Link to="/cropper" onClick={handleNavClick} style={win95ButtonStyle} className="win95-nav-btn">이미지 자르기</Link>
                 <Link to="/notice" onClick={handleNavClick} style={win95ButtonStyle} className="win95-nav-btn">공지</Link>
                 <Link to="/contact" onClick={handleNavClick} style={win95ButtonStyle} className="win95-nav-btn">문의</Link>
             </nav>

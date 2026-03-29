@@ -820,11 +820,11 @@ const handleInlineCgUpload = (e, index, currentItem) => {
             </ul>
             <em style={{ fontSize: '11px', color: '#868e96' }}>(※ 각 컷의 [상태창 변경] 버튼을 통해 대사마다 수치를 실시간으로 바꾸는 연출이 가능!)</em>
         </li>
-                            <li>
-                        <p style={{ marginTop: '4px', color: '#495057', fontSize: '12px' }}>
-                            업로드된 CG일러 및 배경 이미지는 <strong>1920x1080(16:9)</strong>으로 자동 조정됩니다. 이미지가 좌우로 늘어나거나 찌그러져 보인다면, 16:9 비율로 이미지를 미리 편집하여 업로드해 주세요!
-                        </p>
-                    </li>
+            <li>
+                <p style={{ marginTop: '4px', color: '#495057', fontSize: '12px', lineHeight: '1.5' }}>
+                    업로드된 CG일러 및 배경 이미지는 <strong>1920x1080(16:9)</strong>으로 자동 조정됩니다. 이미지가 좌우로 늘어나거나 찌그러져 보인다면, 상단바의 <strong style={{ color: '#1971c2' }}>[✂️ 이미지 자르기]</strong> 메뉴를 이용해 16:9 비율로 쉽게 편집한 후 업로드해 보세요!
+                </p>
+            </li>
 
                   <li style={{ color: '#e03131', fontWeight: 'bold' }}>
       📱 휴대폰으로 '인게임 미리보기' 확인 시, 기기의 가로 폭이 좁아 레이아웃 배치가 어긋나거나 글씨 외곽선이 제대로 표시되지 않을 수 있습니다. 연출을 정확하게 확인하고 싶으시다면 기기를 [가로모드]로 전환하거나 PC 브라우저를 이용해 주세요.
