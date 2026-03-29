@@ -229,13 +229,35 @@ export default function StepEventEditor() {
         setEvents(events.map(ev => ev.id === activeEventId ? { ...ev, ...updates } : ev));
     };
 
+// ⭐ URL에서 파일 이름만 추출하는 함수 (로드 시 필요)
+    const extractNameFromUrl = (url) => {
+        if (typeof url !== 'string') return null;
+        try {
+            const parts = url.split('/');
+            const lastPart = parts[parts.length - 1];
+            return decodeURIComponent(lastPart).split('_').pop();
+        } catch (e) {
+            return "저장된 오디오";
+        }
+    };
+
+    // ⭐ 수정됨: 이벤트 BGM 업로드 (bgmName 저장 추가)
     const handleEventBgmUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
             updateActiveEvent({ 
                 bgm: URL.createObjectURL(file), 
-                bgmFile: file                  
+                bgmFile: file,
+                bgmName: file.name
             });
+        }
+        e.target.value = ''; // 같은 파일 다시 올릴 수 있게 초기화
+    };
+
+    // ⭐ 추가됨: 이벤트 BGM 삭제
+    const handleEventBgmClear = () => {
+        if (window.confirm("이 이벤트의 BGM을 삭제하시겠습니까?")) {
+            updateActiveEvent({ bgm: null, bgmFile: null, bgmName: '' });
         }
     };
     
@@ -914,9 +936,29 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
                     {/* BGM 설정 영역 */}
                     <div className="config-section">
                         <h4 className="config-title">🎵 {activeEvent.title} BGM 설정</h4>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                            <input type="file" accept="audio/*" onChange={handleEventBgmUpload} />
-                            {activeEvent.bgm && <audio src={activeEvent.bgm} controls style={{ height: '30px' }} />}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                {/* 기본 input 대신 예쁜 버튼으로 변경 */}
+                                <input type="file" accept="audio/*" id={`event-bgm-${activeEvent.id}`} onChange={handleEventBgmUpload} style={{ display: 'none' }} />
+                                <button onClick={() => document.getElementById(`event-bgm-${activeEvent.id}`).click()} className="sidebar-btn" style={{ width: 'auto', padding: '6px 15px', backgroundColor: '#f1f3f5', border: '1px solid #ced4da', fontWeight: 'bold', fontSize: '12px' }}>
+                                    🎵 오디오 선택
+                                </button>
+                                {activeEvent.bgm && <audio src={activeEvent.bgm} controls style={{ height: '30px' }} />}
+                            </div>
+
+                            {/* ⭐ BGM 이름 및 삭제 버튼 (세이브 로드 시에도 작동) */}
+                            {(activeEvent.bgmName || activeEvent.bgm) && (
+                                <div className="uploaded-file-name" style={{ fontSize: '12px', color: '#d6336c', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff0f6', padding: '6px 10px', borderRadius: '4px' }}>
+                                    <span>🎶 BGM: {activeEvent.bgmName || extractNameFromUrl(activeEvent.bgm)}</span>
+                                    <button 
+                                        onClick={handleEventBgmClear} 
+                                        style={{ background: 'transparent', border: 'none', color: '#fa5252', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', padding: '0 5px' }}
+                                        title="BGM 삭제"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                     
