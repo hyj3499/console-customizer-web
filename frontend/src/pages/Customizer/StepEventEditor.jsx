@@ -758,9 +758,12 @@ const handleInlineCgUpload = (e, index, currentItem) => {
         updateActiveScenarios(newScenarios);
     };
 
-    const getActiveSpeakerStyle = (speakerId) => {
+const getActiveSpeakerStyle = (speakerId) => {
         if (speakerId === '나레이션') return safeNarrationStyle;
-        if (!speakerId || speakerId === 'PROTAGONIST') return pFontStyle;
+        if (speakerId === 'PROTAGONIST') return pFontStyle;
+        // 빈 문자열("")도 정상적인 이름으로 취급하도록 조건 수정
+        if (speakerId === null || speakerId === undefined) return pFontStyle;
+        
         const char = characters.find(c => c.name === speakerId);
         return char ? char.fontStyle : pFontStyle;
     };
@@ -772,15 +775,34 @@ const getSpeakerName = (speakerId) => {
         return speakerId; 
     };
 
+    // 선택된 초상화 이미지(URL)가 어떤 캐릭터의 것인지 주인을 찾아 스타일을 반환
+    const getPortraitOwnerStyle = (imageUrl) => {
+        if (!imageUrl) return pFontStyle; // 이미지가 없으면 기본값(주인공)
+        
+        const owner = characters.find(char => 
+            char.portraitImages?.some(img => {
+                const src = typeof img === 'object' ? (img.preview || img.url) : img;
+                return src === imageUrl;
+            })
+        );
+        return owner ? (owner.fontStyle || pFontStyle) : pFontStyle;
+    };
+
+// 대화창/네임박스용 스타일 (화자 기준)
     const activeStyle = previewScenario ? getActiveSpeakerStyle(previewScenario.speaker) : pFontStyle;
+    
+    // ⭐ 초상화 프레임용 스타일 (선택된 이미지의 주인 기준)
+    const portraitStyle = previewScenario ? getPortraitOwnerStyle(previewScenario.protagonistImage) : pFontStyle;
+
     const renderFontFamily = activeStyle?.font || currentGlobalUi?.systemFont || 'sans-serif';
 
     const dAsset = (UI_ASSETS.dialog[activeStyle?.dialogFrame] || UI_ASSETS.dialog.simple)(activeStyle?.dialogColor, activeStyle?.dialogBorderColor);
     const nAsset = (UI_ASSETS.namebox[activeStyle?.nameFrame] || UI_ASSETS.namebox.simple)(activeStyle?.nameColor, activeStyle?.nameBorderColor);
     const cAsset = (UI_ASSETS.calendar[currentGlobalUi.calendarFrame] || UI_ASSETS.calendar.none)(currentGlobalUi.calendarColor); 
 
-    const pAsset = (UI_ASSETS.portrait[pFontStyle?.portraitStyle] || UI_ASSETS.portrait.square)(pFontStyle?.portraitColor, pFontStyle?.portraitBorderColor);
-    const finalPortraitBorder = pFontStyle?.usePortraitBorder === false ? 'none' : (pAsset ? pAsset.border : 'none');
+    // ⭐ pAsset이 activeStyle이 아닌 portraitStyle을 참조하도록 수정!
+    const pAsset = (UI_ASSETS.portrait[portraitStyle?.portraitStyle] || UI_ASSETS.portrait.square)(portraitStyle?.portraitColor, portraitStyle?.portraitBorderColor);
+    const finalPortraitBorder = portraitStyle?.usePortraitBorder === false ? 'none' : (pAsset ? pAsset.border : 'none');
 
     const getCalendarTextShadow = () => {
         if (!currentGlobalUi.calendarTextUseOutline) return 'none';
@@ -973,7 +995,7 @@ const getSpeakerName = (speakerId) => {
                                         <div style={{
                                             position: 'absolute', width: '100%', height: '100%', 
                                             zIndex: 2, 
-                                            backgroundColor: pAsset.type === 'image' ? 'transparent' : (pFontStyle.portraitColor || 'rgba(255,182,193,0.8)'),
+                                            backgroundColor: pAsset.type === 'image' ? 'transparent' : (portraitStyle?.portraitColor || 'rgba(255,182,193,0.8)'),
                                             WebkitMaskImage: pAsset.type === 'image' ? `url("${pAsset.mask}")` : 'none', 
                                             maskImage: pAsset.type === 'image' ? `url("${pAsset.mask}")` : 'none',
                                             WebkitMaskSize: '100% 100%', maskSize: '100% 100%', 
