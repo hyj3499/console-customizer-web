@@ -131,11 +131,26 @@ export const generateScreensRpy = (data) => {
     const calText = rgbaToHex(ui.calendarTextColor);
     const calLine = rgbaToHex(ui.calendarTextOutlineColor);
     
-    const isBottomMode = ui.layoutMode === 'bottom';
-    const dialog_y = isBottomMode ? 830 : 780;
-    const portrait_y = isBottomMode ? 830 : 780;
-    const namebox_y = isBottomMode ? 775 : 725;
+// ⭐ 레이아웃 모드에 따른 세로 위치(Y) 및 기준점(Anchor) 계산
+    const layoutMode = ui.layoutMode || 'classic';
+    let dialog_y = "780";
+    let dialog_anchor = "0.0";
+    let portrait_y = "780";
+    let portrait_anchor = "0.0";
+    let namebox_y = "725";
 
+    if (layoutMode === 'bottom') {
+        dialog_y = "830";
+        portrait_y = "830";
+        namebox_y = "775";
+    } else if (layoutMode === 'center') {
+        // 중앙 집중형: 화면의 55% 지점 배치 (에디터 CSS와 동일하게 맞춤)
+        dialog_y = "0.55";         
+        dialog_anchor = "0.5";    // 렌파이에서 중앙 정렬을 위해 0.5 사용
+        portrait_y = "0.55";
+        portrait_anchor = "0.5";
+        namebox_y = "415";        // 대화창 위쪽 적절한 위치 (1080p 기준 계산값)
+    }
     const t = start.title || {};
     const m = start.menu || {};
     const startBgUrl = start.bgImage ? getFileName(start.bgImage) : "bg_title.png";
@@ -308,29 +323,30 @@ screen say(who, what):
         textbutton "저장하기" action ShowMenu('save') text_style "ig_sysmenu_text" style "ig_sysmenu_button"
         textbutton "불러오기" action ShowMenu('load') text_style "ig_sysmenu_text" style "ig_sysmenu_button"
         textbutton "설정" action ShowMenu('preferences') text_style "ig_sysmenu_text" style "ig_sysmenu_button"
+
     if getattr(store, "current_p_image", "") != "":
         fixed:
-            xpos ui_x ypos ${portrait_y} xysize (face_size, face_size)
+            # ⭐ ypos 뒤에 yanchor ${portrait_anchor} 가 반드시 들어가야 합니다.
+            xpos ui_x ypos ${portrait_y} yanchor ${portrait_anchor} xysize (face_size, face_size)
             add ${getPortraitBgStr()}
             add ${portraitImageCode} align(0.5, 0.5)
 
     window:
         id "window"
-        xpos box_x ypos ${dialog_y} xsize tb_w ysize tb_h
-        # ⭐ 수정: 대사 시작 위치를 미리보기(padding: 3cqh 4cqw)와 픽셀 단위로 똑같이 맞춤
+        # ⭐ ypos 뒤에 yanchor ${dialog_anchor} 가 반드시 들어가야 합니다.
+        xpos box_x ypos ${dialog_y} yanchor ${dialog_anchor} xsize tb_w ysize tb_h
         text what id "what":
             size 32
-            pos (77, 32)       # 가로 77px(4cqw), 세로 32px(3cqh) 여백
-            xsize (tb_w - 154) # 오른쪽 여백도 동일하게 남기기 위해 너비 조절
+            pos (77, 32)
+            xsize (tb_w - 154)
 
     if who is not None:
         window:
             id "namebox"
             xpos box_x ypos ${namebox_y}
-            # ⭐ 수정: 고정 크기(xysize)를 지우고, 글자 수에 따라 동적으로 늘어나게 설정
-            xminimum 134           # 최소 너비 (미리보기의 7cqw)
-            yminimum 58 ymaximum 58 # 높이는 58px(5.4cqh)로 고정
-            padding (19, 0, 19, 0)  # 좌우 여백 (미리보기의 1cqw)
+            xminimum 134           
+            yminimum 58 ymaximum 58 
+            padding (19, 0, 19, 0)
             
             text who id "who":
                 size 32
