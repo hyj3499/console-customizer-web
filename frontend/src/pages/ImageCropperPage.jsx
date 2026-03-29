@@ -126,21 +126,38 @@ export default function ImageCropperPage() {
     };
 
 return (
-        <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px' }}>
-            <h2 style={{ color: '#1971c2', borderBottom: '2px solid #e7f5ff', paddingBottom: '10px' }}>✂️ 간편 이미지 자르기 도구</h2>
-            <p style={{ color: '#868e96', fontSize: '14px' }}>배경이나 CG 일러스트를 원하는 비율로 쉽게 자를 수 있습니다.</p>
+        <div className="cropper-page-container">
+            {/* ⭐ 모바일 반응형 처리를 위한 내부 스타일 추가 */}
+            <style>{`
+                .cropper-page-container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+                .cropper-layout { display: flex; gap: 30px; margin-top: 20px; align-items: flex-start; }
+                .cropper-viewer { flex: 1; background-color: #f8f9fa; border: 2px dashed #ced4da; border-radius: 8px; min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; width: 100%; box-sizing: border-box; overflow: hidden; }
+                .cropper-controls { width: 300px; display: flex; flex-direction: column; gap: 20px; flex-shrink: 0; }
+                
+                /* 📱 모바일 최적화 (768px 이하일 때 세로 배치로 변경) */
+                @media screen and (max-width: 768px) {
+                    .cropper-page-container { padding: 15px 10px; }
+                    .cropper-layout { flex-direction: column; gap: 15px; }
+                    .cropper-viewer { min-height: 300px; padding: 10px; border-width: 1.5px; }
+                    .cropper-controls { width: 100%; }
+                    .aspect-inputs { justify-content: center; } /* 모바일에서 비율 입력창 가운데 정렬 */
+                }
+            `}</style>
 
-            <div style={{ display: 'flex', gap: '30px', marginTop: '20px', alignItems: 'flex-start' }}>
+            <h2 style={{ color: '#1971c2', borderBottom: '2px solid #e7f5ff', paddingBottom: '10px', fontSize: '20px', margin: '0 0 10px 0' }}>✂️ 간편 이미지 자르기 도구</h2>
+            <p style={{ color: '#868e96', fontSize: '13px', margin: '0 0 15px 0' }}>배경이나 CG 일러스트를 원하는 비율로 쉽게 자를 수 있습니다.</p>
+
+            <div className="cropper-layout">
                 
                 {/* ⬅️ 왼쪽: 이미지 뷰어 영역 */}
-                <div style={{ flex: 1, backgroundColor: '#f8f9fa', border: '2px dashed #ced4da', borderRadius: '8px', minHeight: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px' }}>
+                <div className="cropper-viewer">
                     {!imgSrc ? (
-                        <div style={{ margin: 'auto', textAlign: 'center' }}>
-                            <label style={{ cursor: 'pointer', backgroundColor: '#1971c2', color: '#fff', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold' }}>
+                        <div style={{ textAlign: 'center' }}>
+                            <label style={{ cursor: 'pointer', backgroundColor: '#1971c2', color: '#fff', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', display: 'inline-block' }}>
                                 📁 이미지 파일 업로드
                                 <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
                             </label>
-                            <p style={{ marginTop: '15px', color: '#adb5bd' }}>버튼을 눌러 이미지를 선택하세요</p>
+                            <p style={{ marginTop: '15px', color: '#adb5bd', fontSize: '13px' }}>버튼을 눌러 이미지를 선택하세요</p>
                         </div>
                     ) : (
                         <ReactCrop
@@ -148,19 +165,19 @@ return (
                             onChange={(c) => setCrop(c)}
                             onComplete={(c) => setCompletedCrop(c)}
                             aspect={aspectX / aspectY}
-                            style={{ maxWidth: '100%', maxHeight: '600px' }}
+                            style={{ maxWidth: '100%', maxHeight: '60vh' }}
                         >
-                            <img ref={imgRef} src={imgSrc} alt="Upload" onLoad={onImageLoad} style={{ maxWidth: '100%', maxHeight: '600px', objectFit: 'contain' }} />
+                            <img ref={imgRef} src={imgSrc} alt="Upload" onLoad={onImageLoad} style={{ maxWidth: '100%', maxHeight: '60vh', objectFit: 'contain' }} />
                         </ReactCrop>
                     )}
                 </div>
 
                 {/* ➡️ 오른쪽: 컨트롤 패널 */}
-                <div style={{ width: '300px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div className="cropper-controls">
                     
                     <div style={{ backgroundColor: '#fff', border: '1px solid #dee2e6', padding: '20px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
                         <h4 style={{ margin: '0 0 15px 0', color: '#495057' }}>📐 비율 설정</h4>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div className="aspect-inputs" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <input 
                                 type="number" value={aspectX} min="1" 
                                 onChange={(e) => handleAspectChange('x', e.target.value)} 
@@ -173,9 +190,9 @@ return (
                                 style={{ width: '60px', padding: '8px', textAlign: 'center', border: '1px solid #ced4da', borderRadius: '4px' }} 
                             />
                         </div>
-                        <div style={{ marginTop: '10px', display: 'flex', gap: '5px' }}>
-                            <button onClick={() => { handleAspectChange('x', 16); handleAspectChange('y', 9); }} style={{ padding: '4px 8px', fontSize: '12px', cursor: 'pointer' }}>16:9 (배경용)</button>
-                            <button onClick={() => { handleAspectChange('x', 1); handleAspectChange('y', 1); }} style={{ padding: '4px 8px', fontSize: '12px', cursor: 'pointer' }}>1:1</button>
+                        <div className="aspect-inputs" style={{ marginTop: '15px', display: 'flex', gap: '8px' }}>
+                            <button onClick={() => { handleAspectChange('x', 16); handleAspectChange('y', 9); }} style={{ flex: 1, padding: '6px 8px', fontSize: '12px', cursor: 'pointer', backgroundColor: '#f1f3f5', border: '1px solid #ced4da', borderRadius: '4px', fontWeight: 'bold', color: '#495057' }}>16:9 (배경)</button>
+                            <button onClick={() => { handleAspectChange('x', 1); handleAspectChange('y', 1); }} style={{ flex: 1, padding: '6px 8px', fontSize: '12px', cursor: 'pointer', backgroundColor: '#f1f3f5', border: '1px solid #ced4da', borderRadius: '4px', fontWeight: 'bold', color: '#495057' }}>1:1 (얼굴)</button>
                         </div>
                     </div>
 
@@ -183,12 +200,12 @@ return (
                         <button 
                             onClick={handleCropImage} 
                             disabled={!imgSrc}
-                            style={{ padding: '12px', backgroundColor: imgSrc ? '#20c997' : '#e9ecef', color: imgSrc ? '#fff' : '#adb5bd', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: imgSrc ? 'pointer' : 'not-allowed', fontSize: '16px' }}
+                            style={{ padding: '12px', backgroundColor: imgSrc ? '#20c997' : '#e9ecef', color: imgSrc ? '#fff' : '#adb5bd', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: imgSrc ? 'pointer' : 'not-allowed', fontSize: '15px', transition: '0.2s' }}
                         >
                             ✂️ 영역만큼 이미지 자르기
                         </button>
                         
-                        <label style={{ textAlign: 'center', cursor: 'pointer', color: '#495057', fontSize: '14px', textDecoration: 'underline', marginTop: '10px' }}>
+                        <label style={{ textAlign: 'center', cursor: 'pointer', color: '#495057', fontSize: '13px', textDecoration: 'underline', marginTop: '5px' }}>
                             다른 이미지 업로드하기...
                             <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
                         </label>
@@ -197,13 +214,13 @@ return (
                     {/* 자르기 결과 미리보기 및 저장 */}
                     {croppedImgUrl && (
                         <div style={{ marginTop: '10px', padding: '15px', backgroundColor: '#e7f5ff', borderRadius: '8px', border: '1px solid #a5d8ff', textAlign: 'center' }}>
-                            <h4 style={{ margin: '0 0 10px 0', color: '#1971c2' }}>✨ 결과물 미리보기</h4>
+                            <h4 style={{ margin: '0 0 10px 0', color: '#1971c2', fontSize: '15px' }}>✨ 결과물 미리보기</h4>
                             <img src={croppedImgUrl} alt="Cropped" style={{ maxWidth: '100%', borderRadius: '4px', border: '1px solid #ced4da', marginBottom: '15px' }} />
                             <button 
                                 onClick={handleSaveImage}
-                                style={{ width: '100%', padding: '12px', backgroundColor: '#1971c2', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
+                                style={{ width: '100%', padding: '12px', backgroundColor: '#1971c2', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '15px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
                             >
-                                💾 PC에 저장하기
+                                💾 저장하기
                             </button>
                         </div>
                     )}
