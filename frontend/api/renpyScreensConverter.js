@@ -136,10 +136,11 @@ export const generateScreensRpy = (data) => {
     const portrait_y = isBottomMode ? 830 : 780;
     const namebox_y = isBottomMode ? 775 : 725;
 
-    // ... (startMenu 관련 변수들 생략 - 원본 유지) ...
     const t = start.title || {};
     const m = start.menu || {};
     const startBgUrl = start.bgImage ? getFileName(start.bgImage) : "bg_title.png";
+    
+    const mButtons = m.buttons || ['NEW GAME', 'LOAD', 'SETTING', 'EXIT'];
 
     const tSize = Math.round((t.fontSize !== undefined ? t.fontSize : 8) * 10.8);
     const mSize = Math.round((m.fontSize !== undefined ? m.fontSize : 4) * 10.8);
@@ -352,10 +353,10 @@ screen main_menu():
         
         vbox:
             spacing ${mSpacing} align (0.5, 0.5)
-            textbutton "NEW GAME" action Start() style "start_menu_button" text_style "start_menu_button_text" xalign 0.5
-            textbutton "LOAD" action ShowMenu("load") style "start_menu_button" text_style "start_menu_button_text" xalign 0.5
-            textbutton "SETTING" action ShowMenu("preferences") style "start_menu_button" text_style "start_menu_button_text" xalign 0.5
-            textbutton "EXIT" action Quit(confirm=not main_menu) style "start_menu_button" text_style "start_menu_button_text" xalign 0.5
+            textbutton "${mButtons[0]}" action Start() style "start_menu_button" text_style "start_menu_button_text" xalign 0.5
+            textbutton "${mButtons[1]}" action ShowMenu("load") style "start_menu_button" text_style "start_menu_button_text" xalign 0.5
+            textbutton "${mButtons[2]}" action ShowMenu("preferences") style "start_menu_button" text_style "start_menu_button_text" xalign 0.5
+            textbutton "${mButtons[3]}" action Quit(confirm=not main_menu) style "start_menu_button" text_style "start_menu_button_text" xalign 0.5
 `;
     return rpy;
 };

@@ -55,6 +55,16 @@ export default function StepStartMenu() {
     const updateTitle = (updates) => setStartMenu({ title: { ...title, ...updates } });
     const updateMenu = (updates) => setStartMenu({ menu: { ...menu, ...updates } });
 
+    // 예전 세이브 파일을 불러왔을 때를 대비한 기본 버튼 텍스트 설정
+    const menuButtons = menu.buttons || ['NEW GAME', 'LOAD', 'SETTING', 'EXIT'];
+
+    // 특정 버튼의 텍스트만 콕 집어서 바꿔주는 함수
+    const updateMenuButton = (index, newValue) => {
+        const newButtons = [...menuButtons];
+        newButtons[index] = newValue;
+        updateMenu({ buttons: newButtons });
+    };
+
     // 🖼️ 배경 이미지 업로드 핸들러
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
@@ -141,8 +151,10 @@ export default function StepStartMenu() {
                         {title.text || "타이틀을 입력하세요"}
                     </div>
                     <div style={{ position: 'absolute', left: `${menu.x}%`, top: `${menu.y}%`, transform: 'translate(-50%, -50%)', backgroundColor: hexToRgba(menu.bgColor, menu.bgOpacity), padding: `${menu.padding / 10}cqw`, borderRadius: `0px`, display: 'flex', flexDirection: 'column', gap: '2cqh', alignItems: 'center', border: menu.useBorder ? `2px solid ${menu.borderColor || '#ffffff'}` : 'none', zIndex: 10 }}>
-                        {['NEW GAME', 'LOAD', 'SETTING', 'EXIT'].map(text => (
-                            <span key={text} style={{ fontFamily: getFontFamily(menu.font), fontSize: `${menu.fontSize}cqh`, color: menu.color, textShadow: getTextShadow(menu.useOutline, menu.outlineColor), fontWeight: 'bold' }}>{text}</span>
+                        {menuButtons.map((text, idx) => (
+                            <span key={idx} style={{ fontFamily: getFontFamily(menu.font), fontSize: `${menu.fontSize}cqh`, color: menu.color, textShadow: getTextShadow(menu.useOutline, menu.outlineColor), fontWeight: 'bold' }}>
+                                {text}
+                            </span>
                         ))}
                     </div>
                 </div>
@@ -268,6 +280,19 @@ export default function StepStartMenu() {
                         <div className="form-group"><label className="form-label">불투명도 ({(menu.bgOpacity * 100).toFixed(0)}%)</label><input type="range" min="0" max="1" step="0.05" value={menu.bgOpacity} onChange={(e) => updateMenu({ bgOpacity: Number(e.target.value) })} /></div>
                         <div className="form-group" style={{ flex: 'unset', width: '150px', borderLeft: '1px dashed #dee2e6', paddingLeft: '15px' }}><label className="checkbox-label"><input type="checkbox" checked={menu.useBorder} onChange={(e) => updateMenu({ useBorder: e.target.checked })} /> 박스 테두리</label>{menu.useBorder && <input type="color" className="color-circle" value={menu.borderColor || '#ffffff'} onChange={(e) => updateMenu({ borderColor: e.target.value })} />}</div>
                         <div className="form-group"><label className="form-label">박스 여백 ({menu.padding})</label><input type="range" min="0" max="100" value={menu.padding} onChange={(e) => updateMenu({ padding: Number(e.target.value) })} /></div>
+                    </div>
+                    <div className="form-row form-divider">
+                        {[1, 2, 3, 4].map((num, i) => (
+                            <div key={i} className="form-group" style={{ flex: 1 }}>
+                                <label className="form-label">버튼 {num} 텍스트</label>
+                                <input 
+                                    type="text" 
+                                    className="form-input" 
+                                    value={menuButtons[i]} 
+                                    onChange={(e) => updateMenuButton(i, e.target.value)} 
+                                />
+                            </div>
+                        ))}
                     </div>
                     <div className="form-row form-divider">
                         <div className="form-group"><label className="form-label">위치 X ({menu.x}%)</label><input type="range" min="0" max="100" value={menu.x} onChange={(e) => updateMenu({ x: Number(e.target.value) })} /></div>
