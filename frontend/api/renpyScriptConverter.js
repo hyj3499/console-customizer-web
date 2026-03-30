@@ -8,6 +8,24 @@ const getFileName = (path) => {
     try { return decodeURIComponent(fileName); } catch (e) { return fileName; }
 };
 
+// ⭐ 새로 추가: ID를 받아서 전체 데이터(data)의 characters 보관함을 뒤져 진짜 주소를 찾아주는 함수
+const resolveImageUrl = (imageId, data) => {
+    if (!imageId) return null;
+    
+    // 이미지가 URL 형태면 그대로 반환 (구버전 호환용)
+    if (imageId.startsWith('http') || imageId.startsWith('/images/')) return imageId;
+
+    // 캐릭터 보관함에서 ID 매칭
+    for (const char of (data.characters || [])) {
+        const allImages = [...(char.portraitImages || []), ...(char.standingImages || [])];
+        const found = allImages.find(img => img.id === imageId);
+        if (found) {
+            return found.url || found.preview || found;
+        }
+    }
+    return imageId; // 못 찾으면 원본 반환
+};
+
 const safeFont = (fontName) => {
     if (!fontName || fontName === "시스템 폰트 사용" || fontName === "") return "DejaVuSans.ttf";
     if (!fontName.toLowerCase().endsWith(".ttf") && !fontName.toLowerCase().endsWith(".otf")) return `${fontName}.ttf`;
@@ -204,7 +222,7 @@ export const generateScriptRpy = (data) => {
                         return;
                     }
 
-                    if (sc.type === 'dialog') {
+if (sc.type === 'dialog') {
                         let transitionNeeded = false;
                         let transType = (sIdx === 0) ? "Dissolve(1.5)" : "dissolve";
 
@@ -215,7 +233,10 @@ export const generateScriptRpy = (data) => {
                             transitionNeeded = true;
                         }
 
-                        const hName = sc.heroineImage === null ? "" : getFileName(sc.heroineImage);
+                        // ⭐ 수정: 스탠딩 이미지 ID를 실제 URL로 변환한 후 파일명을 뽑음
+                        const resolvedHeroine = resolveImageUrl(sc.heroineImage, data);
+                        const hName = resolvedHeroine ? getFileName(resolvedHeroine) : "";
+                        
                         if (hName !== s.h) {
                             if (hName === "") {
                                 out += `    hide h_sprite\n`;
@@ -247,8 +268,10 @@ export const generateScriptRpy = (data) => {
                             out += `    with ${transType}\n`;
                         }
 
-                        // ⭐ 수정: pName 업데이트 블록과 화자(speaker) 지정 로직 분리 및 중괄호 교정
-                        const pName = sc.protagonistImage === null ? "" : getFileName(sc.protagonistImage);
+                        // ⭐ 수정: 초상화 이미지 ID를 실제 URL로 변환한 후 파일명을 뽑음
+                        const resolvedProtagonist = resolveImageUrl(sc.protagonistImage, data);
+                        const pName = resolvedProtagonist ? getFileName(resolvedProtagonist) : "";
+                        
                         if (pName !== s.p) {
                             out += `    $ current_p_image = "${pName}"\n`;
                             s.p = pName;
