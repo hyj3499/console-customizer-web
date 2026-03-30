@@ -175,7 +175,7 @@ const getCleanUrl = (item) => {
         });
     });
 
-    const gameData = {
+const gameData = {
         selectedMode: state.selectedMode,
         narrationFontStyle: state.narrationFontStyle, 
         globalUi: state.globalUi, 
@@ -184,18 +184,24 @@ const getCleanUrl = (item) => {
             bgImage: getCleanUrl(state.startMenu?.bgImage),
             bgm: getCleanUrl(state.startMenu?.bgm)
         },
-characters: state.characters?.map(c => ({
+        characters: state.characters?.map(c => ({
             id: c.id,
             isProtagonist: c.isProtagonist || false,
             name: c.name,
-            portraitImages: c.portraitImages?.map(getCleanUrl).filter(Boolean) || [],
-            standingImages: c.standingImages?.map(getCleanUrl).filter(Boolean) || [],
-            fontStyle: c.fontStyle
+            fontStyle: c.fontStyle,
+            // ⭐ 핵심 수정: 문자열(URL)만 저장하던 것을 { id, url } 객체 형태로 보존!
+            portraitImages: c.portraitImages?.map(img => {
+                const cleanUrl = getCleanUrl(img);
+                return cleanUrl ? { id: img.id || `old_${Date.now()}`, url: cleanUrl } : null;
+            }).filter(Boolean) || [],
+            standingImages: c.standingImages?.map(img => {
+                const cleanUrl = getCleanUrl(img);
+                return cleanUrl ? { id: img.id || `old_${Date.now()}`, url: cleanUrl } : null;
+            }).filter(Boolean) || []
         })) || [],
         events: eventsToSave,
         customFonts: state.customFonts?.map(f => ({ name: f.name, url: getCleanUrl(f.url) }))
     };
-
     const response = await axios.post(`${API_URL}/save`, {
         projectId,
         gameData: JSON.stringify(gameData),

@@ -25,7 +25,8 @@ const getColorId = (rgbaValue) => PRESET_COLORS.find((c) => c.value === rgbaValu
 const getImgUrl = (imgData) => {
   if (!imgData) return null;
   if (typeof imgData === 'string') return imgData;
-  if (typeof imgData === 'object' && imgData.preview) return imgData.preview;
+  // ⭐ 수정: 방금 업로드한 이미지(preview)와 로드한 이미지(url)를 모두 지원하도록 확장
+  if (typeof imgData === 'object') return imgData.preview || imgData.url;
   return null;
 };
 
@@ -474,6 +475,7 @@ const [showTips, setShowTips] = useState(false);
   };
 
   // ⭐ 중복 코드가 사라진 깔끔한 이미지 업로드 로직!
+// ⭐ 중복 코드가 사라진 깔끔한 이미지 업로드 로직!
   const handleImageUpload = async (e, targetId, imageType) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -487,7 +489,12 @@ const [showTips, setShowTips] = useState(false);
         });
         if (!isValid) { alert(`🚨 '${file.name}' 초상화 이미지는 1:1 비율이 아닙니다!`); continue; }
       }
-      newImageData.push({ file, preview: previewUrl });
+      
+      // ⭐ 핵심 추가: 절대 변하지 않는 고유 ID 생성
+      const uniqueId = `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // 기존에 { file, preview } 만 넣던 것을 id도 같이 넣도록 수정!
+      newImageData.push({ id: uniqueId, file: file, preview: previewUrl });
     }
 
     setCharacters(characters.map((char) => {

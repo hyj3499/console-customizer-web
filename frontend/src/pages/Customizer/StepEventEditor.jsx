@@ -92,13 +92,29 @@ const ImageSelectorPanel = ({ title, type, characters, onSelect, selectedImage, 
 </select>
             )}
 
-            <div className="face-list" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', maxHeight: '140px', overflowY: 'auto', padding: '4px' }}>
+<div className="face-list" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', maxHeight: '140px', overflowY: 'auto', padding: '4px' }}>
                 <div className="img-selector-clear" onClick={(e) => { e.stopPropagation(); onSelect(null); }} style={{ borderColor: selectedImage === null ? '#fa5252' : '#ccc', borderWidth: selectedImage === null ? '3px' : '1px' }} title="이미지 제거">🚫</div>
+                
                 {displayImages.map((img, i) => {
-                    const imgSrc = img.preview || img;
-                    const isActive = selectedImage === imgSrc;
+                    // ⭐ 1. 화면에 보여줄 '진짜 주소' 찾기
+                    const imgSrc = typeof img === 'object' ? (img.preview || img.url) : img;
+                    
+                    // ⭐ 2. 시나리오에 저장할 '고유 ID' 찾기 (구버전 호환을 위해 없으면 주소 자체를 사용)
+                    const imgId = typeof img === 'object' ? (img.id || imgSrc) : img;
+                    
+                    // ⭐ 3. 선택된 이미지 비교를 ID 기준으로 수행!
+                    const isActive = selectedImage === imgId; 
+
                     return (
-                        <img key={i} src={imgSrc} alt="face" onClick={(e) => { e.stopPropagation(); onSelect(imgSrc); }} className="img-selector-item" style={{ border: isActive ? '3px solid #1971c2' : '1px solid #ccc', transform: isActive ? 'scale(1.05)' : 'scale(1)' }} />
+                        <img 
+                            key={i} 
+                            src={imgSrc} 
+                            alt="face" 
+                            // ⭐️ 클릭하면 주소가 아닌 ID를 넘겨서 저장하게 함
+                            onClick={(e) => { e.stopPropagation(); onSelect(imgId); }} 
+                            className="img-selector-item" 
+                            style={{ border: isActive ? '3px solid #1971c2' : '1px solid #ccc', transform: isActive ? 'scale(1.05)' : 'scale(1)' }} 
+                        />
                     );
                 })}
             </div>
@@ -113,6 +129,26 @@ export default function StepEventEditor() {
         characters, globalUi, customBackgrounds, addCustomBackground,removeCustomBackground,
         narrationFontStyle
     } = useCustomizerStore();
+
+    const getImageUrlById = (imageId) => {
+        if (!imageId) return null;
+        
+        // 1. 이미 Blob 주소이거나 외부 주소(http)라면 그대로 반환 (구버전 호환용)
+        if (typeof imageId === 'string' && (imageId.startsWith('blob:') || imageId.startsWith('http'))) {
+            return imageId;
+        }
+
+        // 2. 캐릭터 보관함을 뒤져서 해당 ID와 일치하는 이미지의 URL을 찾음
+        for (const char of characters) {
+            const allImages = [...(char.portraitImages || []), ...(char.standingImages || [])];
+            const found = allImages.find(img => img.id === imageId);
+            if (found) {
+                // 업로드 직후라면 .preview(blob), 로드 후라면 .url(클라우드 주소) 사용
+                return found.preview || found.url || found; 
+            }
+        }
+        return null;
+    };
 
     // 🌟 분리된 구조 통합 처리
     const [showTips, setShowTips] = useState(false);
@@ -958,7 +994,7 @@ const getSpeakerName = (speakerId) => {
                         ) : (
                             <>
                                 {previewScenario.bgImage && <img src={previewScenario.bgImage} alt="bg" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
-                                {previewScenario.heroineImage && <img src={previewScenario.heroineImage} alt="standing" className="ig-standing" />}
+                                {previewScenario.heroineImage && <img src={getImageUrlById(previewScenario.heroineImage)} alt="standing" className="ig-standing" />}
 
                                 {!previewScenario.isCg && (
                                     <div className="ig-calendar-group">
@@ -1006,7 +1042,7 @@ const getSpeakerName = (speakerId) => {
                                             border: pAsset.type === 'css' ? finalPortraitBorder : 'none', 
                                             boxSizing: 'border-box', overflow: 'hidden'
                                         }}>
-                                            <img src={previewScenario.protagonistImage} alt="주인공" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <img src={getImageUrlById(previewScenario.protagonistImage)} alt="주인공" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                         </div>
                                     </div>
                                 )}
