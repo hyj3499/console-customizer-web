@@ -431,6 +431,7 @@ const displayProtagonistName = protagonist.name === "" ? "(이름 공백)" : (pr
         }
     };
 
+// ⭐️ 1. 최상단에 async 추가
 const handleBgUpload = (e, index) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -443,11 +444,11 @@ const handleBgUpload = (e, index) => {
                 const canvas = document.createElement('canvas');
                 canvas.width = 1920; canvas.height = 1080;
                 const ctx = canvas.getContext('2d');
-                // 16:9 도화지에 강제로 가득 채워 그리기 (늘리기)
                 ctx.drawImage(img, 0, 0, 1920, 1080);
                 
                 canvas.toBlob((blob) => {
                     const resizedFile = new File([blob], file.name, { type: 'image/jpeg' });
+                    // ⭐️ 에러 발생의 원인이었던 uploadImageToServer 코드를 빼고 원래대로 URL.createObjectURL을 씁니다!
                     const url = URL.createObjectURL(resizedFile);
                     const newId = `custom_bg_${Date.now()}`;
                     
@@ -455,7 +456,9 @@ const handleBgUpload = (e, index) => {
 
                     const newScenarios = [...scenarios];
                     newScenarios[index].bgType = newId;
-                    newScenarios[index].bgImage = url;
+                    newScenarios[index].bgImage = url; // 화면엔 가짜 주소(blob) 표시
+                    newScenarios[index].bgFile = resizedFile; // ⭐️ 나중에 ProjectService가 가져갈 진짜 파일 포장!
+
                     updateActiveScenarios(newScenarios);
                     
                     if (showPreview) setPreviewScenario({ ...newScenarios[index], index });
@@ -650,6 +653,7 @@ const insertScenarioAfter = (index, currentItem, type = 'dialog', extraData = nu
     updateActiveScenarios(newScenarios);
 };
     
+// ⭐️ 1. 최상단에 async 추가
 const handleInlineCgUpload = (e, index, currentItem) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -666,7 +670,9 @@ const handleInlineCgUpload = (e, index, currentItem) => {
                 
                 canvas.toBlob((blob) => {
                     const resizedFile = new File([blob], file.name, { type: 'image/jpeg' });
+                    // ⭐️ 여기도 마찬가지로 원래대로 복구!
                     const url = URL.createObjectURL(resizedFile);
+                    
                     insertScenarioAfter(index, currentItem, 'cg_image', { file: resizedFile, url });
                 }, 'image/jpeg', 0.8);
             };

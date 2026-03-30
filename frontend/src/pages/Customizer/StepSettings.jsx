@@ -47,12 +47,10 @@ const SOUND_EFFECTS = [
 const UI_ASSETS = {
   dialog: {
     simple: (bg, border = '#dddddd') => ({ name: '심플형', type: 'css', border: `2px solid ${border}`, borderRadius: '0px' }),
-    gothic: (bg, border = '#a9a9a9') => ({ name: '고딕풍', type: 'css', border: `4px double ${border}`, borderRadius: '0px' }),
     retro: (bg) => ({ name: '도트', type: 'image', src: `/images/retro_dialog_${getColorId(bg)}.png` }),
   },
   namebox: {
     simple: (bg, border = '#dddddd') => ({ name: '심플형', type: 'css', border: `2px solid ${border}`, borderRadius: '0px' }),
-    gothic: (bg, border = '#a9a9a9') => ({ name: '고딕풍', type: 'css', border: `3px double ${border}`, borderRadius: '0px' }),
   },
   portrait: {
     square: (bg, border = '#dddddd') => ({ name: '기본 사각형', type: 'css', border: `3px solid ${border}`, borderRadius: '0%' }),

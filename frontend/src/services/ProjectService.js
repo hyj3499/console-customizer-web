@@ -63,7 +63,7 @@ state.characters?.forEach(c => {
     state.customBackgrounds?.forEach(collectFile);
     state.customFonts?.forEach(collectFile);
 
-    state.events?.forEach(event => {
+state.events?.forEach(event => {
         if (event.bgmFile && event.bgm?.startsWith('blob:')) {
             const fp = getFileFingerprint(event.bgmFile, projectId);
             blobToFingerprint[event.bgm] = fp;
@@ -72,12 +72,21 @@ state.characters?.forEach(c => {
             }
         }
         event.scenarios?.forEach(sc => {
+            // 1. CG 일러스트 파일 수거
             if (sc.file) {
                 const fp = getFileFingerprint(sc.file, projectId);
                 if (sc.src?.startsWith('blob:')) blobToFingerprint[sc.src] = fp;
                 if (sc.bgImage?.startsWith('blob:')) blobToFingerprint[sc.bgImage] = fp;
                 if (!filesToUpload.some(f => f.fingerprint === fp)) {
                     filesToUpload.push({ file: sc.file, fingerprint: fp, originalName: generateSafeName(sc.file) });
+                }
+            }
+            // ⭐ 2. [추가된 부분] 대사창 배경 파일(bgFile) 수거!
+            if (sc.bgFile) {
+                const fp = getFileFingerprint(sc.bgFile, projectId);
+                if (sc.bgImage?.startsWith('blob:')) blobToFingerprint[sc.bgImage] = fp;
+                if (!filesToUpload.some(f => f.fingerprint === fp)) {
+                    filesToUpload.push({ file: sc.bgFile, fingerprint: fp, originalName: generateSafeName(sc.bgFile) });
                 }
             }
         });
@@ -133,35 +142,31 @@ const filesInfo = filesToActuallyUpload.map(item => ({
     console.log("📄 3단계: JSON 데이터 조립...");
 
     // 💡 2. 가장 중요한 마법! 동일한 지문의 파일은 모두 같은 클라우드 URL로 배급!
-const getCleanUrl = (item) => {
-    if (!item) return null;
+    const getCleanUrl = (item) => {
+        if (!item) return null;
 
-    // A. 이미 순수 문자열(URL)인 경우
-    if (typeof item === 'string') {
-        if (item.includes('undefined')) return null;
-        if (item.startsWith('data:')) return null; // Base64 차단
-        return item;
-    }
+        // 문자열이든 객체든 일단 검사할 url을 하나로 통일합니다.
+        let urlToCheck = typeof item === 'string' ? item : (item.preview || item.url);
 
-    // B. 객체 형태인 경우 ({ file, preview, url })
-    const url = item.preview || item.url;
+        if (typeof urlToCheck === 'string') {
+            if (urlToCheck.includes('undefined')) return null;
+            if (urlToCheck.startsWith('data:')) return null; // Base64 차단
 
-    if (url) {
-        // 1) 직접 업로드한 파일 (blob: 또는 data:) -> 클라우드 주소로 변환
-        if (url.startsWith('blob:') || url.startsWith('data:')) {
-            const fp = blobToFingerprint[url];
-            if (fp && fingerprintToFinalUrl[fp]) {
-                return fingerprintToFinalUrl[fp]; 
+            // ⭐ [핵심 수정] blob: 으로 시작하면 무조건 변환 지도를 뒤져서 진짜 주소로 바꿉니다!
+            if (urlToCheck.startsWith('blob:')) {
+                const fp = blobToFingerprint[urlToCheck];
+                if (fp && fingerprintToFinalUrl[fp]) {
+                    return fingerprintToFinalUrl[fp]; 
+                }
+                return urlToCheck; // 혹시 매핑 안 된 경우를 위한 방어 코드
             }
-            return null; // 아직 업로드 안됐거나 에러난 경우
+            
+            // 기본 제공 프리셋이나 이미 변환된 https:// 주소는 그대로 보존
+            return urlToCheck;
         }
-        
-        // 2) 기본 제공 프리셋 경로 (/images/...) -> 경로 그대로 보존!
-        return url;
-    }
 
-    return null;
-};
+        return null;
+    };
 
     const eventsToSave = JSON.parse(JSON.stringify(state.events || []));
     eventsToSave.forEach(event => {

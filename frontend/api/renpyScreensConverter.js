@@ -54,18 +54,28 @@ const getBgStr = (frameType, bgColorVal, borderColorVal, useBorder, isNamebox) =
     }
 
     // 외곽선이 있을 때 (gothic, simple 모두 Frame 기반으로 통일하여 유연성 확보)
-    if (frameType === 'gothic') {
-        // 고딕 스타일: 얇은 두 줄 테두리 효과를 위해 Frame 안에 Frame을 겹칩니다
-        return `Frame(Composite((10, 10), 
-            (0,0), Transform(Solid("${bdColorHex}"), xysize=(10,1)), 
-            (0,9), Transform(Solid("${bdColorHex}"), xysize=(10,1)), 
-            (0,1), Transform(Solid("${bdColorHex}"), xysize=(1,8)), 
-            (9,1), Transform(Solid("${bdColorHex}"), xysize=(1,8)), 
-            (2,2), Transform(Solid("${bdColorHex}"), xysize=(6,1)), 
-            (2,7), Transform(Solid("${bdColorHex}"), xysize=(6,1)), 
-            (2,3), Transform(Solid("${bdColorHex}"), xysize=(1,4)), 
-            (7,3), Transform(Solid("${bdColorHex}"), xysize=(1,4)), 
-            (3,3), Transform(Solid("${bgColorHex}"), xysize=(4,4))), 4, 4)`;
+if (frameType === 'gothic') {
+        // 12x12 크기의 마이크로 설계도 제작
+        return `Frame(Composite((12, 12), 
+            # 1. 바깥쪽 테두리 (0번 좌표)
+            (0,0), Transform(Solid("${bdColorHex}"), xysize=(12,1)), 
+            (0,11), Transform(Solid("${bdColorHex}"), xysize=(12,1)), 
+            (0,1), Transform(Solid("${bdColorHex}"), xysize=(1,10)), 
+            (11,1), Transform(Solid("${bdColorHex}"), xysize=(1,10)), 
+            
+            # 2. 중간 간격 (1번 좌표는 비워둠으로써 배경색이나 투명함이 드러나게 함)
+            
+            # 3. 안쪽 테두리 (2번 좌표)
+            (2,2), Transform(Solid("${bdColorHex}"), xysize=(8,1)), 
+            (2,9), Transform(Solid("${bdColorHex}"), xysize=(8,1)), 
+            (2,3), Transform(Solid("${bdColorHex}"), xysize=(1,6)), 
+            (9,3), Transform(Solid("${bdColorHex}"), xysize=(1,6)), 
+            
+            # 4. 중앙 채우기 (3번 좌표부터 6개 픽셀)
+            (3,3), Transform(Solid("${bgColorHex}"), xysize=(6,6))), 
+            
+            # 5. 슬라이싱 설정: 테두리 영역인 4픽셀은 고정하고 나머지만 늘림
+            4, 4)`;
     }
 
     // 기본(simple) 스타일: 두꺼운 한 줄 테두리
