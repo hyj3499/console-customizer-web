@@ -794,22 +794,43 @@ const handleInlineCgUpload = (e, index, currentItem) => {
         updateActiveScenarios(newScenarios);
     };
 
+// ==========================================
+// 💡 화자 조회 로직 업데이트 (ID 기반 조회 추가)
+// ==========================================
 const getActiveSpeakerStyle = (speakerId) => {
-        if (speakerId === '나레이션') return safeNarrationStyle;
-        if (speakerId === 'PROTAGONIST') return pFontStyle;
-        // 빈 문자열("")도 정상적인 이름으로 취급하도록 조건 수정
-        if (speakerId === null || speakerId === undefined) return pFontStyle;
-        
-        const char = characters.find(c => c.name === speakerId);
-        return char ? char.fontStyle : pFontStyle;
-    };
+    if (speakerId === '나레이션') return safeNarrationStyle;
+    if (speakerId === 'PROTAGONIST') return pFontStyle;
+    if (speakerId === null || speakerId === undefined) return pFontStyle;
+    
+    // 1. 우선 character의 고유 id로 매칭
+    let char = characters.find(c => c.id.toString() === speakerId?.toString());
+    
+    // 2. 못 찾았다면 하위 호환을 위해 name(이름)으로 매칭 (과거 세이브 파일용)
+    if (!char) {
+        char = characters.find(c => c.name === speakerId);
+    }
+    
+    return char ? char.fontStyle : pFontStyle;
+};
 
 const getSpeakerName = (speakerId) => {
-        if (!speakerId) return '';
-        // ⭐ 공백("")을 값으로 인정하도록 !== undefined 검사로 변경
-        if (speakerId === 'PROTAGONIST') return protagonist.name !== undefined ? protagonist.name : '주인공';
-        return speakerId; 
-    };
+    if (speakerId === 'PROTAGONIST') return protagonist.name !== undefined ? protagonist.name : '주인공';
+    if (speakerId === '나레이션') return ''; // 나레이션은 네임박스 공백
+    if (!speakerId) return '';
+    
+    // 1. 우선 character의 고유 id로 매칭
+    let char = characters.find(c => c.id.toString() === speakerId?.toString());
+    
+    // 2. 못 찾았다면 하위 호환을 위해 name(이름)으로 매칭
+    if (!char) {
+        char = characters.find(c => c.name === speakerId);
+    }
+    
+    if (char) return char.name !== undefined ? char.name : '등장인물';
+    
+    // 3. 둘 다 매칭 안 되면 (과거 데이터 중 이름이 그대로 박힌 경우) 그대로 출력
+    return speakerId; 
+};
 
     // 선택된 초상화 이미지(URL)가 어떤 캐릭터의 것인지 주인을 찾아 스타일을 반환
     const getPortraitOwnerStyle = (imageUrl) => {
@@ -1352,15 +1373,17 @@ const getSpeakerName = (speakerId) => {
                                             )}
                                             <div style={{ display: 'flex', gap: '10px' }}>
 <select value={scenario.speaker} onChange={(e) => handleScenarioChange(index, 'speaker', e.target.value)} className="input-base" style={{ width: '130px' }}>
-        <option value="PROTAGONIST">❤️ {displayProtagonistName}</option>
-        <option value="나레이션">📢 나레이션</option>
-        {characters.filter(c => !c.isProtagonist).map((c, charIdx) => {
-            const defaultName = `등장인물 ${charIdx + 1}`;
-            const actualValue = c.name !== undefined ? c.name : defaultName;
-            const displayName = actualValue === "" ? "(이름 공백)" : actualValue;
-            return <option key={c.id} value={actualValue}>⭐️ {displayName}</option>;
-        })}
-    </select>
+    <option value="PROTAGONIST">❤️ {displayProtagonistName}</option>
+    <option value="나레이션">📢 나레이션</option>
+    {characters.filter(c => !c.isProtagonist).map((c, charIdx) => {
+        const defaultName = `등장인물 ${charIdx + 1}`;
+        const actualValue = c.name !== undefined ? c.name : defaultName;
+        const displayName = actualValue === "" ? "(이름 공백)" : actualValue;
+        
+        // ⭐ 핵심 변경: value에 actualValue(이름)가 아닌 c.id.toString()을 할당!
+        return <option key={c.id} value={c.id.toString()}>⭐️ {displayName}</option>;
+    })}
+</select>
                                                 <input type="text" placeholder="대사를 입력하세요..." value={scenario.text} onChange={(e) => handleScenarioChange(index, 'text', e.target.value)} className="input-base" style={{ flex: 1 }} />
                                             </div>
 

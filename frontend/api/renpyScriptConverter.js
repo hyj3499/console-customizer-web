@@ -90,31 +90,25 @@ export const generateScriptRpy = (data) => {
     script += `default current_day = ""\n`;
     script += `default current_time = ""\n`;
     script += `default current_p_image = ""\n`;
-    // ⭐ 추가: 달력 표시 여부를 결정하는 전역 플래그
     script += `default show_calendar = True\n\n`;
 
-// ⭐ 수정: characters 배열에서 주인공을 찾아 이름과 스타일을 가져옵니다.
     const protagonist = (data.characters || []).find(c => c.isProtagonist) || {};
     const pName = protagonist.name !== undefined ? protagonist.name : '주인공';
     const pStyle = protagonist.fontStyle || {};
 
-    // 1. 주인공 생성 (추출한 pStyle 적용)
     script += buildCharacterDef("p", pName, pStyle, true);
     
-    // 2. 나레이션 전용 객체 생성
-    // 과거 데이터 호환성 및 주인공 스타일 상속을 위해 pStyle을 Fallback으로 사용
     const safeNarrationStyle = data.narrationFontStyle || pStyle;
     script += buildCharacterDef("narration", null, safeNarrationStyle, false);
 
-// 3. 기타 등장인물 생성
     if (data.characters) {
         data.characters.filter(c => !c.isProtagonist).forEach(char => {
-            // ⭐ 이름이 공백("")이어도 통과되도록 !== undefined 로 변경
             if (char.name !== undefined) {
                 script += buildCharacterDef(`char_${char.id}`, char.name, char.fontStyle, false);
             }
         });
     }
+
     script += `\n################################################################################\n`;
     script += `## 3. 게임 실행 루프 (선택지 및 분기 자동 처리)\n`;
     script += `################################################################################\n`;
@@ -124,12 +118,11 @@ export const generateScriptRpy = (data) => {
         script += `    jump event_${data.events[0].id}\n\n`;
     }
 
-if (data.events) {
+    if (data.events) {
         data.events.forEach((event, idx) => {
             const nextEvent = data.events[idx + 1];
             const nextEventLabel = nextEvent ? `event_${nextEvent.id}` : null;
 
-            // 메인 루트만 먼저 추출 (opt1Scen, opt2Scen 등 하드코딩 삭제)
             const mainScen = event.scenarios.filter(s => s.branch === 'main' || s.type === 'choice');
 
             const renderBlock = (labelName, scenarioList, stateIn) => {
@@ -172,7 +165,6 @@ if (data.events) {
                         return;
                     }
 
-                    // ⭐ 수정됨: options 배열만 사용해서 1~10개 선택지 깔끔하게 생성
                     if (sc.type === 'choice') {
                         out += `    menu:\n`;
                         (sc.options || []).forEach((optText, optIdx) => {
@@ -255,25 +247,26 @@ if (data.events) {
                             out += `    with ${transType}\n`;
                         }
 
+                        // ⭐ 수정: pName 업데이트 블록과 화자(speaker) 지정 로직 분리 및 중괄호 교정
                         const pName = sc.protagonistImage === null ? "" : getFileName(sc.protagonistImage);
                         if (pName !== s.p) {
                             out += `    $ current_p_image = "${pName}"\n`;
                             s.p = pName;
                         }
 
-                        let speaker = 'p';
+                        let speakerVar = ""; 
                         if (sc.speaker === 'PROTAGONIST') {
-                            speaker = 'p';
-                        } else if (sc.speaker === '나레이션') {
-                            speaker = 'narration';
+                            speakerVar = "p"; 
+                        } else if (sc.speaker === '나레이션' || !sc.speaker) {
+                            speakerVar = "narration"; 
                         } else {
-                            const c = data.characters.find(char => char.name === sc.speaker);
-                            speaker = c ? `char_${c.id}` : `"${sc.speaker}"`;
+                            const char = data.characters.find(c => c.name === sc.speaker || c.id.toString() === sc.speaker.toString());
+                            speakerVar = char ? `char_${char.id}` : `"${sc.speaker}"`;
                         }
 
                         const text = sc.text ? sc.text.replace(/"/g, '\\"') : "";
-                        out += `    ${speaker} "${text}"\n`;
-                    }
+                        out += `    ${speakerVar} "${text}"\n`; 
+                    } // dialog 블록 끝
                 });
 
                 const lastSc = scenarioList[scenarioList.length - 1];
@@ -293,11 +286,9 @@ if (data.events) {
 
             let curState = { bg: "", p: "", h: "" };
             
-            // 메인 루트 생성
             const mainRes = renderBlock(`event_${event.id}`, mainScen, curState);
             script += mainRes.out;
 
-            // ⭐ 수정됨: 1번부터 10번까지 루프를 돌면서 존재하는 옵션(optionN) 루트들을 모두 렌더링
             for (let i = 1; i <= 10; i++) {
                 const branchName = `option${i}`;
                 const optScen = event.scenarios.filter(s => s.branch === branchName);
