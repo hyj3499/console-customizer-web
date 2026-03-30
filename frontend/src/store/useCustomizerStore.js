@@ -100,7 +100,7 @@ const getInitialState = () => ({
         bgImage: null,
         bgm: null,
         title: { 
-            text: '최애로운 생활', 
+            text: '최애라이프', 
             x: 50, y: 30, 
             fontSize: 8, 
             color: '#ffffff', 

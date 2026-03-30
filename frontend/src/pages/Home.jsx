@@ -222,7 +222,9 @@ export default function Home() {
                     <div className="win95-window-inner" style={{ padding: 0, height: '180px' }}>
                         <textarea 
                             readOnly 
-                            defaultValue={`중앙의 [최애로운_생활.exe]를 실행하여\n나만의 비주얼 노벨을 만들어보세요!\n\n♡ ٩(❛ᴗ❛)۶ ♡`}
+                            defaultValue={`중앙의 [
+                                
+                                생활.exe]를 실행하여\n나만의 비주얼 노벨을 만들어보세요!\n\n♡ ٩(❛ᴗ❛)۶ ♡`}
                             style={{ width: '100%', height: '100%', resize: 'none', border: 'none', outline: 'none', padding: '10px', fontFamily: "'Galmuri9', monospace", fontSize: '13px', color: '#5d4037', backgroundColor: 'var(--win95-content-white)', lineHeight: '1.5' }}
                         />
                     </div>
@@ -279,7 +281,7 @@ export default function Home() {
                 <div className="win95-title-bar" style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                         <img src="/images/icons/program.png" alt="program" style={{ width: '14px', height: '14px', imageRendering: 'pixelated' }} onError={(e) => e.target.style.display='none'}/>
-                        최애로운_생활.exe
+                        최애라이프.exe
                     </span>
                     <button className="win95-button" style={{ minWidth: 'auto', padding: '0 6px', fontWeight: 'bold' }}>X</button>
                 </div>
@@ -321,7 +323,7 @@ export default function Home() {
                         backgroundColor: 'var(--win95-content-white)', height: '100%', fontWeight: 'bold', color: '#5d4037', fontSize: '12px' 
                     }}>
                         <img src="/images/logo.png" alt="logo" style={{ width: '14px', height: '14px', marginRight: '6px', imageRendering: 'pixelated' }} />
-                        최애로운_생활.exe
+                        최애라이프.exe
                     </div>
                     
                     {/* 비활성 탭 1 */}

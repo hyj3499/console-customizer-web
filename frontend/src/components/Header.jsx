@@ -75,7 +75,7 @@ export default function Header() {
                     fontWeight: 'bold', fontSize: '13px', fontFamily: "'Galmuri9', monospace",
                     whiteSpace: 'nowrap' // 글자 짤림 방지
                 }}>
-                    최애로운 생활
+                    최애라이프
                 </span>
             </Link>
             

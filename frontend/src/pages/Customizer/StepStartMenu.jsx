@@ -15,7 +15,7 @@ export default function StepStartMenu() {
     const [uploadedFileName, setUploadedFileName] = useState('');
     const [uploadedBgmName, setUploadedBgmName] = useState(''); 
 
-    const title = startMenu.title || { text: '최애로운 생활', x: 50, y: 30, fontSize: 8, color: '#ffffff', font: 'Galmuri14', useOutline: true, outlineColor: '#000000' };
+    const title = startMenu.title || { text: '최애라이프', x: 50, y: 30, fontSize: 8, color: '#ffffff', font: 'Galmuri14', useOutline: true, outlineColor: '#000000' };
     const menu = startMenu.menu || { 
         x: 50, y: 75, fontSize: 4, color: '#ffffff', font: 'Galmuri14', useOutline: true, outlineColor: '#000000',
         bgColor: '#000000', bgOpacity: 0.5, padding: 20, useBorder: false, borderColor: '#ffffff'
@@ -267,7 +267,7 @@ export default function StepStartMenu() {
                 <div className="monitor-screen">
                     <img src={currentBgUrl} alt="bg" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     <div style={{ position: 'absolute', left: `${title.x}%`, top: `${title.y}%`, transform: 'translate(-50%, -50%)', fontFamily: getFontFamily(title.font), fontSize: `${title.fontSize}cqh`, color: title.color, textShadow: getTextShadow(title.useOutline, title.outlineColor), fontWeight: 'bold', whiteSpace: 'nowrap', textAlign: 'center', zIndex: 10 }}>
-                        {title.text !== undefined ? title.text : "최애로운 생활"}
+                        {title.text !== undefined ? title.text : "최애라이프"}
                     </div>
                     <div style={{ position: 'absolute', left: `${menu.x}%`, top: `${menu.y}%`, transform: 'translate(-50%, -50%)', backgroundColor: hexToRgba(menu.bgColor, menu.bgOpacity), padding: `${menu.padding / 10}cqw`, borderRadius: `0px`, display: 'flex', flexDirection: 'column', gap: '2cqh', alignItems: 'center', border: menu.useBorder ? `2px solid ${menu.borderColor || '#ffffff'}` : 'none', zIndex: 10 }}>
                         {menuButtons.map((text, idx) => (

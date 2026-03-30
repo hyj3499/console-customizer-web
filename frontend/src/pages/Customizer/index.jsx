@@ -275,7 +275,7 @@ export default function Customizer() {
                 flexDirection: 'column'
             }}>
                 <div className="win95-title-bar" style={{ margin: '2px' }}>
-                    <span style={{ fontSize: '12px' }}>최애로운_생활_Ver1.0.exe</span>
+                    <span style={{ fontSize: '12px' }}>최애라이프_Ver1.0.exe</span>
                     <div style={{ display: 'flex', gap: '2px' }}>
                         {/*<button style={{ width: '14px', height: '14px', fontSize: '9px', padding: 0 }}>_</button>
                         <button style={{ width: '14px', height: '14px', fontSize: '9px', padding: 0 }}>X</button>*/}
