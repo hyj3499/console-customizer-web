@@ -39,9 +39,6 @@ const safeFont = (fontName) => {
 };
 
 const getBgStr = (frameType, bgColorVal, borderColorVal, useBorder, isNamebox) => {
-    const w = isNamebox ? 180 : 1100;
-    const h = isNamebox ? 50 : 250;
-
     if (frameType === 'retro') {
         const size = isNamebox ? 50 : 150;
         const prefix = isNamebox ? 'namebox' : 'dialog';
@@ -51,45 +48,33 @@ const getBgStr = (frameType, bgColorVal, borderColorVal, useBorder, isNamebox) =
     const bgColorHex = rgbaToHex(bgColorVal); 
     const bdColorHex = rgbaToHex(borderColorVal || '#dddddd');
 
-    // ⭐ 수정: xysize 고정을 없애서 박스가 글자 수에 맞춰 자유롭게 늘어나도록 변경!
+    // 외곽선이 없을 때
     if (!useBorder) {
         return `Solid("${bgColorHex}")`; 
     }
 
+    // 외곽선이 있을 때 (gothic, simple 모두 Frame 기반으로 통일하여 유연성 확보)
     if (frameType === 'gothic') {
-        const line1 = 1; const gap = 2; const line2 = 1; 
-        const totalBw = line1 + gap + line2; 
-        const innerW = w - (totalBw * 2);
-        const innerH = h - (totalBw * 2);
-
-        return `Composite((${w}, ${h}),
-            (0, 0), Transform(Solid("${bdColorHex}"), xysize=(${w}, ${line1})),
-            (0, ${h - line1}), Transform(Solid("${bdColorHex}"), xysize=(${w}, ${line1})),
-            (0, ${line1}), Transform(Solid("${bdColorHex}"), xysize=(${line1}, ${h - line1 * 2})),
-            (${w - line1}, ${line1}), Transform(Solid("${bdColorHex}"), xysize=(${line1}, ${h - line1 * 2})),
-            (${line1}, ${line1}), Transform(Solid("${bgColorHex}"), xysize=(${w - line1 * 2}, ${gap})),
-            (${line1}, ${h - line1 - gap}), Transform(Solid("${bgColorHex}"), xysize=(${w - line1 * 2}, ${gap})),
-            (${line1}, ${line1 + gap}), Transform(Solid("${bgColorHex}"), xysize=(${gap}, ${h - (line1 + gap) * 2})),
-            (${w - line1 - gap}, ${line1 + gap}), Transform(Solid("${bgColorHex}"), xysize=(${gap}, ${h - (line1 + gap) * 2})),
-            (${line1 + gap}, ${line1 + gap}), Transform(Solid("${bdColorHex}"), xysize=(${w - (line1 + gap) * 2}, ${line2})),
-            (${line1 + gap}, ${h - (line1 + gap) - line2}), Transform(Solid("${bdColorHex}"), xysize=(${w - (line1 + gap) * 2}, ${line2})),
-            (${line1 + gap}, ${line1 + gap + line2}), Transform(Solid("${bdColorHex}"), xysize=(${line2}, ${h - (line1 + gap + line2) * 2})),
-            (${w - (line1 + gap) - line2}, ${line1 + gap + line2}), Transform(Solid("${bdColorHex}"), xysize=(${line2}, ${h - (line1 + gap + line2) * 2})),
-            (${totalBw}, ${totalBw}), Transform(Solid("${bgColorHex}"), xysize=(${innerW}, ${innerH}))
-        )`;
+        // 고딕 스타일: 얇은 두 줄 테두리 효과를 위해 Frame 안에 Frame을 겹칩니다
+        return `Frame(Composite((10, 10), 
+            (0,0), Transform(Solid("${bdColorHex}"), xysize=(10,1)), 
+            (0,9), Transform(Solid("${bdColorHex}"), xysize=(10,1)), 
+            (0,1), Transform(Solid("${bdColorHex}"), xysize=(1,8)), 
+            (9,1), Transform(Solid("${bdColorHex}"), xysize=(1,8)), 
+            (2,2), Transform(Solid("${bdColorHex}"), xysize=(6,1)), 
+            (2,7), Transform(Solid("${bdColorHex}"), xysize=(6,1)), 
+            (2,3), Transform(Solid("${bdColorHex}"), xysize=(1,4)), 
+            (7,3), Transform(Solid("${bdColorHex}"), xysize=(1,4)), 
+            (3,3), Transform(Solid("${bgColorHex}"), xysize=(4,4))), 4, 4)`;
     }
 
-    let bw = 2;
-    const sInnerW = w - (bw * 2);
-    const sInnerH = h - (bw * 2);
-
-    return `Composite((${w}, ${h}),
-        (0, 0), Transform(Solid("${bdColorHex}"), xysize=(${w}, ${bw})),
-        (0, ${h - bw}), Transform(Solid("${bdColorHex}"), xysize=(${w}, ${bw})),
-        (0, ${bw}), Transform(Solid("${bdColorHex}"), xysize=(${bw}, ${sInnerH})),
-        (${w - bw}, ${bw}), Transform(Solid("${bdColorHex}"), xysize=(${bw}, ${sInnerH})),
-        (${bw}, ${bw}), Transform(Solid("${bgColorHex}"), xysize=(${sInnerW}, ${sInnerH}))
-    )`;
+    // 기본(simple) 스타일: 두꺼운 한 줄 테두리
+    return `Frame(Composite((10, 10), 
+        (0,0), Transform(Solid("${bdColorHex}"), xysize=(10,2)), 
+        (0,8), Transform(Solid("${bdColorHex}"), xysize=(10,2)), 
+        (0,2), Transform(Solid("${bdColorHex}"), xysize=(2,6)), 
+        (8,2), Transform(Solid("${bdColorHex}"), xysize=(2,6)), 
+        (2,2), Transform(Solid("${bgColorHex}"), xysize=(6,6))), 3, 3)`;
 };
 
 export const generateScreensRpy = (data) => {
@@ -182,7 +167,9 @@ export const generateScreensRpy = (data) => {
     let rpy = `
 init offset = 1
 
-# ⭐ 메뉴, 설정, 선택지에 globalUi의 systemFont를 일괄 적용하는 스타일 정의
+init python:
+    config.character_id_prefixes.append('namebox')
+
 style default:
     font "${sysFont}"
     size 30
@@ -337,20 +324,28 @@ screen say(who, what):
         xpos box_x ypos ${dialog_y} yanchor ${dialog_anchor} xsize tb_w ysize tb_h
         text what id "what":
             size 32
-            pos (77, 32)
-            xsize (tb_w - 154)
+            pos (10, 10)
+            xsize (tb_w - 20)
 
     if who is not None:
-        window:
-            id "namebox"
-            xpos box_x ypos ${namebox_y}
-            xminimum 134           
-            yminimum 58 ymaximum 58 
-            padding (19, 0, 19, 0)
-            
-            text who id "who":
-                size 32
-                align (0.5, 0.5)    # 네임박스 정중앙에 글자 배치
+            window:
+                id "namebox"
+                
+                # ⭐️ [핵심 2] 스타일 강제 선언 (캐릭터별 스타일을 찾게 만듦)
+                style "namebox" 
+                
+                # ⭐️ [핵심 3] 위치 고정 (숫자로 치환되는 변수 사용)
+                xpos box_x 
+                ypos ${namebox_y}
+                
+                # ⭐️ [핵심 4] 고정된 크기(xsize) 대신 최소 크기(xminimum) 사용
+                xminimum namebox_w           
+                yminimum namebox_h 
+                padding (0, 0, 0, 0)
+                
+                text who id "who":
+                    size 32
+                    align (0.5, 0.5)    # 네임박스 정중앙에 글자 배치
 
 ################################################################################
 ## 시작 메뉴 (Main Menu)
