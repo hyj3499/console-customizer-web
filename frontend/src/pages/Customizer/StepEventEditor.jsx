@@ -127,7 +127,7 @@ export default function StepEventEditor() {
         events, setEvents, activeEventId, setActiveEventId,
         showPreview, setShowPreview, previewScenario, setPreviewScenario,
         characters, globalUi, customBackgrounds, addCustomBackground,removeCustomBackground,
-        narrationFontStyle
+        narrationFontStyle, startMenu
     } = useCustomizerStore();
 
     const getImageUrlById = (imageId) => {
@@ -470,24 +470,56 @@ const handleBgUpload = (e, index) => {
     };
 
     // ⭐ 커스텀 배경 삭제 핸들러
-    const handleDeleteCustomBg = (bgIdToRemove) => {
-        if (!window.confirm("이 배경을 보관함에서 완전히 삭제하시겠습니까?\n(이 배경을 삭제하면 해당 배경을 사용 중인 모든 대사(시작 메뉴 포함)의 배경 설정이 초기화됩니다.)")) return;
+// ⭐ 커스텀 배경 삭제 핸들러 (현재 컷은 예외 처리)
+    const handleDeleteCustomBg = (bgIdToRemove, currentIndex) => {
+        const customBgToDelete = customBackgrounds.find(bg => bg.id === bgIdToRemove);
+        const bgUrlToDelete = customBgToDelete?.url;
 
-        // 1. 보관함에서 삭제
+        // 1. [검사] 시작 메뉴에서 사용 중인가?
+        let isUsedInStartMenu = false;
+        if (startMenu && startMenu.bgImage) {
+            const startMenuUrl = typeof startMenu.bgImage === 'string' ? startMenu.bgImage : (startMenu.bgImage.preview || startMenu.bgImage.url);
+            if (startMenuUrl === bgUrlToDelete) isUsedInStartMenu = true;
+        }
+
+        // 2. [검사] "현재 포커싱된 컷"을 제외한 다른 대사 컷에서 사용 중인가?
+        let isUsedInOtherEvents = false;
+        for (const ev of events) {
+            for (let i = 0; i < ev.scenarios.length; i++) {
+                const sc = ev.scenarios[i];
+                
+                // ⭐️ 핵심: 방금 삭제 버튼을 누른 '현재 컷'은 범인 찾기에서 제외!
+                if (ev.id === activeEventId && i === currentIndex) continue;
+
+                if (sc.bgType === bgIdToRemove || sc.bgImage === bgUrlToDelete) {
+                    isUsedInOtherEvents = true;
+                    break;
+                }
+            }
+            if (isUsedInOtherEvents) break;
+        }
+
+        // 3. 차단: 시작 메뉴나 '다른 컷'에서 쓰고 있다면 차단
+        if (isUsedInStartMenu || isUsedInOtherEvents) {
+            alert("🚨 삭제 불가!\n이 배경 이미지가 [시작 메뉴] 또는 [다른 대사 컷]에서 사용 중입니다.\n먼저 해당 배경들을 다른 것으로 변경한 후 삭제해 주세요.");
+            return;
+        }
+
+        // 4. 통과: 지금 이 컷에서만 쓰고 있다면 삭제 후 검은 화면으로 초기화
+        if (!window.confirm("이 배경을 보관함에서 완전히 삭제하시겠습니까?\n(현재 컷의 배경은 검은색으로 초기화됩니다.)")) return;
+
         removeCustomBackground(bgIdToRemove);
 
-        // 2. 현재 이벤트 내에서 이 배경을 쓰던 컷들을 기본 배경으로 초기화
-        const newScenarios = scenarios.map(sc => {
-            if (sc.bgType === bgIdToRemove) {
-                return { ...sc, bgType: PRESET_BACKGROUNDS[0]?.id, bgImage: PRESET_BACKGROUNDS[0]?.url };
-            }
-            return sc;
-        });
+        const blackBg = PRESET_BACKGROUNDS.find(bg => bg.id === 'bg_black') || PRESET_BACKGROUNDS[0];
+        const newScenarios = [...scenarios];
+        newScenarios[currentIndex] = { 
+            ...newScenarios[currentIndex], 
+            bgType: blackBg.id, bgImage: blackBg.url, bgFile: null 
+        };
         updateActiveScenarios(newScenarios);
-
-        // 3. 미리보기 창이 열려있다면 미리보기 창도 업데이트
-        if (showPreview && previewScenario?.bgType === bgIdToRemove) {
-            setPreviewScenario({ ...previewScenario, bgType: PRESET_BACKGROUNDS[0]?.id, bgImage: PRESET_BACKGROUNDS[0]?.url });
+        
+        if (showPreview && previewScenario?.index === currentIndex) {
+            setPreviewScenario({ ...newScenarios[currentIndex], index: currentIndex });
         }
     };
     
@@ -1367,7 +1399,7 @@ const getSpeakerName = (speakerId) => {
                                                     <input type="file" accept="image/*" ref={el => fileInputRefs.current[index] = el} onChange={(e) => handleBgUpload(e, index)} style={{ display: 'none' }} />
                                                     {scenario.bgType?.startsWith('custom_bg_') && (
             <button 
-                onClick={(e) => { e.stopPropagation(); handleDeleteCustomBg(scenario.bgType); }}
+                onClick={(e) => { e.stopPropagation(); handleDeleteCustomBg(scenario.bgType, index); }}
                 style={{ backgroundColor: '#ffe3e3', color: '#e03131', border: '1px solid #ffc9c9', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
                 title="이 배경을 보관함에서 삭제합니다"
             >

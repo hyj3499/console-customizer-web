@@ -5,7 +5,7 @@ import { SHARED_BACKGROUNDS, SHARED_FONT } from '../../assets/assets';
 import './StepStartMenu.css';
 
 export default function StepStartMenu() {
-    const { startMenu, setStartMenu, customFonts, customBackgrounds, addCustomBackground, removeCustomBackground} = useCustomizerStore();
+    const { startMenu, setStartMenu, customFonts, customBackgrounds, addCustomBackground, removeCustomBackground, events} = useCustomizerStore();
     const fileInputRef = useRef(null);
     const bgmInputRef = useRef(null); 
 
@@ -143,16 +143,38 @@ export default function StepStartMenu() {
     const selectedBgId = SHARED_BACKGROUNDS.find(bg => bg.url === currentBgUrl)?.id || customBackgrounds.find(bg => bg.url === currentBgUrl)?.id || 'custom';
 
     // ⭐ 커스텀 배경 삭제 핸들러
+// ⭐ 커스텀 배경 삭제 핸들러 (사용 중일 때 삭제 차단 로직 적용)
+// ⭐ 커스텀 배경 삭제 핸들러 (이벤트 사용 여부만 검사)
     const handleDeleteCustomBg = (bgIdToRemove) => {
-        if (!window.confirm("이 배경을 보관함에서 완전히 삭제하시겠습니까?\n(이 배경을 삭제하면 해당 배경을 사용 중인 시작 메뉴(대사 포함)의 배경 설정이 초기화됩니다.)")) return;
+        const customBgToDelete = customBackgrounds.find(bg => bg.id === bgIdToRemove);
+        const bgUrlToDelete = customBgToDelete?.url;
 
-        // 1. 보관함에서 삭제
+        // 1. [검사] 시작 메뉴 자기 자신은 검사 패스! 오직 '이벤트 시나리오 컷'만 검사합니다.
+        let isUsedInEvents = false;
+        if (events) {
+            for (const ev of events) {
+                if (ev.scenarios && ev.scenarios.some(sc => sc.bgType === bgIdToRemove || sc.bgImage === bgUrlToDelete)) {
+                    isUsedInEvents = true;
+                    break;
+                }
+            }
+        }
+
+        // 2. 차단: 이벤트에서 쓰고 있다면 삭제 불가
+        if (isUsedInEvents) {
+            alert("🚨 삭제 불가!\n현재 이 배경 이미지가 [이벤트 컷]에서 사용 중입니다.\n이벤트 에디터에서 해당 배경을 다른 것으로 변경한 후 삭제해 주세요.");
+            return;
+        }
+
+        // 3. 통과: 이벤트에서 안 쓴다면 (시작 메뉴에서만 쓴다면) 삭제 진행
+        if (!window.confirm("이 배경을 보관함에서 완전히 삭제하시겠습니까?\n(시작 메뉴의 배경은 기본값으로 초기화됩니다.)")) return;
+
         removeCustomBackground(bgIdToRemove);
 
-        // 2. 만약 현재 시작 메뉴에 적용된 배경이 방금 삭제한 배경이라면 기본 배경으로 롤백
+        // 삭제 후 시작 메뉴 배경 초기화
         if (selectedBgId === bgIdToRemove) {
             setStartMenu({ bgImage: { file: null, preview: SHARED_BACKGROUNDS[0]?.url }, bgImageName: '' });
-            setUploadedFileName(''); // 로컬 텍스트 상태 초기화
+            setUploadedFileName(''); 
         }
     };
 
