@@ -212,7 +212,7 @@ style say_namebox is namebox:
 style say_label:
     font "${mainFont}"
     size 32 
-    bold True
+    bold False
     yalign 0.5
     xalign 0.5
 
