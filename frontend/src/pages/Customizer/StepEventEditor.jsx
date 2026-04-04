@@ -205,7 +205,7 @@ export default function StepEventEditor() {
     // ========================================================
     
     // ⭐ 추가: 모든 컷을 일괄적으로 갤러리 모드로 묶어줄 전역 상태 변수
-    const [isGlobalGalleryMode, setIsGlobalGalleryMode] = useState(false);
+    const [isGlobalGalleryMode, setIsGlobalGalleryMode] = useState(true);
     const activeEvent = events.find(ev => ev.id === activeEventId) || events[0];
     const scenarios = activeEvent.scenarios;
     const hasChoiceNode = scenarios.some(s => s.type === 'choice');
@@ -870,14 +870,17 @@ const getSpeakerName = (speakerId) => {
     return speakerId; 
 };
 
-    // 선택된 초상화 이미지(URL)가 어떤 캐릭터의 것인지 주인을 찾아 스타일을 반환
-    const getPortraitOwnerStyle = (imageUrl) => {
-        if (!imageUrl) return pFontStyle; // 이미지가 없으면 기본값(주인공)
+// 선택된 초상화 이미지(ID 또는 URL)가 어떤 캐릭터의 것인지 주인을 찾아 스타일을 반환
+    const getPortraitOwnerStyle = (imageIdOrUrl) => {
+        if (!imageIdOrUrl) return pFontStyle; // 이미지가 없으면 기본값(주인공)
         
         const owner = characters.find(char => 
             char.portraitImages?.some(img => {
-                const src = typeof img === 'object' ? (img.preview || img.url) : img;
-                return src === imageUrl;
+                // ⭐ 수정됨: 객체인 경우 id와 url을 모두 검사해서 확실하게 주인을 찾음!
+                if (typeof img === 'object') {
+                    return img.id === imageIdOrUrl || img.preview === imageIdOrUrl || img.url === imageIdOrUrl;
+                }
+                return img === imageIdOrUrl;
             })
         );
         return owner ? (owner.fontStyle || pFontStyle) : pFontStyle;
