@@ -125,56 +125,29 @@ export default function Customizer() {
                 body: JSON.stringify({ id: loadId, pw: loadPw })
             });
 
-            if (response.ok) {
-                const data = await response.json(); 
-                console.log("☁️ 클라우드 데이터 로드 완료:", data);
+        if (response.ok) {
+            const data = await response.json();
+            console.log("☁️ 클라우드 데이터 로드 완료:", data);
 
-                const ensureImageObject = (img) => {
-                    if (!img) return null;
-                    if (typeof img === 'object' && img.preview) return img;
-                    if (typeof img === 'string') return { preview: img };
-                    return null;
-                };
+            // ⭐️ 개별 set 함수들을 다 지우고, 스토어의 통합 로드 함수 하나만 호출하세요!
+            // 이 함수가 characters, events, customBackgrounds를 모두 한 번에 담아줍니다.
+            store.loadProjectData(data); 
 
-                if (data.customFonts && data.customFonts.length > 0) {
-                    data.customFonts.forEach(font => {
-                        const newFont = new FontFace(font.name, `url(${font.url})`);
-                        newFont.load().then(loaded => {
-                            document.fonts.add(loaded);
-                            addCustomFont(font.name, font.url, null); 
-                        });
+            // 폰트 로드는 별도 처리가 필요하므로 그대로 둡니다.
+            if (data.customFonts) {
+                data.customFonts.forEach(font => {
+                    const newFont = new FontFace(font.name, `url(${font.url})`);
+                    newFont.load().then(loaded => {
+                        document.fonts.add(loaded);
+                        addCustomFont(font.name, font.url, null); 
                     });
-                }
+                });
+            }
 
-                if (data.startMenu) {
-                    setStartMenu({
-                        ...data.startMenu,
-                        bgImage: ensureImageObject(data.startMenu.bgImage)
-                    });
-                }
-
-                if (data.globalUi) setGlobalUi(data.globalUi);
-                
-                if (data.protagonist) {
-                    setProtagonist({
-                        name: data.protagonist.name || "",
-                        images: (data.protagonist.images || []).map(ensureImageObject).filter(Boolean)
-                    });
-                }
-                
-                if (data.characters) {
-                    setCharacters(data.characters.map(c => ({
-                        ...c,
-                        images: (c.images || []).map(ensureImageObject).filter(Boolean)
-                    })));
-                }
-
-                if (data.events) setEvents(data.events);
-                
-                alert('🎉 데이터 로드 성공! 화면으로 이동합니다.');
-                setShowAuthPopup(false);
-                setCurrentStep(2); 
-            } else {
+            alert('🎉 데이터 로드 성공! 모든 보관함이 동기화되었습니다.');
+            setShowAuthPopup(false);
+            setCurrentStep(2); 
+        } else {
                 const err = await response.json();
                 alert(err.message || '로그인 실패');
             }

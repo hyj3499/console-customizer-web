@@ -205,7 +205,12 @@ const gameData = {
             }).filter(Boolean) || []
         })) || [],
         events: eventsToSave,
-        customFonts: state.customFonts?.map(f => ({ name: f.name, url: getCleanUrl(f.url) }))
+        customFonts: state.customFonts?.map(f => ({ name: f.name, url: getCleanUrl(f.url) })),
+        customBackgrounds: state.customBackgrounds?.map(bg => ({
+            id: bg.id,
+            name: bg.name,
+            url: getCleanUrl(bg.url)
+        })).filter(bg => bg.url !== null) || []
     };
     const response = await axios.post(`${API_URL}/save`, {
         projectId,

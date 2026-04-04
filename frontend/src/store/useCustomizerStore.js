@@ -135,7 +135,8 @@ const useCustomizerStore = create((set) => ({
     resetStore: () => set(getInitialState()),
 
     // ⭐ 프로젝트 파일 불러오기
-loadProjectData: (loadedData) => set((state) => ({
+// ⭐ 프로젝트 파일 불러오기
+    loadProjectData: (loadedData) => set((state) => ({
         ...state,
         ...loadedData,
         characters: (loadedData.characters || state.characters).map(c => ({
@@ -143,8 +144,12 @@ loadProjectData: (loadedData) => set((state) => ({
             portraitImages: c.portraitImages || [],
             standingImages: c.standingImages || []
         })),
+        
+        // ⭐️ 안으로 무사히 들어왔습니다! 이제 loadedData를 정상적으로 읽을 수 있습니다.
+        customBackgrounds: loadedData.customBackgrounds || [], 
+        
         isEditing: true,
-    })),
+    })), // 👈 여기서 모든 게 깔끔하게 닫힙니다.
 
     // ⭐ 캐릭터 및 주인공 통합 업데이트 함수
     updateCharacter: (id, updates) => set((state) => ({
