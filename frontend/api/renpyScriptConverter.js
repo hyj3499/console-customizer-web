@@ -164,6 +164,8 @@ export const generateScriptRpy = (data) => {
                 let s = { ...stateIn }; 
 
                 if (labelName === `event_${event.id}`) {
+                    out += `    $ current_p_image = ""\n`;
+                    out += `    hide h_sprite\n`;
                     if (event.bgm) {
                         const eventBgmName = getFileName(event.bgm);
                         if (eventBgmName) {
@@ -197,8 +199,27 @@ export const generateScriptRpy = (data) => {
                         return;
                     }
 
-                    if (sc.type === 'choice') {
+                        if (sc.type === 'choice') {
                         out += `    menu:\n`;
+
+                        // ⭐ [추가] 바로 직전 컷(dialog)의 대사와 화자를 가져와서 메뉴 캡션으로 삽입
+                        const prevSc = sIdx > 0 ? scenarioList[sIdx - 1] : null;
+                        if (prevSc && prevSc.type === 'dialog') {
+                            let speakerVar = ""; 
+                            if (prevSc.speaker === 'PROTAGONIST') {
+                                speakerVar = "p"; 
+                            } else if (prevSc.speaker === '나레이션' || !prevSc.speaker) {
+                                speakerVar = "narration"; 
+                            } else {
+                                const char = data.characters.find(c => c.name === prevSc.speaker || c.id.toString() === prevSc.speaker.toString());
+                                speakerVar = char ? `char_${char.id}` : `"${prevSc.speaker}"`;
+                            }
+                            const text = prevSc.text ? prevSc.text.replace(/"/g, '\\"') : "";
+                            
+                            // 💡 핵심: {fast} 태그를 붙이면 타이핑 애니메이션과 타자 소리가 완벽하게 생략됩니다!
+                            out += `        ${speakerVar} "${text}{fast}"\n`;
+                        }
+
                         (sc.options || []).forEach((optText, optIdx) => {
                             const finalOptText = optText.trim() || `선택지 ${optIdx + 1}`;
                             out += `        "${finalOptText.replace(/"/g, '\\"')}":\n`;
