@@ -82,8 +82,16 @@ export const generateScriptRpy = (data) => {
 
     let script = `################################################################################\n`;
     script += `## 1. 전역 설정 및 오디오 로직\n`;
-    script += `################################################################################\n`;
+    script += `################################################################################\n\n`;
     
+    // ⭐ [추가] 화면 흔들림 및 VFX 효과 사전 정의
+    script += `default auto_shake = False\n\n`;
+    script += `image white_vfx = Solid("#ffffff")\n\n`;
+    script += `transform flash_vfx:\n`;
+    script += `    alpha 0.0\n`;
+    script += `    linear 0.05 alpha 0.8\n`;
+    script += `    linear 0.1 alpha 0.0\n\n`;
+
     const bgmPath = data.startMenu?.bgm;
     if (bgmPath && (typeof bgmPath === 'string' || bgmPath.preview)) {
         const bgmName = getFileName(bgmPath);
@@ -91,12 +99,18 @@ export const generateScriptRpy = (data) => {
             script += `define config.main_menu_music = "audio/${bgmName}"\n\n`;
         }
     }
-
     script += `init python:\n`;
+    script += `    renpy.music.register_channel("vfx", "sfx", loop=False)\n`;
     script += `    def type_sound_callback(event, sound=None, interact=True, **kwargs):\n`;
-    script += `        if not interact: return\n`;
+    script += `        global auto_shake\n\n`;
+    script += `        if not interact: return\n\n`;
     script += `        if event == "show":\n`;
     script += `            renpy.music.play(sound, channel="sound", loop=True)\n`;
+    script += `            if auto_shake:\n`;
+    script += `                # ⭐️ vfx 채널에서 단 한 번만 재생되도록 명시!\n`;
+    script += `                renpy.music.play("audio/vibrate.ogg", channel="vfx", loop=False)\n`;
+    script += `                renpy.transition(hpunch)\n`;
+    script += `                auto_shake = False\n`;
     script += `        elif event == "slow_done" or event == "end":\n`;
     script += `            renpy.music.stop(channel="sound", fadeout=0.1)\n\n`;
     
@@ -269,14 +283,15 @@ if (sc.type === 'dialog') {
                         }
 
                         // ⭐ 수정: 초상화 이미지 ID를 실제 URL로 변환한 후 파일명을 뽑음
-                        const resolvedProtagonist = resolveImageUrl(sc.protagonistImage, data);
-                        const pName = resolvedProtagonist ? getFileName(resolvedProtagonist) : "";
+                        const resolvedPortrait = resolveImageUrl(sc.protagonistImage, data);
+                        const pName = resolvedPortrait ? getFileName(resolvedPortrait) : "";
                         
                         if (pName !== s.p) {
                             out += `    $ current_p_image = "${pName}"\n`;
                             s.p = pName;
                         }
 
+                        // ⭐ [기존 화자 변수 설정 유지]
                         let speakerVar = ""; 
                         if (sc.speaker === 'PROTAGONIST') {
                             speakerVar = "p"; 

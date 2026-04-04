@@ -121,6 +121,58 @@ export const generateScreensRpy = (data) => {
             (${bw}, ${bw}), Transform(Solid("${bgColorHex}"), xysize=(${inner}, ${inner})))`;
     };
 
+    const portraitImageCode = pStyle.portraitStyle === 'retro' 
+        ? `AlphaMask(Transform(getattr(store, "current_p_image", ""), xysize=(face_size, face_size), fit="cover"), Transform("images/retro_frame_mask.png", xysize=(face_size, face_size)))`
+        : `Transform(getattr(store, "current_p_image", ""), xysize=(face_size, face_size), fit="cover")`;
+
+// ⭐️ [수정] portraitIfBlocks 생성 로직 (들여쓰기 12칸으로 고정)
+    let portraitIfBlocks = "";
+    let isFirstCondition = true;
+
+    if (data.characters && data.characters.length > 0) {
+        data.characters.forEach((char) => {
+            const imgNames = (char.portraitImages || []).map(img => getFileName(img)).filter(n => n !== "");
+            if (imgNames.length === 0) return;
+
+            const cStyle = char.fontStyle || pStyle;
+            let bgStr = "";
+            let imgStr = "";
+
+            if (cStyle.portraitStyle === 'retro') {
+                bgStr = `Transform("images/retro_frame_${getColorId(cStyle.portraitColor)}.png", xysize=(250, 250))`;
+                imgStr = `AlphaMask(Transform(getattr(store, "current_p_image", ""), xysize=(250, 250), fit="cover"), Transform("images/retro_frame_mask.png", xysize=(250, 250)))`;
+            } else {
+                const bgColorHex = rgbaToHex(cStyle.portraitColor);
+                if (cStyle.usePortraitBorder === false) {
+                    bgStr = `Transform(Solid("${bgColorHex}"), xysize=(250, 250))`;
+                } else {
+                    const bdColorHex = rgbaToHex(cStyle.portraitBorderColor || '#dddddd');
+                    const bw = 3; const size = 250; const inner = size - (bw * 2);
+                    bgStr = `Composite((${size}, ${size}), (0, 0), Transform(Solid("${bdColorHex}"), xysize=(${size}, ${bw})), (0, ${size - bw}), Transform(Solid("${bdColorHex}"), xysize=(${size}, ${bw})), (0, ${bw}), Transform(Solid("${bdColorHex}"), xysize=(${bw}, ${inner})), (${size - bw}, ${bw}), Transform(Solid("${bdColorHex}"), xysize=(${bw}, ${inner})), (${bw}, ${bw}), Transform(Solid("${bgColorHex}"), xysize=(${inner}, ${inner})))`;
+                }
+                imgStr = `Transform(getattr(store, "current_p_image", ""), xysize=(250, 250), fit="cover")`;
+            }
+
+            const conditionStr = imgNames.map(n => `"${n}" in getattr(store, "current_p_image", "")`).join(" or ");
+            const keyword = isFirstCondition ? "if" : "elif";
+
+            // ⭐️ 정확히 12칸 들여쓰기 후 코드 작성
+            portraitIfBlocks += `            ${keyword} ${conditionStr}:\n`;
+            portraitIfBlocks += `                add ${bgStr}\n`;
+            portraitIfBlocks += `                add ${imgStr} align(0.5, 0.5)\n`;
+            isFirstCondition = false;
+        });
+    }
+
+    if (isFirstCondition) {
+        portraitIfBlocks += `            add ${getPortraitBgStr()}\n`;
+        portraitIfBlocks += `            add ${portraitImageCode} align(0.5, 0.5)\n`;
+    } else {
+        portraitIfBlocks += `            else:\n`;
+        portraitIfBlocks += `                add ${getPortraitBgStr()}\n`;
+        portraitIfBlocks += `                add ${portraitImageCode} align(0.5, 0.5)\n`;
+    }
+
     // ⭐ 수정됨: 레트로 달력 배경 관련 변수 삭제
 
     const calText = rgbaToHex(ui.calendarTextColor);
@@ -275,9 +327,7 @@ style char_${char.id}_namebox is say_namebox:
         });
     }
 
-    const portraitImageCode = pStyle.portraitStyle === 'retro' 
-        ? `AlphaMask(Transform(getattr(store, "current_p_image", ""), xysize=(face_size, face_size), fit="cover"), Transform("images/retro_frame_mask.png", xysize=(face_size, face_size)))`
-        : `Transform(getattr(store, "current_p_image", ""), xysize=(face_size, face_size), fit="cover")`;
+
 
     rpy += `
 ################################################################################
@@ -321,16 +371,12 @@ screen say(who, what):
         textbutton "불러오기" action ShowMenu('load') text_style "ig_sysmenu_text" style "ig_sysmenu_button"
         textbutton "설정" action ShowMenu('preferences') text_style "ig_sysmenu_text" style "ig_sysmenu_button"
 
-    if getattr(store, "current_p_image", "") != "":
-        fixed:
-            # ⭐ ypos 뒤에 yanchor ${portrait_anchor} 가 반드시 들어가야 합니다.
-            xpos ui_x ypos ${portrait_y} yanchor ${portrait_anchor} xysize (face_size, face_size)
-            add ${getPortraitBgStr()}
-            add ${portraitImageCode} align(0.5, 0.5)
 
+    if getattr(store, "current_p_image", "") != "":
+        fixed xpos ui_x ypos ${portrait_y} yanchor ${portrait_anchor} xysize (face_size, face_size):
+${portraitIfBlocks}
     window:
         id "window"
-        # ⭐ ypos 뒤에 yanchor ${dialog_anchor} 가 반드시 들어가야 합니다.
         xpos box_x ypos ${dialog_y} yanchor ${dialog_anchor} xsize tb_w ysize tb_h
         text what id "what":
             size 32
