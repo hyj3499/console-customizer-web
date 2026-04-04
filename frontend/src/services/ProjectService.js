@@ -13,7 +13,9 @@ const globalFingerprintCache = {};
 
 // 💡 1. 파일 내용 기반 지문 생성 (똑같은 파일은 무조건 1개로 취급)
 const getFileFingerprint = (file, projectId) => {
-    if (!file) return "no_file_" + Date.now();
+    // ⭐ [수정] 진짜 파일(Blob 또는 File)이 아니면 지문을 만들지 않음
+    if (!file || !(file instanceof Blob)) return null; 
+
     const name = file.name || "unknown";
     const size = file.size || 0;
     const lastModified = file.lastModified || 0;
@@ -43,8 +45,12 @@ export const uploadAndSaveProject = async (projectId, htmlString) => {
     const collectFile = (item) => {
         const file = item?.file;
         const url = item?.preview || item?.url;
-        if (file && url) {
+
+        // ⭐ [수정] 1. 진짜 파일 객체가 있고, 2. 주소가 blob: 으로 시작할 때만 업로드 목록에 추가
+        if (file && (file instanceof Blob) && url && url.startsWith('blob:')) {
             const fingerprint = getFileFingerprint(file, projectId);
+            if (!fingerprint) return; // 지문 생성 실패시 스킵
+
             blobToFingerprint[url] = fingerprint;
             if (!filesToUpload.some(f => f.fingerprint === fingerprint)) {
                 filesToUpload.push({ file, fingerprint, originalName: generateSafeName(file) });
